@@ -25,3 +25,108 @@
 .App-link {
   color: #61fb75;
 }
+
+/* Home Page */
+
+/* Layout */
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.layout-content {
+  display: flex;
+  flex: 1;
+}
+
+main {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Layout Header */
+header {
+  background-color: #4caf50;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header .logo {
+  height: 50px;
+}
+
+header nav ul {
+  list-style-type: none;
+  display: flex;
+  gap: 1rem;
+}
+
+header nav ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+header nav ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+/* Layout Footer */
+footer {
+  background-color: #4caf50;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+footer h4 {
+  margin: 0 0 0.5rem 0;
+}
+
+footer ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+footer ul li {
+  margin: 0.5rem 0;
+}
+
+footer ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+footer p {
+  flex-basis: 100%;
+  text-align: center;
+  margin: 1rem 0 0 0;
+}
+
+/* Layout Sidebar */
+aside {
+  background-color: #f4f4f4;
+  padding: 1rem;
+  width: 200px;
+}
+
+aside nav ul {
+  list-style-type: none;
+}
+
+aside nav ul li {
+  margin: 0.5rem 0;
+}
+
+aside nav ul li a {
+  text-decoration: none;
+  color: #333;
+}
