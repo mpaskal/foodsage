@@ -272,12 +272,12 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 5px 20px;
   background-color: #8bc34a; /* Your green color */
 }
 
 .logo {
-  height: 40px; /* Adjust as needed */
+  height: 50px; /* Adjust as needed */
 }
 
 .navbar {
