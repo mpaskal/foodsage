@@ -27,6 +27,18 @@
 }
 
 /* Home Page */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero img {
+  object-fit: cover;
+  height: 200px;
+  width: 100%;
+}
 
 /* Layout */
 .layout {
@@ -42,27 +54,28 @@
 
 main {
   flex: 1;
-  padding: 1rem;
+  padding: 0.3rem;
   overflow-y: auto;
 }
 
 /* Layout Header */
 header {
-  background-color: #4caf50;
+  background-color: #87c159;
   color: white;
-  padding: 1rem;
+  padding: 0.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 header .logo {
-  height: 50px;
+  height: 45px;
 }
 
 header nav ul {
   list-style-type: none;
   display: flex;
+  padding-right: 0.5rem;
   gap: 1rem;
 }
 
@@ -78,37 +91,15 @@ header nav ul li a {
 
 /* Layout Footer */
 footer {
-  background-color: #4caf50;
+  background-color: #058240;
   color: white;
-  padding: 1rem;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-}
-
-footer h4 {
-  margin: 0 0 0.5rem 0;
-}
-
-footer ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-footer ul li {
-  margin: 0.5rem 0;
-}
-
-footer ul li a {
-  color: white;
-  text-decoration: none;
-}
-
-footer p {
-  flex-basis: 100%;
-  text-align: center;
-  margin: 1rem 0 0 0;
+  height: 50px;
+  width: auto;
+  bottom: 0;
 }
 
 /* Layout Sidebar */
