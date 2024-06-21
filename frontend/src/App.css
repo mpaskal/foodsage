@@ -308,6 +308,256 @@
   text-decoration: underline;
 }
 
+/* SignUpPage */
+.sign-up-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.sign-up-container h2 {
+  margin-bottom: 1rem;
+  color: green;
+}
+
+.sign-up-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.sign-up-container form div {
+  margin-bottom: 1rem;
+}
+
+.sign-up-container form label {
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.sign-up-container form input[type="text"],
+.sign-up-container form input[type="email"],
+.sign-up-container form input[type="password"] {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.sign-up-container form button {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background-color: green;
+  color: white;
+  cursor: pointer;
+}
+
+.sign-up-container p {
+  margin-top: 1rem;
+}
+
+.sign-up-container a {
+  color: green;
+  text-decoration: none;
+}
+
+.sign-up-container a:hover {
+  text-decoration: underline;
+}
+
+/* Dashboard */
+
+.dashboard {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 20rem;
+  gap: 2rem;
+  min-height: calc(
+    100vh - 200px
+  ); /* Adjust according to header and footer height */
+}
+
+.welcome-section h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.image-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px; /* Limit the width for better alignment */
+}
+
+.image-container img {
+  width: 48%; /* Adjust width to maintain space between images */
+  height: auto;
+}
+
+/* LayoutApp */
+.layout-app {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-app {
+  position: fixed;
+  top: 0;
+  height: 2em;
+  z-index: 1000;
+  background: #fff; /* Add background color to avoid transparency */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100vw;
+  margin-right: 5rem;
+}
+
+.layout-app-main {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 60px; /* Adjust this value based on header height */
+}
+
+.layout-app-content {
+  display: flex;
+  justify-content: center;
+}
+
+.footer-app {
+  background: #fff;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  text-align: center;
+  width: 100%;
+  position: relative;
+  margin-right: 5rem;
+  margin-left: 10rem;
+}
+
+/* Main */
+
+main {
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .layout-content {
+    margin-left: 0;
+  }
+}
+
+/* HeaderApp */
+.header-app {
+  background-color: #4caf50;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 98%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-left .logo {
+  height: 50px;
+  margin-right: 1rem;
+}
+
+.header-left .space-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.2rem;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 200px; /* Set a fixed width for the search bar */
+}
+
+.search-bar input {
+  border: none;
+  padding: 0.5rem;
+  flex: 1;
+  outline: none;
+}
+
+.search-bar button {
+  background-color: transparent;
+  border: none;
+  color: #4caf50;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5rem;
+}
+
+.header-right svg {
+  cursor: pointer;
+}
+
+/* FooterApp */
+.footer-app {
+  background-color: #4caf50;
+  color: white;
+  padding: 2rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  height: fit-content;
+  width: 90%;
+}
+
+.footer-section {
+  margin: 0 1rem;
+  text-align: center;
+}
+
+.footer-section h4 {
+  margin-bottom: 1rem;
+}
+
+.footer-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.footer-section ul li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.footer-app p {
+  flex-basis: 100%;
+  text-align: center;
+  margin-top: 2rem;
+}
+
 /* Layout */
 .layout {
   display: flex;
@@ -390,22 +640,87 @@ footer {
   bottom: 0;
 }
 
-/* Layout Sidebar */
-aside {
-  background-color: #f4f4f4;
-  padding: 1rem;
-  width: 200px;
+/* Sidebar */
+.sidebar-wrapper {
+  display: flex;
+  top: 0;
+  left: 0;
+  flex-direction: column;
+  height: 100vh;
+  width: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+  background: #dae7cf;
+  transition: transform 0.3s ease-in-out;
+  z-index: 100; /* Ensure it appears above other content */
 }
 
-aside nav ul {
+.sidebar-app.open {
+  transform: translateX(0);
+}
+
+.sidebar-app .sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background-color: #4caf50;
+  color: #dae7cf;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.sidebar-app .sidebar-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-app nav ul {
   list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
-aside nav ul li {
-  margin: 0.5rem 0;
+.sidebar-app nav ul li {
+  margin-bottom: 0.5rem;
 }
 
-aside nav ul li a {
+.sidebar-app nav ul li a {
   text-decoration: none;
   color: #333;
+  padding: 10px 20px;
+  display: block;
+}
+
+.sidebar-app nav ul li ul {
+  padding-left: 1rem;
+}
+
+.sidebar-app nav ul li ul li a {
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .sidebar-app {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-app.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: block;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1001;
+  }
 }

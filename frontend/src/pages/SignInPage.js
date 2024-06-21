@@ -26,7 +26,7 @@ const SignInPage = () => {
   return (
     <Layout>
       <div className="sign-in-container">
-        <h2>Simple Login</h2>
+        <h2>Log In</h2>
         <form onSubmit={handleSignIn}>
           <div>
             <label htmlFor="email">Email</label>

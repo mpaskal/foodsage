@@ -1,17 +1,19 @@
 import React from "react";
-import Header from "./HeaderSite";
-import Footer from "./FooterSite";
+import HeaderApp from "./HeaderApp";
+import Sidebar from "./Sidebar";
+import FooterApp from "./FooterApp";
 
-const Layout = ({ children }) => {
+const LayoutApp = ({ children }) => {
   return (
-    <div className="layout">
-      <Header />
-      <div className="layout-content">
-        <main>{children}</main>
+    <div className="layout-app">
+      <HeaderApp />
+      <div className="layout-app-main">
+        <Sidebar />
+        <div className="layout-app-content">{children}</div>
       </div>
-      <Footer />
+      <FooterApp />
     </div>
   );
 };
 
-export default Layout;
+export default LayoutApp;
