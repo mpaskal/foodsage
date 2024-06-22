@@ -8,6 +8,7 @@ import SignUpPage from "./pages/SignUpPage";
 import DashboardPage from "./pages/DashboardPage";
 
 import "./App.css"; // Import the global stylesheet
+import "./custom.css"; // Ensure this line is present to import your custom styles
 
 function App() {
   return (

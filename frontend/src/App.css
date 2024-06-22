@@ -1,33 +1,4 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 60px;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-  }
-}
-
-.App-header {
-  background-color: rgb(248, 251, 244);
-  height: 80px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  color: green;
-}
-
-.App-link {
-  color: #61fb75;
-}
-
 /* Home Page */
-
 .home {
   text-align: center;
 }
@@ -404,39 +375,22 @@
 .layout-app {
   display: flex;
   flex-direction: column;
-}
-
-.header-app {
-  position: fixed;
-  top: 0;
-  height: 2em;
-  z-index: 1000;
-  background: #fff; /* Add background color to avoid transparency */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 100vw;
-  margin-right: 5rem;
+  min-height: 100vh;
 }
 
 .layout-app-main {
   display: flex;
-  justify-content: space-between;
-  margin-top: 60px; /* Adjust this value based on header height */
+  flex-grow: 1;
+  position: relative;
 }
 
 .layout-app-content {
-  display: flex;
-  justify-content: center;
-}
-
-.footer-app {
-  background: #fff;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-  text-align: center;
-  width: 100%;
-  position: relative;
-  margin-right: 5rem;
-  margin-left: 10rem;
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #fff;
+  width: calc(100% - 250px); /* Adjust based on your sidebar width */
+  margin-left: 250px; /* Should match your sidebar width */
+  overflow-y: auto;
 }
 
 /* Main */
@@ -453,13 +407,13 @@ main {
 
 /* HeaderApp */
 .header-app {
-  background-color: #4caf50;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #4caf50; /* Your desired header background color */
+  padding: 10px;
   color: white;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 98%;
+  width: 100%;
 }
 
 .header-left {
@@ -517,15 +471,18 @@ main {
 
 /* FooterApp */
 .footer-app {
-  background-color: #4caf50;
+  background-color: #4caf50; /* Your desired footer background color */
   color: white;
-  padding: 2rem;
+  padding: 10px 20px;
+  text-align: center;
+  width: 100%; /* Ensure it takes the full width */
+  height: auto; /* Fixed height for the footer */
   display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
-  height: fit-content;
-  width: 90%;
+  bottom: 0;
+  z-index: 1000; /* Ensure it appears above other content */
 }
 
 .footer-section {
@@ -640,87 +597,46 @@ footer {
   bottom: 0;
 }
 
-/* Sidebar */
-.sidebar-wrapper {
-  display: flex;
+@media (max-width: 768px) {
+  .layout-app-content {
+    width: 100%;
+  }
+
+  .custom-sidebar {
+    width: 100%;
+  }
+}
+
+/* Custom CSS for CoreUI Sidebar */
+.custom-sidebar {
+  background-color: #dae7cf !important;
+  color: #333 !important;
+  position: fixed;
   top: 0;
   left: 0;
-  flex-direction: column;
-  height: 100vh;
-  width: 300px;
+  bottom: 0;
+  width: 250px; /* Set a fixed width */
   overflow-y: auto;
-  overflow-x: auto;
-  background: #dae7cf;
-  transition: transform 0.3s ease-in-out;
-  z-index: 100; /* Ensure it appears above other content */
 }
 
-.sidebar-app.open {
-  transform: translateX(0);
+.custom-sidebar .nav-item {
+  padding: 0.5em 0;
 }
 
-.sidebar-app .sidebar-toggle {
-  display: none;
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background-color: #4caf50;
-  color: #dae7cf;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  z-index: 1001;
+.custom-sidenav-group {
+  margin-top: 5em;
 }
 
-.sidebar-app .sidebar-content {
-  display: flex;
-  flex-direction: column;
+.custom-sidebar .nav-link {
+  color: #333 !important; /* Ensure the link text color is correct */
+  transition: background-color 0.2s, color 0.2s;
 }
 
-.sidebar-app nav ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+.custom-sidebar .nav-link:hover {
+  background-color: #c1d5a4 !important; /* Hover background color */
+  color: #000 !important; /* Hover text color */
 }
 
-.sidebar-app nav ul li {
-  margin-bottom: 0.5rem;
-}
-
-.sidebar-app nav ul li a {
-  text-decoration: none;
-  color: #333;
-  padding: 10px 20px;
-  display: block;
-}
-
-.sidebar-app nav ul li ul {
-  padding-left: 1rem;
-}
-
-.sidebar-app nav ul li ul li a {
-  color: #666;
-}
-
-@media (max-width: 768px) {
-  .sidebar-app {
-    transform: translateX(-100%);
-  }
-
-  .sidebar-app.open {
-    transform: translateX(0);
-  }
-
-  .sidebar-toggle {
-    display: block;
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    z-index: 1001;
-  }
+.custom-sidebar .nav-icon {
+  margin-right: 10px;
 }

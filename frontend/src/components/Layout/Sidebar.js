@@ -1,73 +1,55 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBars } from "react-icons/fa";
+import sidebarItems from "../../data/sidebarItems"; // Ensure correct import path
+import {
+  CSidebar,
+  CSidebarNav,
+  CSidebarToggler,
+  CNavGroup,
+  CNavItem,
+  CNavLink,
+} from "@coreui/react";
+import CIcon from "@coreui/icons-react";
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+  const [sidebarShow, setSidebarShow] = useState(true);
 
   return (
-    <div className={`sidebar-wrapper ${isOpen ? "open" : ""}`}>
-      <button className="sidebar-toggle" onClick={toggleSidebar}>
-        <FaBars />
-      </button>
-      <div className="sidebar-app">
-        <aside className="sidebar-content">
-          <nav>
-            <ul>
-              <li>
-                <Link to="/dashboard">Dashboard</Link>
-              </li>
-              <li>
-                <Link to="/inventory">Inventory</Link>
-                <ul>
-                  <li>
-                    <Link to="/inventory/all">All</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/high-risk-items">High-Risk Items</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/pantry-manager">Pantry Manager</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/stock-overview">Stock Overview</Link>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <Link to="/waste-goals">Waste Goals</Link>
-                <ul>
-                  <li>
-                    <Link to="/waste-goals/waste-tracker">Waste Tracker</Link>
-                  </li>
-                  <li>
-                    <Link to="/waste-goals/sustainability-goals">
-                      Sustainability Goals
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/waste-goals/waste-analysis">Waste Analysis</Link>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <Link to="/money-saving">Money Saving</Link>
-              </li>
-              <li>
-                <Link to="/donation">Donation</Link>
-              </li>
-              <li>
-                <Link to="/insights">Insights</Link>
-              </li>
-            </ul>
-          </nav>
-        </aside>
-      </div>
-    </div>
+    <CSidebar
+      show={sidebarShow}
+      onShowChange={(val) => setSidebarShow(val)}
+      className="custom-sidebar"
+    >
+      <CSidebarToggler
+        className="d-lg-none"
+        onClick={() => setSidebarShow(!sidebarShow)}
+      />
+      <CSidebarNav className="custom-sidenav-group">
+        {sidebarItems.map((item, index) =>
+          item.items ? (
+            <CNavGroup
+              key={index}
+              toggler={item.name}
+              icon={<CIcon icon={item.icon} customClassName="nav-icon" />}
+            >
+              {item.items.map((subItem, subIndex) => (
+                <CNavItem key={subIndex}>
+                  <CNavLink href={subItem.path}>{subItem.name}</CNavLink>
+                </CNavItem>
+              ))}
+            </CNavGroup>
+          ) : (
+            <CNavItem key={index}>
+              <CNavLink
+                href={item.path}
+                icon={<CIcon icon={item.icon} customClassName="nav-icon" />}
+              >
+                {item.name}
+              </CNavLink>
+            </CNavItem>
+          )
+        )}
+      </CSidebarNav>
+    </CSidebar>
   );
 };
 
