@@ -385,14 +385,16 @@
 }
 
 .layout-app-content {
-  flex-grow: 1;
-  padding: 20px;
-  background-color: #fff;
-  width: calc(100% - 250px); /* Adjust based on your sidebar width */
-  margin-left: 250px; /* Should match your sidebar width */
-  overflow-y: auto;
+  transition: margin-left 0.3s ease-in-out;
 }
 
+.layout-app-content.sidebar-visible {
+  margin-left: 250px;
+}
+
+.layout-app-content.sidebar-hidden {
+  margin-left: 0;
+}
 /* Main */
 
 main {
@@ -601,10 +603,6 @@ footer {
   .layout-app-content {
     width: 100%;
   }
-
-  .custom-sidebar {
-    width: 100%;
-  }
 }
 
 /* Custom CSS for CoreUI Sidebar */
@@ -615,28 +613,55 @@ footer {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 250px; /* Set a fixed width */
+  width: 250px;
   overflow-y: auto;
-}
-
-.custom-sidebar .nav-item {
-  padding: 0.5em 0;
+  transition: transform 0.3s ease-in-out;
 }
 
 .custom-sidenav-group {
-  margin-top: 5em;
+  margin-top: 7em;
 }
 
-.custom-sidebar .nav-link {
-  color: #333 !important; /* Ensure the link text color is correct */
-  transition: background-color 0.2s, color 0.2s;
+.custom-sidenav-group .nav-link {
+  padding: 0.8em;
 }
 
-.custom-sidebar .nav-link:hover {
-  background-color: #c1d5a4 !important; /* Hover background color */
-  color: #000 !important; /* Hover text color */
+.custom-sidebar.hidden {
+  transform: translateX(-100%);
 }
 
-.custom-sidebar .nav-icon {
-  margin-right: 10px;
+.sidebar-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1001;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: left 0.3s ease-in-out;
+}
+
+.sidebar-toggle.hidden {
+  left: 20px;
+}
+
+.sidebar-toggle.visible {
+  left: 270px; /* 250px (sidebar width) + 20px */
+}
+
+@media (max-width: 768px) {
+  .custom-sidebar {
+    display: none;
+  }
+
+  .sidebar-toggle.visible {
+    left: 20px;
+  }
 }
