@@ -1,18 +1,20 @@
 import {
-  cilList,
-  cilWarning,
-  cilBasket,
-  cilChart,
-  cilTrash,
-  cilMoney,
-  cilGift,
-  cilLightbulb,
-} from "@coreui/icons";
+  FaBox,
+  FaExclamationTriangle,
+  FaMoneyBillWave,
+  FaGift,
+  FaChartLine,
+} from "react-icons/fa";
+import { AiOutlineDashboard } from "react-icons/ai";
+import { GiReceiveMoney, GiFoodTruck } from "react-icons/gi";
+import { MdOutlineInventory, MdOutlineInsights } from "react-icons/md";
+import { FcExpired } from "react-icons/fc";
 
-const sidebarItems = [
+export const sidebarItems = [
+  { name: "Dashboard", path: "/dashboard", icon: AiOutlineDashboard },
   {
     name: "Inventory",
-    icon: cilList,
+    icon: MdOutlineInventory,
     items: [
       { name: "All", path: "/inventory/all" },
       { name: "High-Risk Items", path: "/inventory/high-risk-items" },
@@ -22,7 +24,7 @@ const sidebarItems = [
   },
   {
     name: "Waste Goals",
-    icon: cilTrash,
+    icon: FcExpired,
     items: [
       { name: "Waste Tracker", path: "/waste-goals/waste-tracker" },
       {
@@ -32,21 +34,9 @@ const sidebarItems = [
       { name: "Waste Analysis", path: "/waste-goals/waste-analysis" },
     ],
   },
-  {
-    name: "Money Saving",
-    path: "/money-saving",
-    icon: cilMoney,
-  },
-  {
-    name: "Donation",
-    path: "/donation",
-    icon: cilGift,
-  },
-  {
-    name: "Insights",
-    path: "/insights",
-    icon: cilLightbulb,
-  },
+  { name: "Money Saving", path: "/money-saving", icon: GiReceiveMoney },
+  { name: "Donation", path: "/donation", icon: GiFoodTruck },
+  { name: "Insights", path: "/insights", icon: MdOutlineInsights },
 ];
 
 export default sidebarItems;

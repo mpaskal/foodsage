@@ -12,7 +12,6 @@ const HeaderApp = () => {
   return (
     <header className="header-app">
       <div className="header-left">
-        <img src="/logo.png" alt="FoodSage" className="logo" />
         <span className="space-name">Space Name</span>
       </div>
       <div className="header-right">

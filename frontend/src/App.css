@@ -1,3 +1,13 @@
+:root {
+  --primary-color: #8bc34a;
+  --secondary-color: #609c68;
+  --text-color: #055132;
+  --text-color-light: #fbfcfc;
+  --dark-color: #333;
+  --light-color: #f4f4f4;
+  --danger-color: #f44336;
+  --reserved-color: #8bc34a;
+}
 /* Home Page */
 .home {
   text-align: center;
@@ -409,23 +419,21 @@ main {
 
 /* HeaderApp */
 .header-app {
+  display: flex;
+  justify-content: space-between;
   position: sticky;
   top: 0;
-  z-index: 1000;
-  background-color: #4caf50; /* Your desired header background color */
+  z-index: 10;
+  background-color: var(--secondary-color);
   padding: 10px;
-  color: white;
+  color: var(--text-color-light);
   width: 100%;
 }
 
 .header-left {
+  margin-left: 14em;
   display: flex;
   align-items: center;
-}
-
-.header-left .logo {
-  height: 50px;
-  margin-right: 1rem;
 }
 
 .header-left .space-name {
@@ -436,8 +444,9 @@ main {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 1.2rem;
+  gap: 1.2em;
+  font-size: 1.2em;
+  margin: 0 2em;
 }
 
 .search-bar {
@@ -473,7 +482,7 @@ main {
 
 /* FooterApp */
 .footer-app {
-  background-color: #4caf50; /* Your desired footer background color */
+  background-color: var(--secondary-color);
   color: white;
   padding: 10px 20px;
   text-align: center;
@@ -484,7 +493,6 @@ main {
   justify-content: center;
   flex-wrap: wrap;
   bottom: 0;
-  z-index: 1000; /* Ensure it appears above other content */
 }
 
 .footer-section {
@@ -537,16 +545,23 @@ main {
 
 /* Layout Header */
 
-header {
+header-site {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px 20px;
-  background-color: #8bc34a; /* Your green color */
 }
 
 .logo {
-  height: 50px; /* Adjust as needed */
+  border-radius: 50%;
+  margin-top: 0.5em;
+  margin-left: 0.5em;
+  height: 40px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
 }
 
 .navbar {
@@ -568,7 +583,7 @@ header {
 
 .navbar-links a {
   text-decoration: none;
-  color: white; /* Adjust for better visibility */
+  color: var(--text-color);
   font-size: 16px;
   font-weight: bold;
   padding: 5px 10px;
@@ -577,19 +592,19 @@ header {
 }
 
 .navbar-links a:hover {
-  background-color: #fffde7; /* Slightly lighter color on hover */
-  color: #8bc34a; /* Change text color on hover */
+  background-color: #8bc34a;
+  color: var(--text-color-light); /* Change text color on hover */
 }
 
 .navbar-links .active {
-  background-color: #fffde7; /* Active link background color */
-  color: #8bc34a; /* Active link text color */
+  background-color: #609c68; /* Active link background color */
+  color: var(--text-color-light); /* Active link text color */
 }
 
 /* Layout Footer */
-footer {
-  background-color: #058240;
-  color: white;
+.footer-site {
+  color: var(--text-color);
+  font-weight: bold;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -606,62 +621,104 @@ footer {
 }
 
 /* Custom CSS for CoreUI Sidebar */
-.custom-sidebar {
-  background-color: #dae7cf !important;
-  color: #333 !important;
+.sidebar {
+  background-color: var(--secondary-color);
+  height: 100vh;
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
-  width: 250px;
+  transition: width 0.3s ease;
+  overflow-x: auto;
   overflow-y: auto;
-  transition: transform 0.3s ease-in-out;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 15;
 }
 
-.custom-sidenav-group {
-  margin-top: 7em;
+.sidebar.collapsed {
+  width: 3.5em;
 }
 
-.custom-sidenav-group .nav-link {
-  padding: 0.8em;
+.sidebar-items {
+  height: fit-content;
+  padding-top: 2em;
 }
 
-.custom-sidebar.hidden {
-  transform: translateX(-100%);
+.sidebar-item {
+  margin: auto;
+}
+
+.sidebar-item span {
+  margin-right: 0.7em;
+}
+
+.sidebar-link,
+.sidebar-sublink {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-color-light);
+  padding: 0.7em 0.6em 0.7em 0.1em;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-link:hover,
+.sidebar-sublink:hover {
+  background-color: var(--secondary-color);
+}
+
+.sidebar-icon {
+  font-size: 1.2em;
+  margin: 0.6em 0.4em;
+  min-width: 1.1em;
+}
+
+.sidebar-link span,
+.sidebar-dropdown-content {
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-link span,
+.sidebar.collapsed .sidebar-dropdown-content {
+  opacity: 0;
+}
+
+.sidebar-dropdown-content {
+  margin-left: 2.1em;
 }
 
 .sidebar-toggle {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 1001;
-  background-color: #4caf50;
-  color: white;
+  position: absolute;
+  margin: 2em 0.2em 1em 0;
+  bottom: 1em;
+  right: 0em;
+  width: 30px;
+  height: 30px;
+  background-color: var(--secondary-color);
+  color: var(--text-color-light);
   border: none;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: left 0.3s ease-in-out;
+  transition: all 0.3s ease;
 }
 
-.sidebar-toggle.hidden {
-  left: 20px;
+.sidebar.expanded {
+  width: 12.5em;
 }
 
-.sidebar-toggle.visible {
-  left: 270px; /* 250px (sidebar width) + 20px */
+.sidebar.collapsed .sidebar-toggle {
+  right: 0em;
+  margin: 2em 0.2em 0 0;
 }
 
 @media (max-width: 768px) {
-  .custom-sidebar {
-    display: none;
+  .sidebar {
+    width: 60px;
   }
-
-  .sidebar-toggle.visible {
-    left: 20px;
+  .sidebar.expanded {
+    width: 250px;
   }
 }
