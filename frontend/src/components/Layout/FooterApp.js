@@ -8,10 +8,10 @@ const FooterApp = () => {
         <h4>About</h4>
         <ul>
           <li>
-            <Link to="/about">Our Story</Link>
+            <a href="/about">Our Story</a>
           </li>
           <li>
-            <Link to="/mission-vision">Mission and Vision</Link>
+            <a href="/mission-vision">Mission and Vision</a>
           </li>
         </ul>
       </div>
@@ -19,10 +19,10 @@ const FooterApp = () => {
         <h4>Privacy policy</h4>
         <ul>
           <li>
-            <Link to="/user-rights">User Rights</Link>
+            <a href="/user-rights">User Rights</a>
           </li>
           <li>
-            <Link to="/cookies-policy">Cookies Policy</Link>
+            <a href="/cookies-policy">Cookies Policy</a>
           </li>
         </ul>
       </div>
@@ -30,10 +30,10 @@ const FooterApp = () => {
         <h4>Support</h4>
         <ul>
           <li>
-            <Link to="/faq">FAQ</Link>
+            <a href="/faq">FAQ</a>
           </li>
           <li>
-            <Link to="/help">Help</Link>
+            <a href="/help">Help</a>
           </li>
         </ul>
       </div>
@@ -41,10 +41,10 @@ const FooterApp = () => {
         <h4>Contact us</h4>
         <ul>
           <li>
-            <Link to="/contact">Contact</Link>
+            <a href="/contact">Contact</a>
           </li>
           <li>
-            <Link to="/feedback">Feedback</Link>
+            <a href="/feedback">Feedback</a>
           </li>
         </ul>
       </div>

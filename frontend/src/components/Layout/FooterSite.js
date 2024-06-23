@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Footer = (props) => {
   return (
-    <footer>
+    <footer className="footer-site">
       <small className="copyright">
         <p>Copyright &copy; {props.year} FoodSage</p>
       </small>

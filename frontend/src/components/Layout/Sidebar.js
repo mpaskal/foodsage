@@ -1,72 +1,89 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBars } from "react-icons/fa";
+import { sidebarItems } from "../../data/sidebarItems";
+import { NavLink } from "react-router-dom";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaChevronDown,
+  FaChevronUp,
+} from "react-icons/fa";
+import { BiChevronDown } from "react-icons/bi";
+import { BiChevronUp } from "react-icons/bi";
+// Make sure to create this CSS file
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [expandedItems, setExpandedItems] = useState([]);
 
   const toggleSidebar = () => {
-    setIsOpen(!isOpen);
+    setExpanded(!expanded);
+    // Close all expanded items when collapsing sidebar
+    if (expanded) {
+      setExpandedItems({});
+    }
+  };
+
+  const toggleItem = (itemName) => {
+    if (expanded) {
+      setExpandedItems((prev) => ({
+        ...prev,
+        [itemName]: !prev[itemName],
+      }));
+    } else {
+      // Expand sidebar if it's collapsed and an item is clicked
+      setExpanded(true);
+      setExpandedItems({ [itemName]: true });
+    }
   };
 
   return (
-    <div className={`sidebar-wrapper ${isOpen ? "open" : ""}`}>
-      <button className="sidebar-toggle" onClick={toggleSidebar}>
-        <FaBars />
-      </button>
-      <div className="sidebar-app">
-        <aside className="sidebar-content">
-          <nav>
-            <ul>
-              <li>
-                <Link to="/dashboard">Dashboard</Link>
-              </li>
-              <li>
-                <Link to="/inventory">Inventory</Link>
-                <ul>
-                  <li>
-                    <Link to="/inventory/all">All</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/high-risk-items">High-Risk Items</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/pantry-manager">Pantry Manager</Link>
-                  </li>
-                  <li>
-                    <Link to="/inventory/stock-overview">Stock Overview</Link>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <Link to="/waste-goals">Waste Goals</Link>
-                <ul>
-                  <li>
-                    <Link to="/waste-goals/waste-tracker">Waste Tracker</Link>
-                  </li>
-                  <li>
-                    <Link to="/waste-goals/sustainability-goals">
-                      Sustainability Goals
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/waste-goals/waste-analysis">Waste Analysis</Link>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <Link to="/money-saving">Money Saving</Link>
-              </li>
-              <li>
-                <Link to="/donation">Donation</Link>
-              </li>
-              <li>
-                <Link to="/insights">Insights</Link>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+    <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
+      <div className="sidebar-logo">
+        <img src="/logo2.jpg" alt="FoodSage logo" className="logo" />
       </div>
+      <div className="sidebar-items">
+        {sidebarItems.map((item, index) => (
+          <div key={index} className="sidebar-item">
+            {item.items ? (
+              <div className="sidebar-dropdown">
+                <div
+                  className="sidebar-link"
+                  onClick={() => toggleItem(item.name)}
+                >
+                  <item.icon className="sidebar-icon" />
+                  <span>{item.name}</span>
+                  {expandedItems[item.name] ? (
+                    <BiChevronUp />
+                  ) : (
+                    <BiChevronDown />
+                  )}
+                </div>
+                {expandedItems[item.name] && (
+                  <div className="sidebar-dropdown-content">
+                    {item.items.map((subItem, subIndex) => (
+                      <NavLink
+                        key={subIndex}
+                        to={subItem.path}
+                        className="sidebar-sublink"
+                      >
+                        <span>{subItem.name}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <NavLink to={item.path} className="sidebar-link">
+                <item.icon className="sidebar-icon" />
+                <span>{item.name}</span>
+              </NavLink>
+            )}
+          </div>
+        ))}
+      </div>
+      <button className="sidebar-toggle" onClick={toggleSidebar}>
+        {expanded ? <FaChevronLeft /> : <FaChevronRight />}
+      </button>
     </div>
   );
 };
