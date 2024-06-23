@@ -6,6 +6,16 @@ const User = require("../models/User");
 const router = express.Router();
 const keys = require("../config/keys"); // Ensure this path is correct
 
+// GET /api/users - Get all users
+router.get("/", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // User registration route
 router.post("/register", (req, res) => {
   User.findOne({ email: req.body.email }).then((user) => {
