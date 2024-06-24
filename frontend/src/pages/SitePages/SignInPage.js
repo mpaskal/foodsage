@@ -1,4 +1,3 @@
-// frontend/src/pages/SignInPage.js
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,19 +6,24 @@ import Layout from "../../components/Layout/LayoutSite";
 const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const history = useNavigate();
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/api/users/login", {
-        email,
-        password,
-      });
-      localStorage.setItem("token", response.data.token);
-      history.push("/dashboard");
+      const response = await axios.post(
+        "http://localhost:5000/api/users/login",
+        {
+          email,
+          password,
+        }
+      );
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error signing in", error);
+      setError(error.response.data.msg || "Error signing in");
     }
   };
 
@@ -28,6 +32,7 @@ const SignInPage = () => {
       <div className="sign-in-container">
         <h2>Log In</h2>
         <form onSubmit={handleSignIn}>
+          {error && <p className="error">{error}</p>}
           <div>
             <label htmlFor="email">Email</label>
             <input

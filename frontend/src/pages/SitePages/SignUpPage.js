@@ -11,8 +11,9 @@ const SignUpPage = () => {
     password: "",
     confirmPassword: "",
   });
+
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+
   const navigate = useNavigate();
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
@@ -29,15 +30,22 @@ const SignUpPage = () => {
     }
 
     try {
-      const response = await axios.post("/api/users/register", {
-        firstName,
-        lastName,
-        email,
-        password,
-      });
-      console.log(response.data);
-      setSuccess(true);
-      navigate("/dashboard");
+      const response = await axios.post(
+        "http://localhost:5000/api/users/register",
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+        }
+      );
+      const userData = response.data.user;
+      if (userData) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        navigate("/dashboard");
+      } else {
+        setError("User data is not returned correctly");
+      }
     } catch (error) {
       console.error("Error registering user", error);
       setError(error.response?.data?.msg || "Error registering user");
@@ -49,6 +57,7 @@ const SignUpPage = () => {
       <div className="sign-up-container">
         <h2>Create your account</h2>
         <form onSubmit={handleSubmit}>
+          {error && <p className="error">{error}</p>}
           <div>
             <label htmlFor="firstName">First name</label>
             <input
@@ -104,14 +113,10 @@ const SignUpPage = () => {
               required
             />
           </div>
-          {error && <p className="error-message">{error}</p>}
           <button type="submit">Sign Up</button>
         </form>
         <p>
           Already have an account? <Link to="/signin">Login</Link>
-        </p>
-        <p>
-          Sign in with your Google Account. <Link to="/signin">Signin</Link>
         </p>
       </div>
     </Layout>

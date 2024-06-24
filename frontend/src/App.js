@@ -1,11 +1,11 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/BeforeLoginPages/HomePage";
-import AboutPage from "./pages/BeforeLoginPages/AboutPage";
-import ContactPage from "./pages/BeforeLoginPages/ContactPage";
-import SignInPage from "./pages/BeforeLoginPages/SignInPage";
-import SignUpPage from "./pages/BeforeLoginPages/SignUpPage";
-import DashboardPage from "./pages/UserPages/DashboardPage";
+import HomePage from "./pages/SitePages/HomePage";
+import AboutPage from "./pages/SitePages/AboutPage";
+import ContactPage from "./pages/SitePages/ContactPage";
+import SignInPage from "./pages/SitePages/SignInPage";
+import SignUpPage from "./pages/SitePages/SignUpPage";
+import DashboardPage from "./pages/AppPages/DashboardPage";
 import TenantManagementPage from "./pages/AdminPages/TenantManagementPage";
 import UserManagementPage from "./pages/AdminPages/UserManagementPage";
 
@@ -21,7 +21,6 @@ function App() {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-
         {/* Admin routes */}
         <Route
           path="/admin/tenant-management"

@@ -6,13 +6,13 @@ const tenantRoutes = require("./routes/tenantRoutes");
 require("dotenv").config();
 
 const app = express();
-
 const cors = require("cors");
+
+// Verify JWT_SECRET
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 // Bodyparser middleware
 app.use(cors());
-
-// Bodyparser middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 

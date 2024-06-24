@@ -8,27 +8,43 @@ const Header = () => {
       <nav className="navbar">
         <ul className="navbar-links">
           <li>
-            <NavLink exact to="/" activeClassName="active">
+            <NavLink
+              end
+              to="/"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
               Home
             </NavLink>
           </li>
           <li>
-            <NavLink to="/about" activeClassName="active">
+            <NavLink
+              to="/about"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
               About
             </NavLink>
           </li>
           <li>
-            <NavLink to="/contact" activeClassName="active">
+            <NavLink
+              to="/contact"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
               Contact
             </NavLink>
           </li>
           <li>
-            <NavLink to="/signin" activeClassName="active">
+            <NavLink
+              to="/signin"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
               Sign In
             </NavLink>
           </li>
           <li>
-            <NavLink to="/signup" activeClassName="active">
+            <NavLink
+              to="/signup"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
               Sign Up
             </NavLink>
           </li>
