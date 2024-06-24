@@ -1,6 +1,5 @@
-// frontend/src/pages/SignUpPage.js
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutSite";
 
@@ -8,14 +7,15 @@ const SignUpPage = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    spaceName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
-  const { firstName, lastName, spaceName, email, password, confirmPassword } =
-    formData;
+  const { firstName, lastName, email, password, confirmPassword } = formData;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,7 +24,7 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      console.error("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
@@ -32,13 +32,15 @@ const SignUpPage = () => {
       const response = await axios.post("/api/users/register", {
         firstName,
         lastName,
-        spaceName,
         email,
         password,
       });
       console.log(response.data);
+      setSuccess(true);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error registering user", error);
+      setError(error.response?.data?.msg || "Error registering user");
     }
   };
 
@@ -65,17 +67,6 @@ const SignUpPage = () => {
               id="lastName"
               name="lastName"
               value={lastName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="spaceName">Space name</label>
-            <input
-              type="text"
-              id="spaceName"
-              name="spaceName"
-              value={spaceName}
               onChange={handleChange}
               required
             />
@@ -113,6 +104,7 @@ const SignUpPage = () => {
               required
             />
           </div>
+          {error && <p className="error-message">{error}</p>}
           <button type="submit">Sign Up</button>
         </form>
         <p>
