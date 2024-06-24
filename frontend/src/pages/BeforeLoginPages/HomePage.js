@@ -1,6 +1,6 @@
 import React from "react";
-import Layout from "../components/Layout/LayoutSite";
-import HeroImg from "../assets/images/home_page_main_image.jpg";
+import Layout from "../../components/Layout/LayoutSite";
+import HeroImg from "../../assets/images/home_page_main_image.jpg";
 
 const HomePage = () => {
   return (

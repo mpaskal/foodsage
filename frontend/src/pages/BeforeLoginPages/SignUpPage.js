@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import Layout from "../components/Layout/LayoutSite";
+import Layout from "../../components/Layout/LayoutSite";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({

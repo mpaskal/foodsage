@@ -1,6 +1,6 @@
 import React from "react";
-import Layout from "../components/Layout/LayoutSite";
-import HeroImg from "../assets/images/about_page.jpg";
+import Layout from "../../components/Layout/LayoutSite";
+import HeroImg from "../../assets/images/about_page.jpg";
 
 const AboutPage = () => {
   return (

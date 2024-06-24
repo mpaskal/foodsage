@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const adminAppSchema = new mongoose.Schema({
+const appAdminSchema = new mongoose.Schema({
   loginName: { type: String, required: true },
   password: { type: String, required: true },
   firstName: { type: String, required: true },
@@ -11,4 +11,4 @@ const adminAppSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("AdminApp", adminAppSchema);
+module.exports = mongoose.model("AppAdmin", appAdminSchema);

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const AdminApp = require("./models/AdminApp");
+const AppAdmin = require("./models/AppAdmin");
 require("dotenv").config();
 
 const db = process.env.MONGO_URI;
@@ -10,24 +10,24 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log(err));
 
-const createAdminAppUser = async () => {
-  const email = "paskalm@rogers.com";
-  const password = "foodsage";
-  const loginName = "adminApp";
-  const firstName = "AdminApp";
+const createAppAdminUser = async () => {
+  const email = "AppAdmin@example.com";
+  const password = "AppAdminpassword";
+  const loginName = "AppAdmin";
+  const firstName = "Admin";
   const lastName = "User";
   const permissions = "full";
 
-  const existingUser = await AdminApp.findOne({ email });
+  const existingUser = await AppAdmin.findOne({ email });
   if (existingUser) {
-    console.log("AdminApp user already exists");
+    console.log("AppAdmin user already exists");
     return;
   }
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  const adminAppUser = new AdminApp({
+  const appAdminUser = new AppAdmin({
     loginName,
     password: hashedPassword,
     firstName,
@@ -36,8 +36,8 @@ const createAdminAppUser = async () => {
     permissions,
   });
 
-  await adminAppUser.save();
-  console.log("AdminApp user created");
+  await appAdminUser.save();
+  console.log("AppAdmin user created");
 };
 
-createAdminAppUser().then(() => mongoose.disconnect());
+createAppAdminUser().then(() => mongoose.disconnect());

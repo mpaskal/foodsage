@@ -1,7 +1,7 @@
 import React from "react";
-import Layout from "../components/Layout/LayoutApp";
-import Img1 from "../assets/images/dashboard-img1.jpg";
-import Img2 from "../assets/images/dashboard-img2.jpg";
+import Layout from "../../components/Layout/LayoutApp";
+import Img1 from "../../assets/images/dashboard-img1.jpg";
+import Img2 from "../../assets/images/dashboard-img2.jpg";
 
 const DashboardPage = () => {
   return (
