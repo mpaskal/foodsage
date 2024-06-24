@@ -1,21 +1,22 @@
-// frontend/src/pages/SignUpPage.js
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Layout from "../components/Layout/LayoutSite";
+import Layout from "../../components/Layout/LayoutSite";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    spaceName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
 
-  const { firstName, lastName, spaceName, email, password, confirmPassword } =
-    formData;
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+
+  const { firstName, lastName, email, password, confirmPassword } = formData;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,21 +25,30 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      console.error("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
     try {
-      const response = await axios.post("/api/users/register", {
-        firstName,
-        lastName,
-        spaceName,
-        email,
-        password,
-      });
-      console.log(response.data);
+      const response = await axios.post(
+        "http://localhost:5000/api/users/register",
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+        }
+      );
+      const userData = response.data.user;
+      if (userData) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        navigate("/dashboard");
+      } else {
+        setError("User data is not returned correctly");
+      }
     } catch (error) {
       console.error("Error registering user", error);
+      setError(error.response?.data?.msg || "Error registering user");
     }
   };
 
@@ -47,6 +57,7 @@ const SignUpPage = () => {
       <div className="sign-up-container">
         <h2>Create your account</h2>
         <form onSubmit={handleSubmit}>
+          {error && <p className="error">{error}</p>}
           <div>
             <label htmlFor="firstName">First name</label>
             <input
@@ -65,17 +76,6 @@ const SignUpPage = () => {
               id="lastName"
               name="lastName"
               value={lastName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="spaceName">Space name</label>
-            <input
-              type="text"
-              id="spaceName"
-              name="spaceName"
-              value={spaceName}
               onChange={handleChange}
               required
             />
@@ -117,9 +117,6 @@ const SignUpPage = () => {
         </form>
         <p>
           Already have an account? <Link to="/signin">Login</Link>
-        </p>
-        <p>
-          Sign in with your Google Account. <Link to="/signin">Signin</Link>
         </p>
       </div>
     </Layout>
