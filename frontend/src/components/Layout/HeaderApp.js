@@ -1,5 +1,5 @@
-import React from "react";
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
   FaQuestionCircle,
@@ -9,6 +9,18 @@ import {
 } from "react-icons/fa";
 
 const HeaderApp = () => {
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    localStorage.removeItem("user");
+    navigate("/signin");
+  };
+
+  const toggleDropdown = () => {
+    setDropdownVisible(!dropdownVisible);
+  };
+
   return (
     <header className="header-app">
       <div className="header-left">
@@ -24,7 +36,14 @@ const HeaderApp = () => {
         <FaQuestionCircle />
         <FaCog />
         <FaBell />
-        <FaUser />
+        <div className="user-dropdown">
+          <FaUser onClick={toggleDropdown} className="user-icon" />
+          {dropdownVisible && (
+            <div className="dropdown-menu">
+              <button onClick={handleSignOut}>Sign Out</button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

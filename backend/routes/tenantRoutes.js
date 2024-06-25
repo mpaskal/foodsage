@@ -1,18 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const Tenant = require("../models/Tenant");
+const tenantController = require("../controllers/tenantController");
 
-// @route   GET api/tenants
-// @desc    Get all tenants
-// @access  Public
-router.get("/", async (req, res) => {
-  try {
-    const tenants = await Tenant.find();
-    res.json(tenants);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
-  }
-});
+// Define routes and attach controller functions
+router.get("/", tenantController.getAllTenants);
+router.post("/", tenantController.createTenant);
+
+// Add more routes here if necessary
 
 module.exports = router;

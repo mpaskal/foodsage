@@ -1,3 +1,5 @@
+// frontend/src/pages/SitePages/SignUpPage.js
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -13,7 +15,6 @@ const SignUpPage = () => {
   });
 
   const [error, setError] = useState(null);
-
   const navigate = useNavigate();
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
@@ -29,6 +30,8 @@ const SignUpPage = () => {
       return;
     }
 
+    console.log("Submitting registration: ", formData);
+
     try {
       const response = await axios.post(
         "http://localhost:5000/api/users/register",
@@ -39,9 +42,9 @@ const SignUpPage = () => {
           password,
         }
       );
-      const userData = response.data.user;
-      if (userData) {
-        localStorage.setItem("user", JSON.stringify(userData));
+
+      if (response.data && response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         navigate("/dashboard");
       } else {
         setError("User data is not returned correctly");

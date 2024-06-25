@@ -19,11 +19,16 @@ const SignInPage = () => {
           password,
         }
       );
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      navigate("/dashboard");
+
+      if (response.data && response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        navigate("/dashboard");
+      } else {
+        setError("Invalid login credentials");
+      }
     } catch (error) {
       console.error("Error signing in", error);
-      setError(error.response.data.msg || "Error signing in");
+      setError(error.response?.data?.msg || "Error signing in");
     }
   };
 
