@@ -7,7 +7,6 @@ import SignInPage from "./pages/SitePages/SignInPage";
 import SignUpPage from "./pages/SitePages/SignUpPage";
 import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
-import LayoutApp from "./components/Layout/LayoutApp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 

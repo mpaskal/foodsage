@@ -1,23 +1,16 @@
 import React, { useState } from "react";
 import { sidebarItems } from "../../data/sidebarItems";
 import { NavLink } from "react-router-dom";
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
-import { BiChevronDown } from "react-icons/bi";
-import { BiChevronUp } from "react-icons/bi";
-// Make sure to create this CSS file
+import { FaChevronLeft, FaChevronRight, FaBars } from "react-icons/fa";
+import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
 const Sidebar = () => {
   const [expanded, setExpanded] = useState(true);
   const [expandedItems, setExpandedItems] = useState([]);
+  const [mobileView, setMobileView] = useState(false);
 
   const toggleSidebar = () => {
     setExpanded(!expanded);
-    // Close all expanded items when collapsing sidebar
     if (expanded) {
       setExpandedItems({});
     }
@@ -30,14 +23,21 @@ const Sidebar = () => {
         [itemName]: !prev[itemName],
       }));
     } else {
-      // Expand sidebar if it's collapsed and an item is clicked
       setExpanded(true);
       setExpandedItems({ [itemName]: true });
     }
   };
 
+  const toggleMobileView = () => {
+    setMobileView(!mobileView);
+  };
+
   return (
-    <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
+    <div
+      className={`sidebar ${expanded ? "expanded" : "collapsed"} ${
+        mobileView ? "mobile-view" : ""
+      }`}
+    >
       <div className="sidebar-logo">
         <img src="/logo2.jpg" alt="FoodSage logo" className="logo" />
       </div>
@@ -83,6 +83,9 @@ const Sidebar = () => {
       </div>
       <button className="sidebar-toggle" onClick={toggleSidebar}>
         {expanded ? <FaChevronLeft /> : <FaChevronRight />}
+      </button>
+      <button className="mobile-toggle" onClick={toggleMobileView}>
+        <FaBars />
       </button>
     </div>
   );
