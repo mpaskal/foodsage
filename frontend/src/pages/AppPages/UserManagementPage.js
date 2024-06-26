@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Toast,
-  ToastContainer,
-} from "react-bootstrap";
+import UserTable from "../../components/User/UserTable";
+import UserModal from "../../components/User/UserModal";
+import DeleteConfirmationModal from "../../components/User/DeleteConfirmationModal";
+import { Button, Toast, ToastContainer } from "react-bootstrap";
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
@@ -23,21 +19,8 @@ const UserManagementPage = () => {
     lastName: "",
     email: "",
     password: "",
-    role: "user", // Default role
+    role: "user",
   });
-
-  const handleCloseModal = () => {
-    setModal(false);
-    setForm({
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "user",
-    });
-    setIsEdit(false);
-    setCurrentUser(null);
-  };
 
   const handleShowModal = (user = null) => {
     if (user) {
@@ -50,8 +33,22 @@ const UserManagementPage = () => {
       });
       setCurrentUser(user);
       setIsEdit(true);
+    } else {
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        role: "user",
+      });
+      setIsEdit(false);
     }
     setModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setModal(false);
+    setCurrentUser(null);
   };
 
   const handleChange = (e) => {
@@ -86,7 +83,7 @@ const UserManagementPage = () => {
         );
       }
       handleCloseModal();
-      fetchUsers(); // Re-fetch users after adding or editing a user
+      fetchUsers();
       setToastMessage(
         isEdit ? "User updated successfully." : "User added successfully."
       );
@@ -98,7 +95,7 @@ const UserManagementPage = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
+  const handleDelete = (userId) => {
     setCurrentUser(userId);
     setConfirmModal(true);
   };
@@ -113,7 +110,7 @@ const UserManagementPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers(); // Re-fetch users after deleting a user
+      fetchUsers();
       setConfirmModal(false);
       setToastMessage("User deleted successfully.");
       setShowToast(true);
@@ -152,131 +149,27 @@ const UserManagementPage = () => {
         <Button variant="primary" onClick={() => handleShowModal()}>
           Add User
         </Button>
-        <Modal show={modal} onHide={handleCloseModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>{isEdit ? "Edit User" : "Add User"}</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleSubmit}>
-            <Modal.Body>
-              <Form.Group controlId="firstName">
-                <Form.Label>First Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="firstName"
-                  value={form.firstName}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group controlId="lastName">
-                <Form.Label>Last Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="lastName"
-                  value={form.lastName}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group controlId="email">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group controlId="password">
-                <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-              <Form.Group controlId="role">
-                <Form.Label>Role</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="role"
-                  value={form.role}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </Form.Control>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary">
-                {isEdit ? "Save Changes" : "Add User"}
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
 
-        <Modal show={confirmModal} onHide={() => setConfirmModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirm Deletion</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>Are you sure you want to delete this user?</Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setConfirmModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={confirmDelete}>
-              Delete
-            </Button>
-          </Modal.Footer>
-        </Modal>
+        <UserModal
+          show={modal}
+          handleClose={handleCloseModal}
+          handleSubmit={handleSubmit}
+          handleChange={handleChange}
+          form={form}
+          isEdit={isEdit}
+        />
 
-        <div className="table-container">
-          <Table hover>
-            <thead>
-              <tr>
-                <th>Id</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user._id}>
-                  <td>{user._id}</td>
-                  <td>{user.firstName}</td>
-                  <td>{user.lastName}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>
-                    <Button
-                      variant="info"
-                      onClick={() => handleShowModal(user)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(user._id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </div>
+        <DeleteConfirmationModal
+          show={confirmModal}
+          handleClose={() => setConfirmModal(false)}
+          confirmDelete={confirmDelete}
+        />
+
+        <UserTable
+          users={users}
+          handleShowModal={handleShowModal}
+          handleDelete={handleDelete}
+        />
 
         <ToastContainer position="top-end" className="p-3">
           <Toast
