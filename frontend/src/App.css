@@ -7,6 +7,29 @@
   --light-color: #f4f4f4;
   --danger-color: #f44336;
   --reserved-color: #8bc34a;
+  --cancel-button: rgb(75, 85, 75);
+  --cancel-button-hover: rgb(156, 159, 156);
+}
+
+/* Bootstrap override */
+.btn-primary {
+  background-color: var(--secondary-color) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:visited {
+  background-color: var(--primary-color) !important;
+}
+
+.btn-secondary {
+  background-color: var(--cancel-button) !important;
+}
+
+.btn-secondary:hover,
+.btn-secondary:active,
+.btn-secondary:visited {
+  background-color: var(--cancel-button-hover) !important;
 }
 
 /* Home Page */
@@ -442,7 +465,6 @@
   background-color: #d9534f;
   border-color: #d43f3a;
 }
-
 /* Dashboard */
 .dashboard {
   padding: 1rem;

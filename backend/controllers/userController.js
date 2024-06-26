@@ -70,7 +70,7 @@ const registerAdmin = async (req, res) => {
 
 // Register User (by Admin)
 const registerUser = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, role } = req.body;
 
   try {
     // Check if user already exists
@@ -86,7 +86,7 @@ const registerUser = async (req, res) => {
       email,
       password,
       tenantId: req.user.tenantId, // Associate with the admin's tenantId
-      role: "user",
+      role: role || "user",
     });
 
     // Hash password
@@ -180,10 +180,49 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// Get user profile
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+};
+
+// Update user
+const updateUser = async (req, res) => {
+  const { firstName, lastName, email, role } = req.body;
+  try {
+    let user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    user = await User.findByIdAndUpdate(
+      req.params.id,
+      { firstName, lastName, email, role },
+      { new: true }
+    );
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+};
+
+// Delete user
+const deleteUser = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    let user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    res.json({ msg: "User deleted" });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -196,4 +235,6 @@ module.exports = {
   loginUser,
   getAllUsers,
   getUserProfile,
+  updateUser,
+  deleteUser,
 };

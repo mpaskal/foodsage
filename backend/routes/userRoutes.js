@@ -1,24 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController");
 const userAuth = require("../middlewares/userAuth");
-const requireRole = require("../middlewares/requireRole");
+const userController = require("../controllers/userController");
 
-// Register a new admin
-router.post("/register", userController.registerAdmin);
-
-// Register a new user (admin only)
-router.post(
-  "/register-user",
-  userAuth,
-  requireRole("admin"),
-  userController.registerUser
-);
-
-// Login user
-router.post("/login", userController.loginUser);
-
-// Get all users (admin only)
-router.get("/", userAuth, requireRole("admin"), userController.getAllUsers);
+router.post("/users/register-admin", userController.registerAdmin);
+router.post("/users/register-user", userAuth, userController.registerUser);
+router.post("/users/login", userController.loginUser);
+router.get("/users", userAuth, userController.getAllUsers);
+router.get("/users/profile", userAuth, userController.getUserProfile);
+router.put("/users/:id", userAuth, userController.updateUser);
+router.delete("/users/:id", userAuth, userController.deleteUser);
 
 module.exports = router;

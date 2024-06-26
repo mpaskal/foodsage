@@ -24,7 +24,7 @@ mongoose
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Use Routes
-app.use("/api/users", userRoutes);
+app.use("/api", userRoutes); // Mount user routes at /api
 app.use("/api/tenants", tenantRoutes);
 
 const port = process.env.PORT || 5000;
