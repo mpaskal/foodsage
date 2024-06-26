@@ -3,12 +3,15 @@ const User = require("../models/User");
 
 const userAuth = async (req, res, next) => {
   const token = req.header("Authorization").replace("Bearer ", "");
+  console.log("Received token:", token); // Add this line
+
   if (!token) {
     return res.status(401).json({ msg: "No token, authorization denied" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded token:", decoded); // Add this line
     req.user = decoded.user;
 
     const user = await User.findById(req.user.id);

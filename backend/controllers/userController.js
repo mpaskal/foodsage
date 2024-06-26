@@ -167,6 +167,19 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Get all users for the same tenant
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ tenantId: req.user.tenantId }).select(
+      "-password"
+    );
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+};
+
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -177,4 +190,10 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerAdmin, registerUser, loginUser, getUserProfile };
+module.exports = {
+  registerAdmin,
+  registerUser,
+  loginUser,
+  getAllUsers,
+  getUserProfile,
+};

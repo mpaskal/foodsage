@@ -20,8 +20,12 @@ const SignInPage = () => {
         }
       );
 
-      if (response.data && response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+      if (response.data && response.data.token) {
+        const user = {
+          token: response.data.token,
+          ...response.data.user,
+        };
+        localStorage.setItem("user", JSON.stringify(user));
         navigate("/dashboard");
       } else {
         setError("Invalid login credentials");

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -11,15 +11,30 @@ import {
 const HeaderApp = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
 
   const handleSignOut = () => {
     localStorage.removeItem("user");
     navigate("/signin");
   };
 
-  const toggleDropdown = () => {
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
     setDropdownVisible(!dropdownVisible);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownVisible(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="header-app">
@@ -36,10 +51,12 @@ const HeaderApp = () => {
         <FaQuestionCircle />
         <FaCog />
         <FaBell />
-        <div className="user-dropdown">
+        <div className="user-dropdown" ref={dropdownRef}>
           <FaUser onClick={toggleDropdown} className="user-icon" />
           {dropdownVisible && (
-            <div className="dropdown-menu">
+            <div
+              className={`dropdown-menu ${dropdownVisible ? "visible" : ""}`}
+            >
               <button onClick={handleSignOut}>Sign Out</button>
             </div>
           )}

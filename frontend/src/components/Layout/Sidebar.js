@@ -1,13 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { sidebarItems } from "../../data/sidebarItems";
 import { NavLink } from "react-router-dom";
-import { FaChevronLeft, FaChevronRight, FaBars } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaBars, FaUser } from "react-icons/fa";
 import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
 const Sidebar = () => {
-  const [expanded, setExpanded] = useState(true);
-  const [expandedItems, setExpandedItems] = useState([]);
-  const [mobileView, setMobileView] = useState(false);
+  const [expanded, setExpanded] = useState(window.innerWidth > 768);
+  const [expandedItems, setExpandedItems] = useState({});
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setExpanded(false);
+      } else {
+        setExpanded(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user?.role;
 
   const toggleSidebar = () => {
     setExpanded(!expanded);
@@ -17,27 +32,14 @@ const Sidebar = () => {
   };
 
   const toggleItem = (itemName) => {
-    if (expanded) {
-      setExpandedItems((prev) => ({
-        ...prev,
-        [itemName]: !prev[itemName],
-      }));
-    } else {
-      setExpanded(true);
-      setExpandedItems({ [itemName]: true });
-    }
-  };
-
-  const toggleMobileView = () => {
-    setMobileView(!mobileView);
+    setExpandedItems((prev) => ({
+      ...prev,
+      [itemName]: !prev[itemName],
+    }));
   };
 
   return (
-    <div
-      className={`sidebar ${expanded ? "expanded" : "collapsed"} ${
-        mobileView ? "mobile-view" : ""
-      }`}
-    >
+    <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
       <div className="sidebar-logo">
         <img src="/logo2.jpg" alt="FoodSage logo" className="logo" />
       </div>
@@ -80,12 +82,34 @@ const Sidebar = () => {
             )}
           </div>
         ))}
+        {role === "admin" && (
+          <div className="sidebar-item">
+            <div className="sidebar-dropdown">
+              <div
+                className="sidebar-link"
+                onClick={() => toggleItem("Admin Panel")}
+              >
+                <FaUser className="sidebar-icon" />
+                <span>Admin Panel</span>
+                {expandedItems["Admin Panel"] ? (
+                  <BiChevronUp />
+                ) : (
+                  <BiChevronDown />
+                )}
+              </div>
+              {expandedItems["Admin Panel"] && (
+                <div className="sidebar-dropdown-content">
+                  <NavLink to="/user-management" className="sidebar-sublink">
+                    <span>User Management</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <button className="sidebar-toggle" onClick={toggleSidebar}>
         {expanded ? <FaChevronLeft /> : <FaChevronRight />}
-      </button>
-      <button className="mobile-toggle" onClick={toggleMobileView}>
-        <FaBars />
       </button>
     </div>
   );

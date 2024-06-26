@@ -18,4 +18,7 @@ router.post(
 // Login user
 router.post("/login", userController.loginUser);
 
+// Get all users (admin only)
+router.get("/", userAuth, requireRole("admin"), userController.getAllUsers);
+
 module.exports = router;

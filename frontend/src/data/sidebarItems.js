@@ -38,11 +38,6 @@ export const sidebarItems = [
   { name: "Money Saving", path: "/money-saving", icon: GiReceiveMoney },
   { name: "Donation", path: "/donation", icon: GiFoodTruck },
   { name: "Insights", path: "/insights", icon: MdOutlineInsights },
-  {
-    name: "Admin Panel",
-    icon: FaUserAlt,
-    items: [{ name: "User Management", path: "/user-management" }],
-  },
 ];
 
 export default sidebarItems;
