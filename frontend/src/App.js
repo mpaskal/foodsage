@@ -8,7 +8,7 @@ import SignUpPage from "./pages/SitePages/SignUpPage";
 import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import "@coreui/coreui/dist/css/coreui.min.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 function App() {

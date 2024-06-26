@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { sidebarItems } from "../../data/sidebarItems";
 import { NavLink } from "react-router-dom";
-import { FaChevronLeft, FaChevronRight, FaBars, FaUser } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaUser } from "react-icons/fa";
 import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
 const Sidebar = () => {
   const [expanded, setExpanded] = useState(window.innerWidth > 768);
-  const [expandedItems, setExpandedItems] = useState({});
+  const [expandedItems, setExpandedItems] = useState([]);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) {
         setExpanded(false);
-      } else {
-        setExpanded(true);
       }
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    // Clean up event listener
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const user = JSON.parse(localStorage.getItem("user"));
