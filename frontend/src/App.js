@@ -9,6 +9,7 @@ import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "bootstrap/dist/css/bootstrap.min.css";
+
 import "./App.css";
 
 function App() {

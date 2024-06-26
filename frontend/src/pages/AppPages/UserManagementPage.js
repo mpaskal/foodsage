@@ -1,28 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
-import {
-  CTable,
-  CTableBody,
-  CTableHead,
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-  CButton,
-  CModal,
-  CModalBody,
-  CModalFooter,
-  CModalHeader,
-  CModalTitle,
-  CForm,
-  CFormLabel,
-  CFormInput,
-  CFormSelect,
-} from "@coreui/react";
+import { Table, Button, Modal, Form } from "react-bootstrap";
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
-  const [modal, setModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -31,9 +14,8 @@ const UserManagementPage = () => {
     role: "user", // Default role
   });
 
-  const toggleModal = () => {
-    setModal(!modal);
-  };
+  const handleShowModal = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -55,7 +37,7 @@ const UserManagementPage = () => {
           },
         }
       );
-      toggleModal();
+      handleCloseModal();
       fetchUsers(); // Re-fetch users after adding a new one
     } catch (error) {
       console.error("Error adding user", error);
@@ -87,101 +69,112 @@ const UserManagementPage = () => {
     <Layout>
       <div className="user-management">
         <h1>User Management</h1>
-        <CButton color="primary" onClick={toggleModal}>
+        <Button variant="primary" onClick={handleShowModal}>
           Add User
-        </CButton>
-        <CModal visible={modal} onClose={toggleModal}>
-          <CModalHeader>
-            <CModalTitle>Add User</CModalTitle>
-          </CModalHeader>
-          <CForm onSubmit={handleSubmit}>
-            <CModalBody>
-              <CFormLabel htmlFor="firstName">First Name</CFormLabel>
-              <CFormInput
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={form.firstName}
-                onChange={handleChange}
-                required
-              />
-              <CFormLabel htmlFor="lastName">Last Name</CFormLabel>
-              <CFormInput
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={form.lastName}
-                onChange={handleChange}
-                required
-              />
-              <CFormLabel htmlFor="email">Email</CFormLabel>
-              <CFormInput
-                type="email"
-                id="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-              <CFormLabel htmlFor="password">Password</CFormLabel>
-              <CFormInput
-                type="password"
-                id="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
-              <CFormLabel htmlFor="role">Role</CFormLabel>
-              <CFormSelect
-                id="role"
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                required
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </CFormSelect>
-            </CModalBody>
-            <CModalFooter>
-              <CButton type="submit" color="primary">
+        </Button>
+        <Modal show={showModal} onHide={handleCloseModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Add User</Modal.Title>
+          </Modal.Header>
+          <Form onSubmit={handleSubmit}>
+            <Modal.Body>
+              <Form.Group>
+                <Form.Label htmlFor="firstName">First Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label htmlFor="lastName">Last Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label htmlFor="email">Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label htmlFor="password">Password</Form.Label>
+                <Form.Control
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label htmlFor="role">Role</Form.Label>
+                <Form.Control
+                  as="select"
+                  id="role"
+                  name="role"
+                  value={form.role}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </Form.Control>
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button type="submit" variant="primary">
                 Add User
-              </CButton>
-              <CButton color="secondary" onClick={toggleModal}>
+              </Button>
+              <Button variant="secondary" onClick={handleCloseModal}>
                 Cancel
-              </CButton>
-            </CModalFooter>
-          </CForm>
-        </CModal>
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
         <div className="table-container">
-          <CTable hover>
-            <CTableHead>
-              <CTableRow>
-                <CTableHeaderCell>Id</CTableHeaderCell>
-                <CTableHeaderCell>First Name</CTableHeaderCell>
-                <CTableHeaderCell>Last Name</CTableHeaderCell>
-                <CTableHeaderCell>Email</CTableHeaderCell>
-                <CTableHeaderCell>Role</CTableHeaderCell>
-                <CTableHeaderCell>Actions</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
+          <Table hover>
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {users.map((user) => (
-                <CTableRow key={user._id}>
-                  <CTableDataCell>{user._id}</CTableDataCell>
-                  <CTableDataCell>{user.firstName}</CTableDataCell>
-                  <CTableDataCell>{user.lastName}</CTableDataCell>
-                  <CTableDataCell>{user.email}</CTableDataCell>
-                  <CTableDataCell>{user.role}</CTableDataCell>
-                  <CTableDataCell>
-                    <CButton color="info">Edit</CButton>
-                    <CButton color="danger">Delete</CButton>
-                  </CTableDataCell>
-                </CTableRow>
+                <tr key={user._id}>
+                  <td>{user._id}</td>
+                  <td>{user.firstName}</td>
+                  <td>{user.lastName}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>
+                    <Button variant="info">Edit</Button>
+                    <Button variant="danger">Delete</Button>
+                  </td>
+                </tr>
               ))}
-            </CTableBody>
-          </CTable>
+            </tbody>
+          </Table>
         </div>
       </div>
     </Layout>
