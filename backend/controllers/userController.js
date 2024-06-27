@@ -224,15 +224,15 @@ const deleteUser = async (req, res) => {
     });
     const isLastAdmin = adminUsers.length === 1;
 
-    if (isLastAdmin) {
-      // Delete tenant and all users
+    if (isLastAdmin && user.role === "admin") {
+      // Delete all users and tenant
       await User.deleteMany({ tenantId: user.tenantId });
       await Tenant.findByIdAndDelete(user.tenantId);
-      res.json({ msg: "All users and tenant deleted" });
+      return res.json({ msg: "All users and tenant deleted successfully" });
     } else {
-      // Delete user
+      // Delete the user
       await User.findByIdAndDelete(userId);
-      res.json({ msg: "User deleted" });
+      return res.json({ msg: "User deleted successfully" });
     }
   } catch (err) {
     console.error(err.message);

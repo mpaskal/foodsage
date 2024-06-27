@@ -86,7 +86,9 @@ const UserManagementPage = () => {
       }
     } catch (error) {
       console.error("Error fetching users", error);
-      if (error.response && error.response.status === 401) {
+      if (error.response && error.response.status === 404) {
+        setToastMessage("Endpoint not found. Please check the API endpoint.");
+      } else if (error.response && error.response.status === 401) {
         setToastMessage("Your session has expired. Please log in again.");
       } else {
         setToastMessage("Error fetching users");
@@ -136,6 +138,15 @@ const UserManagementPage = () => {
       const token = loggedInUser?.token;
 
       if (isEdit) {
+        if (
+          currentUser._id === loggedInUser._id &&
+          form.role !== currentUser.role
+        ) {
+          setToastMessage("You cannot change your own role.");
+          setShowToast(true);
+          return;
+        }
+
         await axios.put(
           `/api/users/${currentUser._id}`,
           { ...form },
@@ -204,45 +215,40 @@ const UserManagementPage = () => {
         adminCount === 1 &&
         currentUser === loggedInUser._id
       ) {
-        setToastMessage("Cannot delete the last admin user.");
-        setShowToast(true);
-        setConfirmModal(false);
-      } else if (isLastAdmin && currentUser === loggedInUser._id) {
-        // Delete all users and tenant
-        try {
-          await axios.delete(`/api/tenants`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          // Clear local storage
-          localStorage.clear();
-          // Redirect to home page after deleting everything
-          window.location.href = "/";
-        } catch (error) {
-          setToastMessage(
-            error.response?.data?.msg || "Error deleting tenant and users"
-          );
-          setShowToast(true);
-          setConfirmModal(false);
-        }
+        setToastMessage(
+          "You are the last admin. Deleting your account will remove all users, the tenant, and all associated data. Please confirm."
+        );
+        await axios.delete(`/api/tenants`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        // Clear local storage
+        localStorage.clear();
+        // Redirect to home page after deleting everything
+        window.location.href = "/";
+      } else if (currentUser === loggedInUser._id) {
+        // Self-deletion
+        await axios.delete(`/api/users/${currentUser}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        // Clear local storage
+        localStorage.clear();
+        // Redirect to home page
+        window.location.href = "/";
       } else {
         // Regular user deletion
-        try {
-          await axios.delete(`/api/users/${currentUser}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          fetchUsers(token);
-          setConfirmModal(false);
-          setToastMessage("User deleted successfully.");
-          setShowToast(true);
-        } catch (error) {
-          setToastMessage(error.response?.data?.msg || "Error deleting user");
-          setShowToast(true);
-          setConfirmModal(false);
-        }
+        await axios.delete(`/api/users/${currentUser}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        fetchUsers(token);
+        setConfirmModal(false);
+        setToastMessage("User deleted successfully.");
+        setShowToast(true);
       }
     } catch (error) {
       console.error("Error deleting user", error);
