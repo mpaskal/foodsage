@@ -1,6 +1,8 @@
 import React from "react";
 import Layout from "../../components/Layout/LayoutSite";
-import HeroImg from "../../assets/images/home_page_main_image.jpg";
+import HeroImg from "../../assets/images/main_picture.png";
+import ReduceWasteImage from "../../assets/images/reduce_waste.png";
+import { Link, useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   return (
@@ -8,51 +10,73 @@ const HomePage = () => {
       <div className="home">
         <header className="home-header">
           <img src={HeroImg} alt="Hero" className="hero-image" />
-          <h1 className="header-text">Set waste management and budget goals</h1>
+          <h1 className="header-text" style={{ position: 'absolute', top: '39%', left: '50%', transform: 'translate(-50%, -50%)', color: '#fd7565', fontSize: '2.5em', backgroundColor: 'rgba(255, 255, 255, 0.7)', padding: '10px 20px', borderRadius: '5px', textAlign: 'center', width: '80%', maxWidth: '800px' }}>
+  Set waste management and budget goals
+</h1>
         </header>
         <div className="home-content">
           <section>
-            <h2>Food Waste</h2>
-            <p>
-              Food waste is a major issue that affects the environment, economy,
-              and society. According to the United Nations, about one-third of
-              all food produced for human consumption is lost or wasted
-              globally. This amounts to approximately 1.3 billion tons of food
-              wasted each year, which has significant social, economic, and
-              environmental impacts. Food waste contributes to hunger and
-              malnutrition, increases greenhouse gas emissions, and wastes
-              valuable resources such as water, energy, and labor. By reducing
-              food waste, we can help address these issues and create a more
-              sustainable food system for future generations.
+            <h2 className="main-Name-title">Discover Foodsage: Your Smart Pantry Companion!</h2>
+            <p className="main-Name">
+            Unlock the full potential of your pantry with Foodsage!</p><p className="main-Name">
+            Our innovative app is designed to revolutionize the way you manage food at home,
+             ensuring that nothing goes to waste.</p><p className="main-Name"> With Foodsage, you're not just organizing 
+             your kitchen—you're joining a movement towards sustainability and mindful consumption.
             </p>
           </section>
+          
+          <section class="features-section">
+    <div class="text-block">
+        <h2 class="text-block-title">Why Choose Foodsage?</h2>
+        <ul>
+            <li>Reduce Waste: Get reminders before your food expires, so you can use it just in time.</li>
+            <li>Save Money: Track your food usage and avoid buying excess groceries that lead to waste.</li>
+            <li>Eat Fresh: Use our tailored recipes to turn nearing-expiration ingredients into delicious meals.</li>
+            <li>Support the Community: Don’t let surplus food go to waste; donate it to local food banks through our app with just a few taps.</li>
+        </ul>
+    </div>
+    <div class="image-block">
+    <img src={ReduceWasteImage} alt="Reduce_waste" className="Reduce_waste" />
+    </div>
+    </section>
+   
+
           <section>
-            <h2>Yearly average global food loss and waste</h2>
-            <ul>
-              <li>1/3 of the world's food</li>
-              <li>1.3 billion tons</li>
-              <li>1 trillion US dollars</li>
-              <li>45% of all fruit and vegetables</li>
-              <li>35% of all fish and seafood</li>
-              <li>30% of all cereals</li>
-              <li>20% of all dairy products</li>
-              <li>20% of all meat and poultry</li>
-            </ul>
-          </section>
-          <section>
-            <h2>How you can save</h2>
-            <p>
-              By reducing your food waste, you can save money, help the
-              environment, and support your community. Here are some simple tips
-              to help you reduce food waste at home:
-            </p>
-            <ul>
-              <li>Plan your meals and make a shopping list</li>
-              <li>Buy only what you need and use what you buy</li>
-              <li>Store food properly to keep it fresh longer</li>
-              <li>Use leftovers to create new meals</li>
-              <li>Compost food scraps and other organic waste</li>
-            </ul>
+          <div className="steps-container">
+      <h2 className="steps-container-title">Start Making a Difference Today in Three Easy Steps:</h2>
+  
+       
+          <h3>1. Create Your Account</h3>
+          <ul>
+            <li>Sign Up for a new account or Log In with your existing credentials, including Google account integration for quick access.</li>
+          </ul>
+       
+      
+          <h3>2. Manage Your Inventory</h3>
+          <ul>
+            <li>Add Items to your inventory by entering product names, purchase dates, and expiration dates. Use our barcode scanner for quick input!</li>
+          </ul>
+       
+    
+          <h3>3. Track, Donate, and Cook</h3>
+          <ul>
+            <li>View Expiring Items: Get notifications for items nearing their expiration.</li>
+            <li>Set Waste Goals: Commit to reducing your food waste through achievable targets.</li>
+            <li>Donate: Easily donate items to partnered food banks right from the app.</li>
+            <li>Discover Recipes: Find delicious recipes tailored to use up your available ingredients.</li>
+          </ul>
+      
+       
+          <h3>4. Stay Informed</h3>
+          <ul>
+            <li>Access real-time statistics about your food usage and savings.</li>
+          </ul>
+          <p>
+        With Foodsage, you're not just managing your pantry; 
+        you're contributing to a sustainable world. Reduce waste, save money, and share what you can. Start today!
+        <Link to="/signin">Login</Link>
+      </p>
+    </div>
           </section>
         </div>
       </div>
