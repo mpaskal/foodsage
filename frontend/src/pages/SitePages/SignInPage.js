@@ -26,6 +26,7 @@ const SignInPage = () => {
           ...response.data.user,
         };
         localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("token", response.data.token);
         navigate("/dashboard");
       } else {
         setError("Invalid login credentials");

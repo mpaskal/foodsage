@@ -1,5 +1,3 @@
-// frontend/src/pages/SitePages/SignUpPage.js
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -30,8 +28,6 @@ const SignUpPage = () => {
       return;
     }
 
-    console.log("Submitting registration: ", formData);
-
     try {
       const response = await axios.post(
         "http://localhost:5000/api/users/register",
@@ -43,9 +39,24 @@ const SignUpPage = () => {
         }
       );
 
-      if (response.data && response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        navigate("/dashboard");
+      if (response.data && response.data.user && response.data.token) {
+        // Store user data and token in localStorage
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...response.data.user,
+            token: response.data.token,
+          })
+        );
+
+        // Set a flag to indicate this is a new user
+        localStorage.setItem("isNewUser", "true");
+
+        // Wait for a short time before redirecting
+        setTimeout(() => {
+          // Redirect to dashboard
+          navigate("/dashboard");
+        }, 1000); // Wait for 1 second
       } else {
         setError("User data is not returned correctly");
       }
@@ -58,7 +69,7 @@ const SignUpPage = () => {
   return (
     <Layout>
       <div className="sign-up-container">
-        <h2>Create your account</h2>
+        <h2>Create Admin Account</h2>
         <form onSubmit={handleSubmit}>
           {error && <p className="error">{error}</p>}
           <div>

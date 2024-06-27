@@ -14,8 +14,8 @@ const HeaderApp = () => {
   const dropdownRef = useRef(null);
 
   const handleSignOut = () => {
-    localStorage.removeItem("user");
-    navigate("/signin");
+    localStorage.clear();
+    navigate("/");
   };
 
   const toggleDropdown = (e) => {

@@ -1,7 +1,14 @@
+// UserTable.js
 import React from "react";
 import { Table, Button } from "react-bootstrap";
 
-const UserTable = ({ users, handleShowModal, handleDelete }) => {
+const UserTable = ({
+  users,
+  handleShowModal,
+  handleDelete,
+  loggedInUser,
+  isLastAdmin,
+}) => {
   return (
     <Table hover>
       <thead>
@@ -15,7 +22,7 @@ const UserTable = ({ users, handleShowModal, handleDelete }) => {
         </tr>
       </thead>
       <tbody>
-        {users.map((user) => (
+        {users?.map((user) => (
           <tr key={user._id}>
             <td>{user._id}</td>
             <td>{user.firstName}</td>
@@ -26,7 +33,18 @@ const UserTable = ({ users, handleShowModal, handleDelete }) => {
               <Button variant="info" onClick={() => handleShowModal(user)}>
                 Edit
               </Button>
-              <Button variant="danger" onClick={() => handleDelete(user._id)}>
+              <Button
+                variant="danger"
+                onClick={() => handleDelete(user._id)}
+                disabled={
+                  (loggedInUser._id === user._id &&
+                    user.role === "admin" &&
+                    !isLastAdmin) ||
+                  (loggedInUser._id !== user._id &&
+                    user.role === "admin" &&
+                    isLastAdmin)
+                }
+              >
                 Delete
               </Button>
             </td>

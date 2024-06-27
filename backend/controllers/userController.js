@@ -3,22 +3,19 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Tenant = require("../models/Tenant");
 
-// Register Admin
-const registerAdmin = async (req, res) => {
+// Register First User (Admin)
+const registerFirstUser = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
-    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    // Create tenant
     const tenant = new Tenant({ name: email });
     await tenant.save();
 
-    // Create new admin user
     user = new User({
       firstName,
       lastName,
@@ -28,13 +25,11 @@ const registerAdmin = async (req, res) => {
       role: "admin",
     });
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
 
-    // Return jsonwebtoken
     const payload = {
       user: {
         id: user.id,
@@ -73,56 +68,35 @@ const registerUser = async (req, res) => {
   const { firstName, lastName, email, password, role } = req.body;
 
   try {
-    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    // Create new user
     user = new User({
       firstName,
       lastName,
       email,
       password,
-      tenantId: req.user.tenantId, // Associate with the admin's tenantId
+      tenantId: req.user.tenantId,
       role: role || "user",
     });
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
 
-    // Return jsonwebtoken
-    const payload = {
+    res.json({
       user: {
         id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
         role: user.role,
         tenantId: user.tenantId,
       },
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: 3600 },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role,
-            tenantId: user.tenantId,
-          },
-        });
-      }
-    );
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -158,7 +132,17 @@ const loginUser = async (req, res) => {
       { expiresIn: 3600 },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user });
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            tenantId: user.tenantId,
+          },
+        });
       }
     );
   } catch (err) {
@@ -202,7 +186,7 @@ const updateUser = async (req, res) => {
       req.params.id,
       { firstName, lastName, email, role },
       { new: true }
-    );
+    ).select("-password");
     res.json(user);
   } catch (err) {
     console.error(err.message);
@@ -220,9 +204,23 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    await User.findByIdAndDelete(userId);
+    // Check if this is the last admin user
+    const adminUsers = await User.find({
+      tenantId: user.tenantId,
+      role: "admin",
+    });
+    const isLastAdmin = adminUsers.length === 1;
 
-    res.json({ msg: "User deleted" });
+    if (isLastAdmin) {
+      // Delete tenant and all users
+      await User.deleteMany({ tenantId: user.tenantId });
+      await Tenant.findByIdAndDelete(user.tenantId);
+      res.json({ msg: "All users and tenant deleted" });
+    } else {
+      // Delete user
+      await User.findByIdAndDelete(userId);
+      res.json({ msg: "User deleted" });
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -230,7 +228,7 @@ const deleteUser = async (req, res) => {
 };
 
 module.exports = {
-  registerAdmin,
+  registerFirstUser,
   registerUser,
   loginUser,
   getAllUsers,

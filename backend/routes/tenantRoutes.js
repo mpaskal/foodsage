@@ -1,11 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const tenantController = require("../controllers/tenantController");
+const {
+  getAllTenants,
+  createTenant,
+  deleteTenantAndUsers,
+  getTenantById,
+  updateTenant,
+} = require("../controllers/tenantController");
+const userAuth = require("../middlewares/userAuth");
 
-// Define routes and attach controller functions
-router.get("/", tenantController.getAllTenants);
-router.post("/", tenantController.createTenant);
+// GET /api/tenants
+router.get("/", userAuth, getAllTenants);
 
-// Add more routes here if necessary
+// POST /api/tenants
+router.post("/", userAuth, createTenant);
+
+// DELETE /api/tenants
+router.delete("/", userAuth, deleteTenantAndUsers);
+
+// GET /api/tenants/:id
+router.get("/:id", userAuth, getTenantById);
+
+// PUT /api/tenants/:id
+router.put("/:id", userAuth, updateTenant);
 
 module.exports = router;
