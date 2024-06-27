@@ -16,7 +16,7 @@ const AboutPage = () => {
         </header>
         <div className="about-content">
           <p>
-            <span className="icon">🍏</span> GreenDuo is a software development
+            <span className="icon">🍏eegi</span> GreenDuo is a software development
             company founded in 2024 to tackle a critical social impact project:
             reducing food waste in Canada. Did you know that $49 billion worth
             of food is wasted or lost in Canada each year? That's enough to feed
