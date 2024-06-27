@@ -13,7 +13,6 @@ const SignUpPage = () => {
   });
 
   const [error, setError] = useState(null);
-
   const navigate = useNavigate();
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
@@ -39,15 +38,27 @@ const SignUpPage = () => {
           password,
         }
       );
-      const userData = response.data.user;
-      if (userData) {
-        localStorage.setItem("user", JSON.stringify(userData));
-        navigate("/dashboard");
+
+      if (response.data && response.data.user && response.data.token) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...response.data.user,
+            token: response.data.token,
+          })
+        );
+
+        localStorage.setItem("isNewUser", "true");
+
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
       } else {
         setError("User data is not returned correctly");
       }
     } catch (error) {
       console.error("Error registering user", error);
+      console.log("Error Response Data:", error.response?.data);
       setError(error.response?.data?.msg || "Error registering user");
     }
   };
@@ -55,7 +66,7 @@ const SignUpPage = () => {
   return (
     <Layout>
       <div className="sign-up-container">
-        <h2>Create your account</h2>
+        <h2>Create Admin Account</h2>
         <form onSubmit={handleSubmit}>
           {error && <p className="error">{error}</p>}
           <div>

@@ -1,39 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { sidebarItems } from "../../data/sidebarItems";
 import { NavLink } from "react-router-dom";
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
-import { BiChevronDown } from "react-icons/bi";
-import { BiChevronUp } from "react-icons/bi";
-// Make sure to create this CSS file
+import { FaChevronLeft, FaChevronRight, FaUser } from "react-icons/fa";
+import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
 const Sidebar = () => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(window.innerWidth > 768);
   const [expandedItems, setExpandedItems] = useState([]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setExpanded(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Clean up event listener
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user?.role;
 
   const toggleSidebar = () => {
     setExpanded(!expanded);
-    // Close all expanded items when collapsing sidebar
     if (expanded) {
       setExpandedItems({});
     }
   };
 
   const toggleItem = (itemName) => {
-    if (expanded) {
-      setExpandedItems((prev) => ({
-        ...prev,
-        [itemName]: !prev[itemName],
-      }));
-    } else {
-      // Expand sidebar if it's collapsed and an item is clicked
-      setExpanded(true);
-      setExpandedItems({ [itemName]: true });
-    }
+    setExpandedItems((prev) => ({
+      ...prev,
+      [itemName]: !prev[itemName],
+    }));
   };
 
   return (
@@ -80,6 +84,31 @@ const Sidebar = () => {
             )}
           </div>
         ))}
+        {role === "admin" && (
+          <div className="sidebar-item">
+            <div className="sidebar-dropdown">
+              <div
+                className="sidebar-link"
+                onClick={() => toggleItem("Admin Panel")}
+              >
+                <FaUser className="sidebar-icon" />
+                <span>Admin Panel</span>
+                {expandedItems["Admin Panel"] ? (
+                  <BiChevronUp />
+                ) : (
+                  <BiChevronDown />
+                )}
+              </div>
+              {expandedItems["Admin Panel"] && (
+                <div className="sidebar-dropdown-content">
+                  <NavLink to="/user-management" className="sidebar-sublink">
+                    <span>User Management</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <button className="sidebar-toggle" onClick={toggleSidebar}>
         {expanded ? <FaChevronLeft /> : <FaChevronRight />}
