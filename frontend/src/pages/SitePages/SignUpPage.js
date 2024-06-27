@@ -40,7 +40,6 @@ const SignUpPage = () => {
       );
 
       if (response.data && response.data.user && response.data.token) {
-        // Store user data and token in localStorage
         localStorage.setItem(
           "user",
           JSON.stringify({
@@ -49,19 +48,17 @@ const SignUpPage = () => {
           })
         );
 
-        // Set a flag to indicate this is a new user
         localStorage.setItem("isNewUser", "true");
 
-        // Wait for a short time before redirecting
         setTimeout(() => {
-          // Redirect to dashboard
           navigate("/dashboard");
-        }, 1000); // Wait for 1 second
+        }, 1000);
       } else {
         setError("User data is not returned correctly");
       }
     } catch (error) {
       console.error("Error registering user", error);
+      console.log("Error Response Data:", error.response?.data);
       setError(error.response?.data?.msg || "Error registering user");
     }
   };

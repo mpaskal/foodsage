@@ -1,3 +1,5 @@
+// frontend/src/components/User/DeleteConfirmationModal.js
+
 import React from "react";
 import { Modal, Button } from "react-bootstrap";
 
@@ -10,19 +12,28 @@ const DeleteConfirmationModal = ({
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Delete Confirmation</Modal.Title>
+        <Modal.Title>Confirm Deletion</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {isLastAdmin
-          ? "You are the last admin. Deleting this account will remove all data associated with the tenant. Are you sure you want to proceed?"
-          : "Are you sure you want to delete this user?"}
+        {isLastAdmin ? (
+          <p>
+            You are the last admin. Deleting your account will remove all users
+            and data associated with this tenant. Are you sure you want to
+            proceed?
+          </p>
+        ) : (
+          <p>
+            Are you sure you want to delete this user? This action cannot be
+            undone.
+          </p>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
           Cancel
         </Button>
         <Button variant="danger" onClick={confirmDelete}>
-          Delete
+          Confirm
         </Button>
       </Modal.Footer>
     </Modal>

@@ -110,12 +110,12 @@ const loginUser = async (req, res) => {
   try {
     let user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ msg: "Invalid Credentials" });
+      return res.status(400).json({ msg: "Invalid email or password" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: "Invalid Credentials" });
+      return res.status(400).json({ msg: "Invalid email or password" });
     }
 
     const payload = {
@@ -154,10 +154,23 @@ const loginUser = async (req, res) => {
 // Get all users for the same tenant
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ tenantId: req.user.tenantId }).select(
-      "-password"
-    );
-    res.json(users);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const users = await User.find({ tenantId: req.user.tenantId })
+      .select("-password")
+      .skip(skip)
+      .limit(limit);
+
+    const totalUsers = await User.countDocuments({
+      tenantId: req.user.tenantId,
+    });
+
+    res.json({
+      users,
+      totalPages: Math.ceil(totalUsers / limit),
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");

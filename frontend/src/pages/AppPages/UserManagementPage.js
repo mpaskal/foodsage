@@ -66,14 +66,24 @@ const UserManagementPage = () => {
         }
       );
 
-      setUsers(response.data);
-      setTotalPages(response.data.totalPages);
+      console.log("API Response:", response.data);
 
-      // Update isLastAdmin
-      const adminUsers = response.data.filter((u) => u.role === "admin");
-      setIsLastAdmin(
-        adminUsers.length === 1 && adminUsers[0]._id === loggedInUser?._id
-      );
+      if (response.data && Array.isArray(response.data.users)) {
+        setUsers(response.data.users);
+        setTotalPages(response.data.totalPages);
+
+        // Update isLastAdmin
+        const adminUsers = response.data.users.filter(
+          (u) => u.role === "admin"
+        );
+        setIsLastAdmin(
+          adminUsers.length === 1 && adminUsers[0]._id === loggedInUser?._id
+        );
+      } else {
+        console.error("Invalid response structure:", response.data);
+        setToastMessage("Error fetching users");
+        setShowToast(true);
+      }
     } catch (error) {
       console.error("Error fetching users", error);
       if (error.response && error.response.status === 401) {

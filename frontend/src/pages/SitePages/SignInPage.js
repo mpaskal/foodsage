@@ -33,6 +33,7 @@ const SignInPage = () => {
       }
     } catch (error) {
       console.error("Error signing in", error);
+      console.log("Error Response Data:", error.response?.data);
       setError(error.response?.data?.msg || "Error signing in");
     }
   };
