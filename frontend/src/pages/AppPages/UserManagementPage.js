@@ -138,6 +138,7 @@ const UserManagementPage = () => {
       const token = loggedInUser?.token;
 
       if (isEdit) {
+        // Prevent the logged-in user from changing their own role
         if (
           currentUser._id === loggedInUser._id &&
           form.role !== currentUser.role
@@ -215,18 +216,27 @@ const UserManagementPage = () => {
         adminCount === 1 &&
         currentUser === loggedInUser._id
       ) {
+        // Confirm the deletion of all users and tenant
         setToastMessage(
-          "You are the last admin. Deleting your account will remove all users, the tenant, and all associated data. Please confirm."
+          "Deleting the last admin will remove all users, the tenant, and all associated data. Please confirm."
         );
-        await axios.delete(`/api/tenants`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        // Clear local storage
-        localStorage.clear();
-        // Redirect to home page after deleting everything
-        window.location.href = "/";
+        try {
+          await axios.delete(`/api/tenants`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          // Clear local storage
+          localStorage.clear();
+          // Redirect to home page after deleting everything
+          window.location.href = "/";
+        } catch (error) {
+          setToastMessage(
+            error.response?.data?.msg || "Error deleting tenant and users"
+          );
+          setShowToast(true);
+          setConfirmModal(false);
+        }
       } else if (currentUser === loggedInUser._id) {
         // Self-deletion
         await axios.delete(`/api/users/${currentUser}`, {
@@ -273,6 +283,8 @@ const UserManagementPage = () => {
           handleChange={handleChange}
           form={form}
           isEdit={isEdit}
+          loggedInUser={loggedInUser}
+          currentUserId={currentUser?._id}
         />
 
         <DeleteConfirmationModal

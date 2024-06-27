@@ -8,7 +8,12 @@ const UserModal = ({
   handleChange,
   form,
   isEdit,
+  loggedInUser,
+  currentUserId,
 }) => {
+  console.log("loggedInUser in UserModal:", loggedInUser);
+  console.log("currentUserId in UserModal:", currentUserId);
+
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
@@ -71,6 +76,11 @@ const UserModal = ({
               value={form.role}
               onChange={handleChange}
               required
+              disabled={
+                isEdit &&
+                loggedInUser?.role === "admin" &&
+                loggedInUser?.id === currentUserId
+              }
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>

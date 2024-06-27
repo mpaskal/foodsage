@@ -195,6 +195,11 @@ const updateUser = async (req, res) => {
     let user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
+    // Prevent the logged-in user from changing their own role
+    if (req.user.id === req.params.id && user.role !== role) {
+      return res.status(403).json({ msg: "You cannot change your own role." });
+    }
+
     user = await User.findByIdAndUpdate(
       req.params.id,
       { firstName, lastName, email, role },
