@@ -16,7 +16,7 @@ const HomePage = () => {
         </header>
         <div className="home-content">
           <section>
-            <h2 className="main-Name-title">Discover Foodsage: Your Smart Pantry Companion!</h2>
+            <h2 className="main-Name-title" style={{color: '#058240'}}>Discover Foodsage: Your Smart Pantry Companion!</h2>
             <p className="main-Name">
             Unlock the full potential of your pantry with Foodsage!</p><p className="main-Name">
             Our innovative app is designed to revolutionize the way you manage food at home,
