@@ -193,7 +193,7 @@ const UserManagementPage = () => {
       setToastMessage("Cannot delete the last admin user.");
       setShowToast(true);
     } else {
-      setCurrentUser(userId);
+      setCurrentUser(userToDelete);
       setConfirmModal(true);
     }
   };
@@ -208,13 +208,13 @@ const UserManagementPage = () => {
         return;
       }
 
-      const userToDelete = users.find((user) => user._id === currentUser);
+      const userToDelete = users.find((user) => user._id === currentUser._id);
       const adminCount = users.filter((user) => user.role === "admin").length;
 
       if (
         userToDelete.role === "admin" &&
         adminCount === 1 &&
-        currentUser === loggedInUser._id
+        currentUser._id === loggedInUser._id
       ) {
         // Confirm the deletion of all users and tenant
         setToastMessage(
@@ -237,9 +237,9 @@ const UserManagementPage = () => {
           setShowToast(true);
           setConfirmModal(false);
         }
-      } else if (currentUser === loggedInUser._id) {
+      } else if (currentUser._id === loggedInUser._id) {
         // Self-deletion
-        await axios.delete(`/api/users/${currentUser}`, {
+        await axios.delete(`/api/users/${currentUser._id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -250,7 +250,7 @@ const UserManagementPage = () => {
         window.location.href = "/";
       } else {
         // Regular user deletion
-        await axios.delete(`/api/users/${currentUser}`, {
+        await axios.delete(`/api/users/${currentUser._id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -291,7 +291,7 @@ const UserManagementPage = () => {
           show={confirmModal}
           handleClose={() => setConfirmModal(false)}
           confirmDelete={confirmDelete}
-          isLastAdmin={isLastAdmin && currentUser === loggedInUser?._id}
+          isLastAdmin={isLastAdmin && currentUser._id === loggedInUser?._id}
         />
 
         {isLoading ? (
