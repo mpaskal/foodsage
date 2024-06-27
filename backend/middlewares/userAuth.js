@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-module.exports = async (req, res, next) => {
+const userAuth = async (req, res, next) => {
   const token = req.header("Authorization").replace("Bearer ", "");
   if (!token) {
     return res.status(401).json({ msg: "No token, authorization denied" });
@@ -23,3 +23,5 @@ module.exports = async (req, res, next) => {
     res.status(401).json({ msg: "Token is not valid" });
   }
 };
+
+module.exports = userAuth;

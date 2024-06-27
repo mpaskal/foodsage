@@ -1,18 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const Tenant = require("../models/Tenant");
+const {
+  getAllTenants,
+  createTenant,
+  deleteTenantAndUsers,
+  getTenantById,
+  updateTenant,
+} = require("../controllers/tenantController");
+const userAuth = require("../middlewares/userAuth");
 
-// @route   GET api/tenants
-// @desc    Get all tenants
-// @access  Public
-router.get("/", async (req, res) => {
-  try {
-    const tenants = await Tenant.find();
-    res.json(tenants);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
-  }
-});
+// GET /api/tenants
+router.get("/", userAuth, getAllTenants);
+
+// POST /api/tenants
+router.post("/", userAuth, createTenant);
+
+// DELETE /api/tenants
+router.delete("/", userAuth, deleteTenantAndUsers);
+
+// GET /api/tenants/:id
+router.get("/:id", userAuth, getTenantById);
+
+// PUT /api/tenants/:id
+router.put("/:id", userAuth, updateTenant);
 
 module.exports = router;

@@ -1,17 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const users = require("./routes/users");
-const tenantRoutes = require("./routes/tenantRoutes");
+const cors = require("cors");
 require("dotenv").config();
 
+const userRoutes = require("./routes/userRoutes");
+const tenantRoutes = require("./routes/tenantRoutes");
+
 const app = express();
-const cors = require("cors");
 
-// Verify JWT_SECRET
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
-
-// Bodyparser middleware
+// Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -25,8 +23,8 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log("MongoDB connection error:", err));
 
-// Routes
-app.use("/api/users", users);
+// Use Routes
+app.use("/api", userRoutes); // Mount user routes at /api
 app.use("/api/tenants", tenantRoutes);
 
 const port = process.env.PORT || 5000;
