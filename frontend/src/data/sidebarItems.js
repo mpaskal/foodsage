@@ -4,6 +4,7 @@ import {
   FaMoneyBillWave,
   FaGift,
   FaChartLine,
+  FaUserAlt,
 } from "react-icons/fa";
 import { AiOutlineDashboard } from "react-icons/ai";
 import { GiReceiveMoney, GiFoodTruck } from "react-icons/gi";
