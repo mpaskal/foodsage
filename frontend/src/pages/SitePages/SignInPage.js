@@ -20,6 +20,8 @@ const SignInPage = () => {
         }
       );
 
+      console.log("Login Response:", response.data); // Debugging statement
+
       if (response.data && response.data.token) {
         const user = {
           token: response.data.token,
@@ -33,7 +35,7 @@ const SignInPage = () => {
       }
     } catch (error) {
       console.error("Error signing in", error);
-      console.log("Error Response Data:", error.response?.data);
+      console.log("Error Response Data:", error.response?.data); // Debugging statement
       setError(error.response?.data?.msg || "Error signing in");
     }
   };

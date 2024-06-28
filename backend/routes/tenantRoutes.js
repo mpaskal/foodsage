@@ -1,4 +1,5 @@
 const express = require("express");
+const tenantController = require("../controllers/tenantController");
 const router = express.Router();
 const {
   getAllTenants,

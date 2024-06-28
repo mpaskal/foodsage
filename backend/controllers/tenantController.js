@@ -7,7 +7,7 @@ const getAllTenants = async (req, res) => {
     const tenants = await Tenant.find();
     res.json(tenants);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };
@@ -21,23 +21,25 @@ const createTenant = async (req, res) => {
     await tenant.save();
     res.json(tenant);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };
 
 // Function to delete a tenant and all associated users
 const deleteTenantAndUsers = async (req, res) => {
+  const tenantId = req.params.id; // Assume tenantId is passed as a URL parameter
+
   try {
     // Delete all users associated with the tenant
-    await User.deleteMany({ tenantId: req.tenantId });
+    await User.deleteMany({ tenantId });
 
     // Delete the tenant
-    await Tenant.findByIdAndDelete(req.tenantId);
+    await Tenant.findByIdAndDelete(tenantId);
 
     res.json({ msg: "Tenant and associated users deleted successfully" });
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };
@@ -51,7 +53,7 @@ const getTenantById = async (req, res) => {
     }
     res.json(tenant);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };
@@ -71,7 +73,7 @@ const updateTenant = async (req, res) => {
 
     res.json(tenant);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };

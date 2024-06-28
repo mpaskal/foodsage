@@ -22,7 +22,7 @@ const DeleteConfirmationModal = ({
         ) : (
           <p>
             Are you sure you want to delete this user? This action cannot be
-            undone.
+            undone
           </p>
         )}
       </Modal.Body>
