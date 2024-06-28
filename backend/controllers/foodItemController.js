@@ -1,14 +1,24 @@
 const FoodItem = require("../models/FoodItem");
+const upload = require("../middleware/upload");
 
 // Create a new food item
 exports.createFoodItem = async (req, res) => {
-  try {
-    const foodItem = new FoodItem(req.body);
-    await foodItem.save();
-    res.status(201).send(foodItem);
-  } catch (error) {
-    res.status(400).send(error);
-  }
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).send({ message: err });
+    }
+
+    try {
+      const newItem = new FoodItem({
+        ...req.body,
+        image: req.file ? req.file.path : null,
+      });
+      await newItem.save();
+      res.status(201).send(newItem);
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  });
 };
 
 // Get all food items
@@ -36,18 +46,29 @@ exports.getFoodItemById = async (req, res) => {
 
 // Update a food item
 exports.updateFoodItem = async (req, res) => {
-  try {
-    const foodItem = await FoodItem.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!foodItem) {
-      return res.status(404).send();
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).send({ message: err });
     }
-    res.status(200).send(foodItem);
-  } catch (error) {
-    res.status(400).send(error);
-  }
+
+    try {
+      const updates = {
+        ...req.body,
+        image: req.file ? req.file.path : req.body.image, // Use the existing image if no new file is uploaded
+      };
+      const foodItem = await FoodItem.findByIdAndUpdate(
+        req.params.id,
+        updates,
+        { new: true, runValidators: true }
+      );
+      if (!foodItem) {
+        return res.status(404).send();
+      }
+      res.status(200).send(foodItem);
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  });
 };
 
 // Delete a food item

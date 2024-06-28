@@ -6,6 +6,7 @@ const FoodItemModal = ({
   handleClose,
   handleSubmit,
   handleChange,
+  handleFileChange, // New handler for file input
   form,
   isEdit,
 }) => {
@@ -125,12 +126,11 @@ const FoodItemModal = ({
             />
           </Form.Group>
           <Form.Group className="mb-3" controlId="image">
-            <Form.Label>Image URL</Form.Label>
+            <Form.Label>Image</Form.Label>
             <Form.Control
-              type="text"
+              type="file"
               name="image"
-              value={form.image}
-              onChange={handleChange}
+              onChange={handleFileChange}
             />
           </Form.Group>
         </Modal.Body>

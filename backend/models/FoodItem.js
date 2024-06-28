@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
 
-const foodItemSchema = new Schema(
+const foodItemSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     category: { type: String, required: true },
@@ -22,9 +21,9 @@ const foodItemSchema = new Schema(
       ref: "User",
       required: true,
     },
-    image: { type: String }, // Assuming you have an image URL or path
+    image: { type: String }, // Path to the uploaded image file
   },
-  { timestamps: true } // This adds createdAt and updatedAt fields
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("FoodItem", foodItemSchema);

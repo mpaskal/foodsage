@@ -7,7 +7,7 @@ import SignInPage from "./pages/SitePages/SignInPage";
 import SignUpPage from "./pages/SitePages/SignUpPage";
 import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
-import FoodInventoryPage from "./pages/AppPages/FoodInventoryPage";
+import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -28,7 +28,7 @@ function App() {
 
         <Route element={<ProtectedRoute role={role} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/inventory/all" element={<FoodInventoryPage />} />
+          <Route path="/fooditems" element={<FoodItemsPage />} />
           <Route
             path="/user-management"
             element={<UserManagementPage />}

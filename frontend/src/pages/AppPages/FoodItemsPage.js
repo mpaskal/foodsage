@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
-import FoodItemTable from "../../components/FoodItem/FoodItemTable"; // Adjust path as needed
-import FoodItemModal from "../../components/FoodItem/FoodItemModal"; // Adjust path as needed
-import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal"; // Adjust path as needed
-import { Button } from "react-bootstrap"; // Import Button component from react-bootstrap
+import FoodItemTable from "../../components/FoodItem/FoodItemTable";
+import FoodItemModal from "../../components/FoodItem/FoodItemModal";
+import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal";
+import { Button } from "react-bootstrap";
 
-const FoodInventoryPage = () => {
+const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -22,7 +22,7 @@ const FoodInventoryPage = () => {
     source: "",
     expirationDate: "",
     purchasedDate: "",
-    image: "",
+    image: null,
   });
 
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
@@ -57,7 +57,7 @@ const FoodInventoryPage = () => {
         source: "",
         expirationDate: "",
         purchasedDate: "",
-        image: "",
+        image: null,
       });
       setIsEdit(false);
     }
@@ -71,13 +71,42 @@ const FoodInventoryPage = () => {
     setForm({ ...form, [name]: value });
   };
 
+  const handleFileChange = (e) => {
+    setForm({ ...form, image: e.target.files[0] });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("name", form.name);
+    formData.append("category", form.category);
+    formData.append("quantity", form.quantity);
+    formData.append("quantityMeasurement", form.quantityMeasurement);
+    formData.append("storage", form.storage);
+    formData.append("cost", form.cost);
+    formData.append("source", form.source);
+    formData.append("expirationDate", form.expirationDate);
+    formData.append("purchasedDate", form.purchasedDate);
+    formData.append("tenantId", form.tenantId);
+    formData.append("userId", form.userId);
+    if (form.image) {
+      formData.append("image", form.image);
+    }
+
     try {
       if (isEdit) {
-        await axios.patch(`/fooditems/${currentItem._id}`, form);
+        await axios.patch(`/fooditems/${currentItem._id}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       } else {
-        await axios.post("/fooditems", form);
+        await axios.post("/fooditems", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       }
       fetchFoodItems();
       handleCloseModal();
@@ -119,6 +148,7 @@ const FoodInventoryPage = () => {
           handleClose={handleCloseModal}
           handleSubmit={handleSubmit}
           handleChange={handleInputChange}
+          handleFileChange={handleFileChange}
           form={form}
           isEdit={isEdit}
         />
@@ -132,4 +162,4 @@ const FoodInventoryPage = () => {
   );
 };
 
-export default FoodInventoryPage;
+export default FoodItemsPage;

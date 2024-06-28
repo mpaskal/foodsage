@@ -17,10 +17,10 @@ export const sidebarItems = [
     name: "Inventory",
     icon: MdOutlineInventory,
     items: [
-      { name: "All", path: "/inventory/all" },
-      { name: "High-Risk Items", path: "/inventory/high-risk-items" },
-      { name: "Pantry Manager", path: "/inventory/pantry-manager" },
-      { name: "Stock Overview", path: "/inventory/stock-overview" },
+      { name: "All", path: "/fooditems" },
+      { name: "High-Risk Items", path: "/fooditems/high-risk-items" },
+      { name: "Pantry Manager", path: "/fooditems/pantry-manager" },
+      { name: "Stock Overview", path: "/fooditems/stock-overview" },
     ],
   },
   {

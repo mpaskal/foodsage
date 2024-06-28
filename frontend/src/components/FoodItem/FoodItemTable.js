@@ -15,13 +15,13 @@ const FoodItemTable = ({
           <th>Image</th>
           <th>Name</th>
           <th>Category</th>
-          <th>Quantity</th>
-          <th>Quantity Measurement</th>
+          <th>Qty</th>
+          <th>Qty Meas</th>
           <th>Storage</th>
-          <th>Cost</th>
+          <th>Purchased Date</th>
+          <th>Cost/Item</th>
           <th>Source</th>
           <th>Expiration Date</th>
-          <th>Purchased Date</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -37,10 +37,10 @@ const FoodItemTable = ({
             <td>{item.quantity}</td>
             <td>{item.quantityMeasurement}</td>
             <td>{item.storage}</td>
+            <td>{new Date(item.purchasedDate).toLocaleDateString()}</td>
             <td>{item.cost}</td>
             <td>{item.source}</td>
             <td>{new Date(item.expirationDate).toLocaleDateString()}</td>
-            <td>{new Date(item.purchasedDate).toLocaleDateString()}</td>
             <td>
               <Button variant="info" onClick={() => handleShowModal(item)}>
                 Edit
