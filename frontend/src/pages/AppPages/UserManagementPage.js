@@ -220,6 +220,15 @@ const UserManagementPage = () => {
         adminCount === 1 &&
         userToDelete._id === loggedInUser.id
       ) {
+        // Show special warning message
+        const userConfirmed = window.confirm(
+          "Deleting the last admin will remove all users, the tenant, and all associated data. Are you sure you want to proceed?"
+        );
+        if (!userConfirmed) {
+          setConfirmModal(false);
+          return;
+        }
+
         // Confirm the deletion of all users and tenant
         try {
           await axios.delete(`/api/tenants/${userToDelete.tenantId}`, {
