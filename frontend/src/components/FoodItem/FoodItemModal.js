@@ -6,7 +6,7 @@ const FoodItemModal = ({
   handleClose,
   handleSubmit,
   handleChange,
-  handleFileChange, // New handler for file input
+  handleFileChange,
   form,
   isEdit,
 }) => {
@@ -60,12 +60,20 @@ const FoodItemModal = ({
               <Form.Group className="mb-3" controlId="quantityMeasurement">
                 <Form.Label>Quantity Measurement</Form.Label>
                 <Form.Control
-                  type="text"
+                  as="select"
                   name="quantityMeasurement"
                   value={form.quantityMeasurement}
                   onChange={handleChange}
                   required
-                />
+                >
+                  <option value="item">item</option>
+                  <option value="kg">kg</option>
+                  <option value="lb">lb</option>
+                  <option value="L">L</option>
+                  <option value="oz">oz</option>
+                  <option value="g">g</option>
+                  <option value="box">box</option>
+                </Form.Control>
               </Form.Group>
             </Col>
           </Row>

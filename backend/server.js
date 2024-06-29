@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const tenantRoutes = require("./routes/tenantRoutes");
+const foodItemRoutes = require("./routes/foodItemRoutes");
 
 const app = express();
 
@@ -24,8 +25,9 @@ mongoose
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Use Routes
-app.use("/api", userRoutes); // Mount user routes at /api
+app.use("/api", userRoutes);
 app.use("/api/tenants", tenantRoutes);
+app.use("/api", foodItemRoutes);
 
 const port = process.env.PORT || 5000;
 

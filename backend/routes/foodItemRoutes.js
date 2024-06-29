@@ -1,9 +1,9 @@
 const express = require("express");
-const router = new express.Router();
-const foodItemController = require("../controllers/foodItemController"); // Adjust the path as needed
+const router = express.Router();
+const foodItemController = require("../controllers/foodItemController");
 
 router.post("/fooditems", foodItemController.createFoodItem);
-router.get("/fooditems", foodItemController.getAllFoodItems);
+router.get("/fooditems", foodItemController.getFoodItems);
 router.get("/fooditems/:id", foodItemController.getFoodItemById);
 router.patch("/fooditems/:id", foodItemController.updateFoodItem);
 router.delete("/fooditems/:id", foodItemController.deleteFoodItem);

@@ -1,12 +1,20 @@
 const FoodItem = require("../models/FoodItem");
-const upload = require("../middleware/upload");
+const upload = require("../middlewares/upload"); // Correct path to upload.js
+
+// Create a new food item
+const FoodItem = require("../models/FoodItem");
+const upload = require("../middlewares/upload");
 
 // Create a new food item
 exports.createFoodItem = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
+      console.error("Upload Error:", err);
       return res.status(400).send({ message: err });
     }
+
+    console.log("Received Body:", req.body); // Log received body
+    console.log("Received File:", req.file); // Log received file
 
     try {
       const newItem = new FoodItem({
@@ -16,18 +24,19 @@ exports.createFoodItem = async (req, res) => {
       await newItem.save();
       res.status(201).send(newItem);
     } catch (error) {
-      res.status(400).send(error);
+      console.error("Error creating food item:", error.message);
+      res.status(400).send({ message: error.message });
     }
   });
 };
 
 // Get all food items
-exports.getAllFoodItems = async (req, res) => {
+exports.getFoodItems = async (req, res) => {
   try {
-    const foodItems = await FoodItem.find({});
-    res.status(200).send(foodItems);
+    const foodItems = await FoodItem.find();
+    res.status(200).json(foodItems);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json({ message: "Error fetching food items", error });
   }
 };
 

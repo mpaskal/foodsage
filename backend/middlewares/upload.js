@@ -1,9 +1,36 @@
-const express = require("express");
-const router = new express.Router();
-const foodItemController = require("../controllers/foodItemController");
-const upload = require("../middleware/upload");
+const multer = require("multer");
+const path = require("path");
 
-router.post("/fooditems", upload, foodItemController.createFoodItem);
-router.patch("/fooditems/:id", upload, foodItemController.updateFoodItem);
+// Set storage engine
+const storage = multer.diskStorage({
+  destination: "./uploads/",
+  filename: function (req, file, cb) {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  },
+});
 
-module.exports = router;
+// Initialize upload
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1000000 }, // Limit file size to 1MB
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+}).single("image");
+
+// Check file type
+function checkFileType(file, cb) {
+  const filetypes = /jpeg|jpg|png|gif/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb("Error: Images Only!");
+  }
+}
+
+module.exports = upload;

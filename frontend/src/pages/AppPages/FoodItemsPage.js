@@ -16,16 +16,19 @@ const FoodItemsPage = () => {
     name: "",
     category: "",
     quantity: "",
-    quantityMeasurement: "",
+    quantityMeasurement: "item",
     storage: "",
     cost: "",
     source: "",
     expirationDate: "",
     purchasedDate: "",
     image: null,
+    tenantId: "",
+    userId: "",
   });
 
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
+  console.log("LoggedInUser:", loggedInUser); // Log loggedInUser
 
   useEffect(() => {
     fetchFoodItems();
@@ -33,7 +36,7 @@ const FoodItemsPage = () => {
 
   const fetchFoodItems = async () => {
     try {
-      const response = await axios.get("/fooditems");
+      const response = await axios.get("/api/fooditems");
       setFoodItems(response.data);
     } catch (error) {
       console.error("Error fetching food items:", error);
@@ -43,7 +46,11 @@ const FoodItemsPage = () => {
   const handleShowModal = (item) => {
     if (item) {
       setCurrentItem(item);
-      setForm(item);
+      setForm({
+        ...item,
+        tenantId: loggedInUser?.tenantId || "",
+        userId: loggedInUser?.id || "",
+      });
       setIsEdit(true);
     } else {
       setCurrentItem(null);
@@ -51,13 +58,15 @@ const FoodItemsPage = () => {
         name: "",
         category: "",
         quantity: "",
-        quantityMeasurement: "",
+        quantityMeasurement: "item",
         storage: "",
         cost: "",
         source: "",
         expirationDate: "",
         purchasedDate: "",
         image: null,
+        tenantId: loggedInUser?.tenantId || "",
+        userId: loggedInUser?.id || "",
       });
       setIsEdit(false);
     }
@@ -94,15 +103,17 @@ const FoodItemsPage = () => {
       formData.append("image", form.image);
     }
 
+    console.log("Form Data:", [...formData.entries()]); // Add logging here
+
     try {
       if (isEdit) {
-        await axios.patch(`/fooditems/${currentItem._id}`, formData, {
+        await axios.patch(`/api/fooditems/${currentItem.id}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
       } else {
-        await axios.post("/fooditems", formData, {
+        await axios.post("/api/fooditems", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -111,13 +122,16 @@ const FoodItemsPage = () => {
       fetchFoodItems();
       handleCloseModal();
     } catch (error) {
-      console.error("Error saving food item:", error);
+      console.error(
+        "Error saving food item:",
+        error.response?.data || error.message
+      );
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/fooditems/${id}`);
+      await axios.delete(`/api/fooditems/${id}`);
       fetchFoodItems();
       setShowDeleteModal(false);
     } catch (error) {
@@ -155,7 +169,7 @@ const FoodItemsPage = () => {
         <DeleteConfirmationModal
           show={showDeleteModal}
           handleClose={handleCloseDeleteModal}
-          confirmDelete={() => handleDelete(currentItem._id)}
+          confirmDelete={() => handleDelete(currentItem.id)}
         />
       </div>
     </Layout>
