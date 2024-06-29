@@ -1,31 +1,23 @@
 const FoodItem = require("../models/FoodItem");
-const upload = require("../middlewares/upload"); // Correct path to upload.js
-
-// Create a new food item
-const FoodItem = require("../models/FoodItem");
-const upload = require("../middlewares/upload");
+const uploadMiddleware = require("../middlewares/uploadMiddleware");
 
 // Create a new food item
 exports.createFoodItem = async (req, res) => {
-  upload(req, res, async (err) => {
+  uploadMiddleware(req, res, async (err) => {
     if (err) {
-      console.error("Upload Error:", err);
-      return res.status(400).send({ message: err });
+      console.error("Error uploading file:", err); // Log error details
+      return res.status(400).json({ message: "Error uploading file", err });
     }
-
-    console.log("Received Body:", req.body); // Log received body
-    console.log("Received File:", req.file); // Log received file
-
     try {
       const newItem = new FoodItem({
         ...req.body,
         image: req.file ? req.file.path : null,
       });
       await newItem.save();
-      res.status(201).send(newItem);
+      res.status(201).json(newItem);
     } catch (error) {
-      console.error("Error creating food item:", error.message);
-      res.status(400).send({ message: error.message });
+      console.error("Error creating food item:", error); // Log error details
+      res.status(400).json({ message: "Error creating food item", error });
     }
   });
 };
@@ -55,27 +47,29 @@ exports.getFoodItemById = async (req, res) => {
 
 // Update a food item
 exports.updateFoodItem = async (req, res) => {
-  upload(req, res, async (err) => {
+  uploadMiddleware(req, res, async (err) => {
     if (err) {
-      return res.status(400).send({ message: err });
+      return res.status(400).json({ message: "Error uploading file", err });
     }
-
     try {
       const updates = {
         ...req.body,
-        image: req.file ? req.file.path : req.body.image, // Use the existing image if no new file is uploaded
+        image: req.body.image ? req.body.image : req.body.existingImage,
       };
       const foodItem = await FoodItem.findByIdAndUpdate(
         req.params.id,
         updates,
-        { new: true, runValidators: true }
+        {
+          new: true,
+          runValidators: true,
+        }
       );
       if (!foodItem) {
-        return res.status(404).send();
+        return res.status(404).json({ message: "Food item not found" });
       }
-      res.status(200).send(foodItem);
+      res.status(200).json(foodItem);
     } catch (error) {
-      res.status(400).send(error);
+      res.status(400).json({ message: "Error updating food item", error });
     }
   });
 };

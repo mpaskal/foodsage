@@ -28,7 +28,6 @@ const FoodItemsPage = () => {
   });
 
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
-  console.log("LoggedInUser:", loggedInUser); // Log loggedInUser
 
   useEffect(() => {
     fetchFoodItems();
@@ -49,13 +48,13 @@ const FoodItemsPage = () => {
       setForm({
         ...item,
         expirationDate: item.expirationDate
-          ? new Date(item.expirationDate).toLocaleDateString("en-CA")
+          ? new Date(item.expirationDate).toISOString().substring(0, 10)
           : "",
         purchasedDate: item.purchasedDate
-          ? new Date(item.purchasedDate).toLocaleDateString("en-CA")
+          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
           : "",
-        tenantId: loggedInUser?.tenantId || "",
-        userId: loggedInUser?.id || "",
+        tenantId: item.tenantId || loggedInUser.tenantId,
+        userId: item.userId || loggedInUser.id,
       });
       setIsEdit(true);
     } else {
@@ -71,8 +70,8 @@ const FoodItemsPage = () => {
         expirationDate: "",
         purchasedDate: new Date().toLocaleDateString("en-CA"), // Default to today in local time
         image: null,
-        tenantId: loggedInUser?.tenantId || "",
-        userId: loggedInUser?.id || "",
+        tenantId: loggedInUser.tenantId,
+        userId: loggedInUser.id,
       });
       setIsEdit(false);
     }
@@ -87,57 +86,59 @@ const FoodItemsPage = () => {
   };
 
   const handleFileChange = (e) => {
-    setForm({ ...form, image: e.target.files[0] });
+    const { name, files } = e.target;
+    const file = files[0];
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, [name]: reader.result.split(",")[1] }); // Only save the base64 string
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setForm({ ...form, [name]: "" });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("category", form.category);
-    formData.append("quantity", form.quantity);
-    formData.append("quantityMeasurement", form.quantityMeasurement);
-    formData.append("storage", form.storage);
-    formData.append("cost", form.cost);
-    formData.append("source", form.source);
-    formData.append("expirationDate", form.expirationDate);
-    formData.append("purchasedDate", form.purchasedDate);
-    formData.append("tenantId", form.tenantId);
-    formData.append("userId", form.userId);
-    if (form.image) {
-      formData.append("image", form.image);
-    }
-
-    console.log("Form Data:", [...formData.entries()]); // Add logging here
-
     try {
-      if (isEdit && currentItem && currentItem.id) {
-        await axios.patch(`/api/fooditems/${currentItem.id}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+      const formData = new FormData();
+      for (const key in form) {
+        if (form[key] !== "") {
+          formData.append(key, form[key]);
+        }
+      }
+      console.log(
+        "Form Data being sent:",
+        Object.fromEntries(formData.entries())
+      ); // Log form data for debugging
+
+      if (isEdit) {
+        console.log("Editing item with ID:", currentItem._id);
+        await axios.patch(`/api/fooditems/${currentItem._id}`, formData);
       } else {
-        await axios.post("/api/fooditems", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        console.log("Adding new item");
+        await axios.post("/api/fooditems", formData);
       }
       fetchFoodItems();
       handleCloseModal();
     } catch (error) {
       console.error(
         "Error saving food item:",
-        error.response?.data || error.message
+        error.response ? error.response.data : error
       );
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (item) => {
+    console.log("Deleting item:", item);
+    if (!item || !item._id) {
+      console.error("No valid item provided for deletion");
+      return;
+    }
     try {
-      await axios.delete(`/api/fooditems/${id}`);
+      await axios.delete(`/api/fooditems/${item._id}`);
       fetchFoodItems();
       setShowDeleteModal(false);
     } catch (error) {
@@ -175,7 +176,7 @@ const FoodItemsPage = () => {
         <DeleteConfirmationModal
           show={showDeleteModal}
           handleClose={handleCloseDeleteModal}
-          confirmDelete={() => handleDelete(currentItem.id)}
+          confirmDelete={() => handleDelete(currentItem)}
         />
       </div>
     </Layout>

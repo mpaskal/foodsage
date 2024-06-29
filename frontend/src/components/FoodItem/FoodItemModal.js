@@ -66,13 +66,13 @@ const FoodItemModal = ({
                   onChange={handleChange}
                   required
                 >
-                  <option value="item">item</option>
-                  <option value="kg">kg</option>
-                  <option value="lb">lb</option>
+                  <option value="item">Item</option>
+                  <option value="kg">Kg</option>
+                  <option value="lb">Lb</option>
                   <option value="L">L</option>
-                  <option value="oz">oz</option>
-                  <option value="g">g</option>
-                  <option value="box">box</option>
+                  <option value="oz">Oz</option>
+                  <option value="g">G</option>
+                  <option value="box">Box</option>
                 </Form.Control>
               </Form.Group>
             </Col>
@@ -118,7 +118,11 @@ const FoodItemModal = ({
             <Form.Control
               type="date"
               name="expirationDate"
-              value={form.expirationDate}
+              value={
+                form.expirationDate
+                  ? new Date(form.expirationDate).toISOString().substring(0, 10)
+                  : ""
+              }
               onChange={handleChange}
               required
             />
@@ -128,7 +132,11 @@ const FoodItemModal = ({
             <Form.Control
               type="date"
               name="purchasedDate"
-              value={form.purchasedDate}
+              value={
+                form.purchasedDate
+                  ? new Date(form.purchasedDate).toISOString().substring(0, 10)
+                  : ""
+              }
               onChange={handleChange}
               required
             />
