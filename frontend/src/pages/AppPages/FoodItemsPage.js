@@ -14,10 +14,10 @@ const FoodItemsPage = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    category: "Meat", // Default category
     quantity: "",
-    quantityMeasurement: "item",
-    storage: "",
+    quantityMeasurement: "Kg", // Default quantity measurement
+    storage: "Fridge", // Default storage
     cost: "",
     source: "",
     expirationDate: "",
@@ -61,10 +61,10 @@ const FoodItemsPage = () => {
       setCurrentItem(null);
       setForm({
         name: "",
-        category: "",
+        category: "Meat", // Default category
         quantity: "",
-        quantityMeasurement: "item",
-        storage: "",
+        quantityMeasurement: "Kg", // Default quantity measurement
+        storage: "Fridge", // Default storage
         cost: "",
         source: "",
         expirationDate: "",
@@ -109,6 +109,10 @@ const FoodItemsPage = () => {
           formData.append(key, form[key]);
         }
       }
+      console.log(
+        "Form Data being sent:",
+        Object.fromEntries(formData.entries())
+      ); // Log form data for debugging
 
       if (isEdit) {
         console.log("Editing item with ID:", currentItem._id);

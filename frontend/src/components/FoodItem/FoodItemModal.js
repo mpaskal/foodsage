@@ -1,7 +1,44 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
 
-const storageOptions = ["Fridge", "Freezer", "Pantry", "Cellar"];
+const categories = [
+  "Meat",
+  "Fish",
+  "Dairy",
+  "Vegetables",
+  "Fruits",
+  "Berries",
+  "Pastries",
+  "Bakery",
+  "Grains",
+  "Packaged Food",
+  "Other",
+];
+
+const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
+
+// Define the relevant quantity measurements for each category
+const quantityMeasurementsByCategory = {
+  Meat: ["Kg", "Lb"],
+  Fish: ["Kg", "Lb"],
+  Dairy: ["L", "Oz"],
+  Vegetables: ["Kg", "Lb", "Gr", "Item"],
+  Fruits: ["Kg", "Lb", "Item"],
+  Berries: ["Gr", "Item"],
+  Pastries: ["Item", "Box"],
+  Bakery: ["Item", "Box"],
+  Grains: ["Kg", "Lb", "Gr"],
+  "Packaged Food": ["Item", "Box"],
+  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
+};
+
+// Define the relevant quantity measurements for each storage
+const quantityMeasurementsByStorage = {
+  Fridge: ["Kg", "Lb", "L", "Oz", "Item"],
+  Freezer: ["Kg", "Lb", "L", "Oz", "Item"],
+  Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
+  Cellar: ["Item", "Box", "Kg", "Lb", "Gr"],
+};
 
 const FoodItemModal = ({
   show,
@@ -12,6 +49,28 @@ const FoodItemModal = ({
   form,
   isEdit,
 }) => {
+  const [quantityMeasurements, setQuantityMeasurements] = useState([]);
+
+  useEffect(() => {
+    updateQuantityMeasurements(form.category, form.storage);
+  }, [form.category, form.storage]);
+
+  const updateQuantityMeasurements = (category, storage) => {
+    const categoryMeasurements = quantityMeasurementsByCategory[category] || [];
+    const storageMeasurements = quantityMeasurementsByStorage[storage] || [];
+    const combinedMeasurements = [
+      ...new Set([...categoryMeasurements, ...storageMeasurements]),
+    ];
+    setQuantityMeasurements(combinedMeasurements);
+
+    // Set default value for quantity measurement if not already set
+    if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
+      handleChange({
+        target: { name: "quantityMeasurement", value: combinedMeasurements[0] },
+      });
+    }
+  };
+
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
@@ -36,12 +95,18 @@ const FoodItemModal = ({
               <Form.Group className="mb-3" controlId="category">
                 <Form.Label>Category</Form.Label>
                 <Form.Control
-                  type="text"
+                  as="select"
                   name="category"
                   value={form.category}
                   onChange={handleChange}
                   required
-                />
+                >
+                  {categories.map((category, index) => (
+                    <option key={index} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </Form.Control>
               </Form.Group>
             </Col>
           </Row>
@@ -68,13 +133,11 @@ const FoodItemModal = ({
                   onChange={handleChange}
                   required
                 >
-                  <option value="item">Item</option>
-                  <option value="kg">Kg</option>
-                  <option value="lb">Lb</option>
-                  <option value="L">L</option>
-                  <option value="oz">Oz</option>
-                  <option value="g">G</option>
-                  <option value="box">Box</option>
+                  {quantityMeasurements.map((measurement, index) => (
+                    <option key={index} value={measurement}>
+                      {measurement}
+                    </option>
+                  ))}
                 </Form.Control>
               </Form.Group>
             </Col>
@@ -90,9 +153,9 @@ const FoodItemModal = ({
                   onChange={handleChange}
                   required
                 >
-                  {storageOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {storages.map((storage, index) => (
+                    <option key={index} value={storage}>
+                      {storage}
                     </option>
                   ))}
                 </Form.Control>
