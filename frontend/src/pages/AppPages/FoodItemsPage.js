@@ -21,7 +21,7 @@ const FoodItemsPage = () => {
     cost: "",
     source: "",
     expirationDate: "",
-    purchasedDate: "",
+    purchasedDate: new Date().toLocaleDateString("en-CA"), // Default to today in local time
     image: null,
     tenantId: "",
     userId: "",
@@ -48,6 +48,12 @@ const FoodItemsPage = () => {
       setCurrentItem(item);
       setForm({
         ...item,
+        expirationDate: item.expirationDate
+          ? new Date(item.expirationDate).toLocaleDateString("en-CA")
+          : "",
+        purchasedDate: item.purchasedDate
+          ? new Date(item.purchasedDate).toLocaleDateString("en-CA")
+          : "",
         tenantId: loggedInUser?.tenantId || "",
         userId: loggedInUser?.id || "",
       });
@@ -63,7 +69,7 @@ const FoodItemsPage = () => {
         cost: "",
         source: "",
         expirationDate: "",
-        purchasedDate: "",
+        purchasedDate: new Date().toLocaleDateString("en-CA"), // Default to today in local time
         image: null,
         tenantId: loggedInUser?.tenantId || "",
         userId: loggedInUser?.id || "",
@@ -106,7 +112,7 @@ const FoodItemsPage = () => {
     console.log("Form Data:", [...formData.entries()]); // Add logging here
 
     try {
-      if (isEdit) {
+      if (isEdit && currentItem && currentItem.id) {
         await axios.patch(`/api/fooditems/${currentItem.id}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
