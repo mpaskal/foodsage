@@ -1,6 +1,8 @@
 import React from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
 
+const storageOptions = ["Fridge", "Freezer", "Pantry", "Cellar"];
+
 const FoodItemModal = ({
   show,
   handleClose,
@@ -82,12 +84,18 @@ const FoodItemModal = ({
               <Form.Group className="mb-3" controlId="storage">
                 <Form.Label>Storage</Form.Label>
                 <Form.Control
-                  type="text"
+                  as="select"
                   name="storage"
                   value={form.storage}
                   onChange={handleChange}
                   required
-                />
+                >
+                  {storageOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Form.Control>
               </Form.Group>
             </Col>
             <Col md={6}>

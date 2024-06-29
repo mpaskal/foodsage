@@ -109,10 +109,6 @@ const FoodItemsPage = () => {
           formData.append(key, form[key]);
         }
       }
-      console.log(
-        "Form Data being sent:",
-        Object.fromEntries(formData.entries())
-      ); // Log form data for debugging
 
       if (isEdit) {
         console.log("Editing item with ID:", currentItem._id);
