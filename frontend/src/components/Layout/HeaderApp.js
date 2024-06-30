@@ -39,7 +39,7 @@ const HeaderApp = () => {
   return (
     <header className="header-app">
       <div className="header-left">
-        <span className="space-name">Space Name</span>
+        {/* <span className="space-name">Space Name</span> */}
       </div>
       <div className="header-right">
         <div className="search-bar">

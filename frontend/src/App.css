@@ -578,7 +578,7 @@ a:hover {
   line-height: 1.42857143;
   text-align: center;
   white-space: nowrap;
-  vertical-align: middle;
+  /* vertical-align: middle; */
   touch-action: manipulation;
   cursor: pointer;
   user-select: none;
@@ -692,8 +692,10 @@ main {
   border: none;
   /* padding: 0.5rem; */
  height: 25px;
+ width: 15px;
   flex: 1;
   outline: none;
+  font-size: 15px;
 }
 
 .search-bar button {
