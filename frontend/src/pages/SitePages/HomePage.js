@@ -14,7 +14,7 @@ const HomePage = () => {
             className="header-text"
             style={{
               position: "absolute",
-              top: "39%",
+              // top: "39%",
               left: "50%",
               transform: "translate(-50%, -50%)",
               color: "#fd7565",
