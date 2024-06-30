@@ -1,6 +1,7 @@
 :root {
   --primary-color: #8bc34a;
-  --secondary-color: #609c68;
+  /* --secondary-color: #609c68; */
+  --secondary-color: #058240;
   --text-color: #055132;
   --text-color-light: #fbfcfc;
   --dark-color: #333;
@@ -73,17 +74,6 @@
 .text-block-title{
   text-align: center;
 }
-/* Old code */
-/* .home-header {
-  position: relative;
-  text-align: center;
-  color: white;
-}
-
-.hero-image {
-  width: 100%;
-  height: auto;
-} */
 
 .home-header {
   position: relative;
@@ -94,10 +84,10 @@
 
 .hero-image {
   width: 100%;
-  max-height: 250px; /* Limits the height of the image */
-  object-fit: cover; /* Ensures the image covers the space without distorting */
-  display: block;  /* Removes extra space/margin below the image */
-  margin: 0; /* Removes any default margin around the image */
+  max-height: 250px;
+  object-fit: cover; 
+  display: block; 
+  margin: 0; 
 }
 
 
@@ -105,7 +95,7 @@
  .header-text {
 
   position: absolute;
-  top: 39%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   color: #fd7565;
@@ -576,7 +566,7 @@ a:hover {
 .form-group select {
   width: 100%;
   padding: 8px;
-  box-sizing: border-box;
+  /* box-sizing: border-box; thins the futre*/
 }
 
 .btn {
@@ -588,7 +578,7 @@ a:hover {
   line-height: 1.42857143;
   text-align: center;
   white-space: nowrap;
-  vertical-align: middle;
+  /* vertical-align: middle; */
   touch-action: manipulation;
   cursor: pointer;
   user-select: none;
@@ -624,8 +614,7 @@ a:hover {
   gap: 2rem;
   min-height: calc(
     100vh - 200px
-  ); /* Adjust according to header and footer height */
-}
+  ); }
 
 .welcome-section h1 {
   text-align: center;
@@ -643,7 +632,9 @@ a:hover {
 .image-container img {
   width: 48%; /* Adjust width to maintain space between images */
   height: auto;
-}
+} 
+
+
 
 /* Main */
 main {
@@ -699,9 +690,12 @@ main {
 
 .search-bar input {
   border: none;
-  padding: 0.5rem;
+  /* padding: 0.5rem; */
+ height: 25px;
+ width: 15px;
   flex: 1;
   outline: none;
+  font-size: 15px;
 }
 
 .search-bar button {
@@ -798,21 +792,22 @@ main {
 
 /* FooterApp */
 .footer-app {
-  background-color: var(--secondary-color);
   color: white;
   text-align: center;
-  height: auto; /* Fixed height for the footer */
+  height: auto;  /* Adjust the height as necessary */
   display: flex;
-  align-items: center;
-  justify-content: center;
+  justify-content: center;  /* Centering the footer content horizontally */
+  align-items: center;  /* Align items vertically */
   flex-wrap: wrap;
-  bottom: 0;
-  width: 100vw;
+  padding-top:13px;
+  padding-left: 220px;
+gap: 30px;
 }
 
 .footer-section {
-  margin: 0 1rem;
-  text-align: center;
+  margin: 0 1rem;  /* Reduced margin to decrease the space between columns */
+  flex: 1 1 20%;  /* Giving each footer section flexibility to grow, keeping the width flexible */
+  min-width: 140px;  /* Minimum width for each section to maintain structure */
 }
 
 .footer-section h4 {
@@ -831,60 +826,26 @@ main {
 .footer-section ul li a {
   color: white;
   text-decoration: none;
-  font-weight: bold;
+
 }
 
 .footer-app p {
   flex-basis: 100%;
   text-align: center;
-  margin-top: 2rem;
+  margin-top: -2rem;  /* Ensuring there's sufficient space above the copyright text */
 }
-
-/* FooterAdmin */
-.footer-admin {
-  background-color: var(--secondary-color);
-  color: white;
-  padding: 10px 20px;
-  text-align: center;
-  width: 100%; /* Ensure it takes the full width */
-  height: auto; /* Fixed height for the footer */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  bottom: 0;
+footer {
+  width: 100%;
+  margin: 0; /* Ensure there are no margins pushing the footer inward */
 }
-
-.footer-admin-section {
-  margin: 0 1rem;
-  text-align: center;
+@media (max-width: 1024px) {
+  .footer-app {
+    justify-content: space-around;  /* Ensure spacing is even on smaller screens */
+    padding: 20px 10px;  /* Adjust padding for smaller screens */
+    width: 100vw;  /* Full width on smaller screens */
+    margin-left: 0;  /* Remove margin as sidebar likely changes to overlay or hidden */
+  }
 }
-
-.footer-admin-section h4 {
-  margin-bottom: 1rem;
-}
-
-.footer-admin-section ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.footer-admin-section ul li {
-  margin-bottom: 0.5rem;
-}
-
-.footer-admin-section ul li a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.footer-admin p {
-  flex-basis: 100%;
-  text-align: center;
-  margin-top: 2rem;
-}
-
 /* Layout */
 .layout {
   display: flex;
@@ -977,8 +938,9 @@ header-site {
 }
 
 .layout-app-content {
-  margin-left: 250px; /* Width of expanded sidebar */
+  margin-left: -25px; /* Width of expanded sidebar */
   transition: margin-left 0.3s ease;
+  color:  #fd7565;;
 }
 
 .layout-app-content.sidebar-visible {
@@ -991,7 +953,7 @@ header-site {
 
 /* Sidebar */
 .sidebar {
-  background-color: var(--secondary-color);
+  background-color: #058240;
   height: 100vh;
   position: fixed;
   top: 0;
@@ -1086,7 +1048,7 @@ header-site {
 }
 
 .sidebar.expanded {
-  width: 250px;
+  width: 170px;
 }
 
 .sidebar.collapsed .sidebar-toggle {
