@@ -77,7 +77,7 @@ const UserManagementPage = () => {
           (u) => u.role === "admin"
         );
         setIsLastAdmin(
-          adminUsers.length === 1 && adminUsers[0]._id === loggedInUser?._id
+          adminUsers.length === 1 && adminUsers[0]._id === loggedInUser?.id
         );
       } else {
         console.error("Invalid response structure:", response.data);
@@ -140,7 +140,7 @@ const UserManagementPage = () => {
       if (isEdit) {
         // Prevent the logged-in user from changing their own role
         if (
-          currentUser._id === loggedInUser._id &&
+          currentUser._id === loggedInUser.id &&
           form.role !== currentUser.role
         ) {
           setToastMessage("You cannot change your own role.");
@@ -185,10 +185,14 @@ const UserManagementPage = () => {
     const userToDelete = users.find((user) => user._id === userId);
     const adminCount = users.filter((user) => user.role === "admin").length;
 
+    console.log(`Trying to delete user: ${userToDelete?._id}`);
+    console.log(`Logged in user: ${loggedInUser?.id}`);
+    console.log(`Is last admin: ${isLastAdmin}`);
+
     if (
       userToDelete.role === "admin" &&
       adminCount === 1 &&
-      userId === loggedInUser._id
+      userId === loggedInUser?.id
     ) {
       setToastMessage("Cannot delete the last admin user.");
       setShowToast(true);
@@ -208,20 +212,26 @@ const UserManagementPage = () => {
         return;
       }
 
-      const userToDelete = users.find((user) => user._id === currentUser._id);
+      const userToDelete = users.find((user) => user._id === currentUser?._id);
       const adminCount = users.filter((user) => user.role === "admin").length;
 
       if (
-        userToDelete.role === "admin" &&
+        userToDelete?.role === "admin" &&
         adminCount === 1 &&
-        currentUser._id === loggedInUser._id
+        userToDelete._id === loggedInUser.id
       ) {
-        // Confirm the deletion of all users and tenant
-        setToastMessage(
-          "Deleting the last admin will remove all users, the tenant, and all associated data. Please confirm."
+        // Show special warning message
+        const userConfirmed = window.confirm(
+          "Deleting the last admin will remove all users, the tenant, and all associated data. Are you sure you want to proceed?"
         );
+        if (!userConfirmed) {
+          setConfirmModal(false);
+          return;
+        }
+
+        // Confirm the deletion of all users and tenant
         try {
-          await axios.delete(`/api/tenants`, {
+          await axios.delete(`/api/tenants/${userToDelete.tenantId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -237,9 +247,9 @@ const UserManagementPage = () => {
           setShowToast(true);
           setConfirmModal(false);
         }
-      } else if (currentUser._id === loggedInUser._id) {
+      } else if (userToDelete?._id === loggedInUser.id) {
         // Self-deletion
-        await axios.delete(`/api/users/${currentUser._id}`, {
+        await axios.delete(`/api/users/${userToDelete._id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -250,7 +260,7 @@ const UserManagementPage = () => {
         window.location.href = "/";
       } else {
         // Regular user deletion
-        await axios.delete(`/api/users/${currentUser._id}`, {
+        await axios.delete(`/api/users/${userToDelete?._id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -291,7 +301,7 @@ const UserManagementPage = () => {
           show={confirmModal}
           handleClose={() => setConfirmModal(false)}
           confirmDelete={confirmDelete}
-          isLastAdmin={isLastAdmin && currentUser._id === loggedInUser?._id}
+          isLastAdmin={isLastAdmin && currentUser?._id === loggedInUser?.id}
         />
 
         {isLoading ? (

@@ -2,10 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const tenantRoutes = require("./routes/tenantRoutes");
+const foodItemRoutes = require("./routes/foodItemRoutes");
 
 const app = express();
 
@@ -13,6 +15,9 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // DB Config
 const db = process.env.MONGO_URI;
@@ -26,6 +31,7 @@ mongoose
 // Use Routes
 app.use("/api", userRoutes); // Mount user routes at /api
 app.use("/api/tenants", tenantRoutes);
+app.use("/api", foodItemRoutes);
 
 const port = process.env.PORT || 5000;
 
