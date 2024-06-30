@@ -14,14 +14,14 @@ const FoodItemsPage = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    category: "Meat", // Default category
+    category: "Dairy", // Default to Dairy
     quantity: "",
-    quantityMeasurement: "Kg", // Default quantity measurement
-    storage: "Fridge", // Default storage
+    quantityMeasurement: "",
+    storage: "Fridge", // Default to Fridge
     cost: "",
     source: "",
     expirationDate: "",
-    purchasedDate: new Date().toLocaleDateString("en-CA"), // Default to today in local time
+    purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
     image: null,
     tenantId: "",
     userId: "",
@@ -61,14 +61,14 @@ const FoodItemsPage = () => {
       setCurrentItem(null);
       setForm({
         name: "",
-        category: "Meat", // Default category
+        category: "Dairy", // Default to Dairy
         quantity: "",
-        quantityMeasurement: "Kg", // Default quantity measurement
-        storage: "Fridge", // Default storage
+        quantityMeasurement: "",
+        storage: "Fridge", // Default to Fridge
         cost: "",
         source: "",
         expirationDate: "",
-        purchasedDate: new Date().toLocaleDateString("en-CA"), // Default to today in local time
+        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
         image: null,
         tenantId: loggedInUser.tenantId,
         userId: loggedInUser.id,

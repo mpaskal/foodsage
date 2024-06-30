@@ -1,41 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
+import { calculateExpirationDate } from "../../utils/dateUtils";
 
 const categories = [
-  "Meat",
-  "Fish",
   "Dairy",
-  "Vegetables",
-  "Fruits",
-  "Berries",
-  "Pastries",
-  "Bakery",
-  "Grains",
-  "Packaged Food",
+  "Fresh",
+  "Grains and Bread",
+  "Packaged and Snack Foods",
+  "Frozen Goods",
   "Other",
 ];
 
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 
-// Define the relevant quantity measurements for each category
 const quantityMeasurementsByCategory = {
-  Meat: ["Kg", "Lb"],
-  Fish: ["Kg", "Lb"],
-  Dairy: ["L", "Oz"],
-  Vegetables: ["Kg", "Lb", "Gr", "Item"],
-  Fruits: ["Kg", "Lb", "Item"],
-  Berries: ["Gr", "Item"],
-  Pastries: ["Item", "Box"],
-  Bakery: ["Item", "Box"],
-  Grains: ["Kg", "Lb", "Gr"],
-  "Packaged Food": ["Item", "Box"],
+  Dairy: ["L", "Oz", "Item"],
+  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
+  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
+  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-// Define the relevant quantity measurements for each storage
 const quantityMeasurementsByStorage = {
-  Fridge: ["Kg", "Lb", "L", "Oz", "Item"],
-  Freezer: ["Kg", "Lb", "L", "Oz", "Item"],
+  Fridge: ["L", "Lb", "Oz", "Item", "Kg"],
+  Freezer: ["Kg", "Lb", "Item", "L", "Oz"],
   Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
   Cellar: ["Item", "Box", "Kg", "Lb", "Gr"],
 };
@@ -51,25 +40,81 @@ const FoodItemModal = ({
 }) => {
   const [quantityMeasurements, setQuantityMeasurements] = useState([]);
 
+  const updateQuantityMeasurements = useCallback(
+    (category, storage) => {
+      const categoryMeasurements =
+        quantityMeasurementsByCategory[category] || [];
+      const storageMeasurements = quantityMeasurementsByStorage[storage] || [];
+      const combinedMeasurements = [
+        ...new Set([...categoryMeasurements, ...storageMeasurements]),
+      ];
+      setQuantityMeasurements(combinedMeasurements);
+
+      // Set default value for quantity measurement if not already set
+      if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
+        handleChange({
+          target: {
+            name: "quantityMeasurement",
+            value: combinedMeasurements[0],
+          },
+        });
+      }
+    },
+    [form.quantityMeasurement, handleChange]
+  );
+
   useEffect(() => {
-    updateQuantityMeasurements(form.category, form.storage);
-  }, [form.category, form.storage]);
-
-  const updateQuantityMeasurements = (category, storage) => {
-    const categoryMeasurements = quantityMeasurementsByCategory[category] || [];
-    const storageMeasurements = quantityMeasurementsByStorage[storage] || [];
-    const combinedMeasurements = [
-      ...new Set([...categoryMeasurements, ...storageMeasurements]),
-    ];
-    setQuantityMeasurements(combinedMeasurements);
-
-    // Set default value for quantity measurement if not already set
-    if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
+    if (!form.category) {
+      handleChange({ target: { name: "category", value: "Dairy" } });
+    }
+    updateQuantityMeasurements(
+      form.category || "Dairy",
+      form.storage || "Fridge"
+    );
+    if (!form.quantityMeasurement) {
       handleChange({
-        target: { name: "quantityMeasurement", value: combinedMeasurements[0] },
+        target: {
+          name: "quantityMeasurement",
+          value: quantityMeasurementsByCategory["Dairy"][0],
+        },
       });
     }
-  };
+    if (!form.expirationDate && form.purchasedDate) {
+      const defaultExpirationDate = calculateExpirationDate(
+        form.category || "Dairy",
+        form.storage || "Fridge",
+        form.purchasedDate
+      );
+      handleChange({
+        target: {
+          name: "expirationDate",
+          value: defaultExpirationDate.toISOString().substring(0, 10),
+        },
+      });
+    }
+  }, [
+    form.category,
+    form.storage,
+    form.purchasedDate,
+    handleChange,
+    updateQuantityMeasurements,
+  ]);
+
+  useEffect(() => {
+    if (form.category && form.storage && form.purchasedDate) {
+      const defaultExpirationDate = calculateExpirationDate(
+        form.category,
+        form.storage,
+        form.purchasedDate
+      );
+      handleChange({
+        target: {
+          name: "expirationDate",
+          value: defaultExpirationDate.toISOString().substring(0, 10),
+        },
+      });
+    }
+  }, [form.category, form.storage, form.purchasedDate, handleChange]);
 
   return (
     <Modal show={show} onHide={handleClose}>
