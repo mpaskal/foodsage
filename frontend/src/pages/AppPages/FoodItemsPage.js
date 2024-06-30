@@ -4,7 +4,7 @@ import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal";
-import { Button } from "react-bootstrap";
+import { Button, Row, Col } from "react-bootstrap";
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useState([]);
@@ -162,10 +162,21 @@ const FoodItemsPage = () => {
 
   const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
+  const getFormattedDate = (date) => {
+    return new Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(date);
+  };
+
   return (
     <Layout>
       <div className="container">
-        <h1>Food Inventory</h1>
+        <Row className="align-items-center mb-3">
+          <Col>
+            <h1>Food Inventory</h1>
+          </Col>
+          <Col className="text-right">
+            <h4>Today: {getFormattedDate(new Date())}</h4>
+          </Col>
+        </Row>
         <Button onClick={() => handleShowModal(null)}>Add Food Item</Button>
         <FoodItemTable
           foodItems={foodItems}

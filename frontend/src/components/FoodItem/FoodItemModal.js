@@ -39,6 +39,7 @@ const FoodItemModal = ({
   isEdit,
 }) => {
   const [quantityMeasurements, setQuantityMeasurements] = useState([]);
+  const [manualExpiration, setManualExpiration] = useState(false);
 
   const updateQuantityMeasurements = useCallback(
     (category, storage) => {
@@ -50,6 +51,7 @@ const FoodItemModal = ({
       ];
       setQuantityMeasurements(combinedMeasurements);
 
+      // Set default value for quantity measurement if not already set
       if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
         handleChange({
           target: {
@@ -62,21 +64,56 @@ const FoodItemModal = ({
     [form.quantityMeasurement, handleChange]
   );
 
+  const handleExpirationDateChange = (e) => {
+    setManualExpiration(true);
+    handleChange(e);
+  };
+
   useEffect(() => {
     if (!form.category) {
       handleChange({ target: { name: "category", value: "Dairy" } });
-    }
-    if (!form.storage) {
-      handleChange({ target: { name: "storage", value: "Fridge" } });
     }
     updateQuantityMeasurements(
       form.category || "Dairy",
       form.storage || "Fridge"
     );
-  }, [form.category, form.storage, handleChange, updateQuantityMeasurements]);
+    if (!form.quantityMeasurement) {
+      handleChange({
+        target: {
+          name: "quantityMeasurement",
+          value: quantityMeasurementsByCategory["Dairy"][0],
+        },
+      });
+    }
+    if (!manualExpiration && form.purchasedDate) {
+      const defaultExpirationDate = calculateExpirationDate(
+        form.category || "Dairy",
+        form.storage || "Fridge",
+        form.purchasedDate
+      );
+      handleChange({
+        target: {
+          name: "expirationDate",
+          value: defaultExpirationDate.toISOString().substring(0, 10),
+        },
+      });
+    }
+  }, [
+    form.category,
+    form.storage,
+    form.purchasedDate,
+    handleChange,
+    manualExpiration,
+    updateQuantityMeasurements,
+  ]);
 
   useEffect(() => {
-    if (form.category && form.storage && form.purchasedDate) {
+    if (
+      !manualExpiration &&
+      form.category &&
+      form.storage &&
+      form.purchasedDate
+    ) {
       const defaultExpirationDate = calculateExpirationDate(
         form.category,
         form.storage,
@@ -89,7 +126,13 @@ const FoodItemModal = ({
         },
       });
     }
-  }, [form.category, form.storage, form.purchasedDate, handleChange]);
+  }, [
+    form.category,
+    form.storage,
+    form.purchasedDate,
+    manualExpiration,
+    handleChange,
+  ]);
 
   return (
     <Modal show={show} onHide={handleClose}>
@@ -213,7 +256,7 @@ const FoodItemModal = ({
                   ? new Date(form.expirationDate).toISOString().substring(0, 10)
                   : ""
               }
-              onChange={handleChange}
+              onChange={handleExpirationDateChange}
               required
             />
           </Form.Group>

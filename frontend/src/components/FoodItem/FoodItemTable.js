@@ -12,6 +12,36 @@ const FoodItemTable = ({
     return `data:image/jpeg;base64,${image}`;
   };
 
+  const formatDateForInput = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split("T")[0];
+  };
+
+  const getExpirationDateStyle = (expirationDate) => {
+    const today = new Date();
+    const expDate = new Date(expirationDate);
+    const timeDiff = expDate - today;
+    const daysToExpire = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    if (expDate < today) {
+      return { backgroundColor: "red", color: "white" };
+    } else if (daysToExpire <= 3) {
+      return { backgroundColor: "yellow", color: "black" };
+    } else {
+      return { backgroundColor: "green", color: "white" };
+    }
+  };
+
+  const formatLocalDate = (date) => {
+    const localDate = new Date(date);
+    localDate.setMinutes(
+      localDate.getMinutes() - localDate.getTimezoneOffset()
+    );
+    return localDate.toLocaleDateString();
+  };
+
   return (
     <Table striped bordered hover>
       <thead>
@@ -47,8 +77,10 @@ const FoodItemTable = ({
             <td>{item.storage}</td>
             <td>{item.cost}</td>
             <td>{item.source}</td>
-            <td>{new Date(item.expirationDate).toLocaleDateString()}</td>
-            <td>{new Date(item.purchasedDate).toLocaleDateString()}</td>
+            <td style={getExpirationDateStyle(item.expirationDate)}>
+              {formatLocalDate(item.expirationDate)}
+            </td>
+            <td>{formatLocalDate(item.purchasedDate)}</td>
             <td>
               <Button variant="primary" onClick={() => handleShowModal(item)}>
                 Edit

@@ -39,13 +39,13 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
       break;
     case "Packaged and Snack Foods":
       if (storage === "Pantry") {
-        expirationDate.setDate(purchased.getDate() + 1); // 1 day
+        expirationDate.setMonth(purchased.getMonth() + 6); // 6 months
       } else if (storage === "Fridge") {
-        expirationDate.setDate(purchased.getDate() + 5); // 5 days
+        expirationDate.setMonth(purchased.getMonth() + 8); // 8 months
       } else if (storage === "Freezer") {
-        expirationDate.setMonth(purchased.getMonth() + 1); // 1 month
+        expirationDate.setMonth(purchased.getMonth() + 12); // 12 months
       } else if (storage === "Cellar") {
-        expirationDate.setDate(purchased.getDate() + 1); // 1 day
+        expirationDate.setMonth(purchased.getMonth() + 7); // 7 months
       }
       break;
     case "Frozen Goods":
