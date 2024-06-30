@@ -50,7 +50,6 @@ const FoodItemModal = ({
       ];
       setQuantityMeasurements(combinedMeasurements);
 
-      // Set default value for quantity measurement if not already set
       if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
         handleChange({
           target: {
@@ -67,38 +66,14 @@ const FoodItemModal = ({
     if (!form.category) {
       handleChange({ target: { name: "category", value: "Dairy" } });
     }
+    if (!form.storage) {
+      handleChange({ target: { name: "storage", value: "Fridge" } });
+    }
     updateQuantityMeasurements(
       form.category || "Dairy",
       form.storage || "Fridge"
     );
-    if (!form.quantityMeasurement) {
-      handleChange({
-        target: {
-          name: "quantityMeasurement",
-          value: quantityMeasurementsByCategory["Dairy"][0],
-        },
-      });
-    }
-    if (!form.expirationDate && form.purchasedDate) {
-      const defaultExpirationDate = calculateExpirationDate(
-        form.category || "Dairy",
-        form.storage || "Fridge",
-        form.purchasedDate
-      );
-      handleChange({
-        target: {
-          name: "expirationDate",
-          value: defaultExpirationDate.toISOString().substring(0, 10),
-        },
-      });
-    }
-  }, [
-    form.category,
-    form.storage,
-    form.purchasedDate,
-    handleChange,
-    updateQuantityMeasurements,
-  ]);
+  }, [form.category, form.storage, handleChange, updateQuantityMeasurements]);
 
   useEffect(() => {
     if (form.category && form.storage && form.purchasedDate) {

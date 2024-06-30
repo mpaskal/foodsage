@@ -14,10 +14,10 @@ const FoodItemsPage = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    category: "Dairy", // Default to Dairy
+    category: "Dairy",
     quantity: "",
-    quantityMeasurement: "",
-    storage: "Fridge", // Default to Fridge
+    quantityMeasurement: "L",
+    storage: "Fridge",
     cost: "",
     source: "",
     expirationDate: "",
@@ -61,10 +61,10 @@ const FoodItemsPage = () => {
       setCurrentItem(null);
       setForm({
         name: "",
-        category: "Dairy", // Default to Dairy
+        category: "Dairy",
         quantity: "",
-        quantityMeasurement: "",
-        storage: "Fridge", // Default to Fridge
+        quantityMeasurement: "L",
+        storage: "Fridge",
         cost: "",
         source: "",
         expirationDate: "",
@@ -82,7 +82,10 @@ const FoodItemsPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -92,11 +95,17 @@ const FoodItemsPage = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setForm({ ...form, [name]: reader.result.split(",")[1] }); // Only save the base64 string
+        setForm((prevForm) => ({
+          ...prevForm,
+          [name]: reader.result.split(",")[1], // Only save the base64 string
+        }));
       };
       reader.readAsDataURL(file);
     } else {
-      setForm({ ...form, [name]: "" });
+      setForm((prevForm) => ({
+        ...prevForm,
+        [name]: "",
+      }));
     }
   };
 

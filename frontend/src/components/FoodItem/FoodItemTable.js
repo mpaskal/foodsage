@@ -27,7 +27,11 @@ const FoodItemTable = ({ foodItems, handleShowModal, handleDelete }) => {
             <tr key={item._id}>
               <td>{item._id}</td>
               <td>
-                <img src={item.image} alt={item.name} width="50" />
+                <img
+                  src={`http://localhost:3000/${item.image}`}
+                  alt={item.name}
+                  width="50"
+                />
               </td>
               <td>{item.name}</td>
               <td>{item.category}</td>
