@@ -201,7 +201,6 @@ const FoodItemModal = ({
               name="source"
               value={form.source}
               onChange={handleChange}
-              required
             />
           </Form.Group>
           <Form.Group className="mb-3" controlId="expirationDate">

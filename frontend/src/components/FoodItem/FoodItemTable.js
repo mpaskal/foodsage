@@ -16,7 +16,6 @@ const FoodItemTable = ({
     <Table striped bordered hover>
       <thead>
         <tr>
-          <th>Id</th>
           <th>Image</th>
           <th>Name</th>
           <th>Category</th>
@@ -33,7 +32,6 @@ const FoodItemTable = ({
       <tbody>
         {foodItems.map((item) => (
           <tr key={item._id}>
-            <td>{item._id}</td>
             <td>
               <img
                 src={getImageSrc(item.image)}
