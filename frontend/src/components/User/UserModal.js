@@ -1,23 +1,49 @@
 import React from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
+import { useRecoilState, useRecoilValue } from "recoil";
+import {
+  isUserModalOpenState,
+  selectedUserState,
+  userState,
+} from "../../recoil/atoms";
+import { useUpdateUser, useAddUser } from "../../actions/userActions";
 
-const UserModal = ({
-  show,
-  handleClose,
-  handleSubmit,
-  handleChange,
-  form,
-  isEdit,
-  loggedInUser,
-  currentUserId,
-}) => {
-  console.log("loggedInUser in UserModal:", loggedInUser);
-  console.log("currentUserId in UserModal:", currentUserId);
+const UserModal = () => {
+  const [isUserModalOpen, setIsUserModalOpen] =
+    useRecoilState(isUserModalOpenState);
+  const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
+  const loggedInUser = useRecoilValue(userState);
+
+  const updateUser = useUpdateUser();
+  const addUser = useAddUser();
+
+  const handleClose = () => setIsUserModalOpen(false);
+
+  const handleChange = (e) => {
+    setSelectedUser({ ...selectedUser, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (selectedUser?._id) {
+        await updateUser(selectedUser, loggedInUser.token);
+      } else {
+        await addUser(selectedUser, loggedInUser.token);
+      }
+      handleClose();
+    } catch (error) {
+      console.error("Error submitting user:", error);
+      // Handle error (e.g., show a toast message)
+    }
+  };
 
   return (
-    <Modal show={show} onHide={handleClose}>
+    <Modal show={isUserModalOpen} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>{isEdit ? "Edit User" : "Add User"}</Modal.Title>
+        <Modal.Title>
+          {selectedUser?._id ? "Edit User" : "Add User"}
+        </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
@@ -28,7 +54,7 @@ const UserModal = ({
                 <Form.Control
                   type="text"
                   name="firstName"
-                  value={form.firstName}
+                  value={selectedUser?.firstName || ""}
                   onChange={handleChange}
                   required
                 />
@@ -40,7 +66,7 @@ const UserModal = ({
                 <Form.Control
                   type="text"
                   name="lastName"
-                  value={form.lastName}
+                  value={selectedUser?.lastName || ""}
                   onChange={handleChange}
                   required
                 />
@@ -52,20 +78,20 @@ const UserModal = ({
             <Form.Control
               type="email"
               name="email"
-              value={form.email}
+              value={selectedUser?.email || ""}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          {!isEdit && (
+          {!selectedUser?._id && (
             <Form.Group className="mb-3" controlId="password">
               <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
                 name="password"
-                value={form.password}
+                value={selectedUser?.password || ""}
                 onChange={handleChange}
-                required={!isEdit}
+                required={!selectedUser?._id}
               />
             </Form.Group>
           )}
@@ -73,13 +99,13 @@ const UserModal = ({
             <Form.Label>Role</Form.Label>
             <Form.Select
               name="role"
-              value={form.role}
+              value={selectedUser?.role || "user"}
               onChange={handleChange}
               required
               disabled={
-                isEdit &&
+                selectedUser?._id &&
                 loggedInUser?.role === "admin" &&
-                loggedInUser?.id === currentUserId
+                loggedInUser?.id === selectedUser?._id
               }
             >
               <option value="user">User</option>
@@ -92,7 +118,7 @@ const UserModal = ({
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {isEdit ? "Save Changes" : "Add User"}
+            {selectedUser?._id ? "Save Changes" : "Add User"}
           </Button>
         </Modal.Footer>
       </Form>
