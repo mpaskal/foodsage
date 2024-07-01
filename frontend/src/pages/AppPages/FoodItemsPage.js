@@ -1,16 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
+import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal";
 import { Button, Row, Col } from "react-bootstrap";
 import { calculateExpirationDate } from "../../utils/dateUtils";
+import { debounce } from "lodash";
+
+const debouncedApiCall = debounce((id, data, callback) => {
+  axios
+    .patch(`/api/fooditems/${id}`, data)
+    .then((response) => {
+      console.log("Item updated successfully:", response.data);
+      if (callback) callback(response.data);
+    })
+    .catch((error) => {
+      console.error(
+        "Error updating item:",
+        error.response ? error.response.data : error.message
+      );
+    });
+}, 500);
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState({
     name: "",
     category: "Dairy",
@@ -32,40 +50,137 @@ const FoodItemsPage = () => {
     fetchFoodItems();
   }, []);
 
-  const fetchFoodItems = async () => {
+  const fetchFoodItems = useCallback(async () => {
     try {
       const response = await axios.get("/api/fooditems");
       setFoodItems(response.data);
     } catch (error) {
       console.error("Error fetching food items:", error);
     }
+  }, []);
+
+  const handleShowModal = (item) => {
+    if (item) {
+      setCurrentItem(item);
+      setForm({
+        ...item,
+        expirationDate: item.expirationDate
+          ? new Date(item.expirationDate).toISOString().substring(0, 10)
+          : "",
+        purchasedDate: item.purchasedDate
+          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
+          : "",
+        tenantId: item.tenantId || loggedInUser.tenantId,
+        userId: item.userId || loggedInUser.id,
+      });
+      setIsEdit(true);
+    } else {
+      setCurrentItem(null);
+      setForm({
+        name: "",
+        category: "Dairy",
+        quantity: "",
+        quantityMeasurement: "L",
+        storage: "Fridge",
+        cost: "",
+        source: "",
+        expirationDate: "",
+        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
+        image: null,
+        tenantId: loggedInUser.tenantId,
+        userId: loggedInUser.id,
+      });
+      setIsEdit(false);
+    }
+    setShowModal(true);
   };
 
-  const handleInputChange = async (id, name, value) => {
-    try {
-      const updatedItem = { ...foodItems.find((item) => item._id === id) };
-      updatedItem[name] = value;
+  const handleCloseModal = () => setShowModal(false);
 
-      if (
-        name === "category" ||
-        name === "storage" ||
-        name === "purchasedDate"
-      ) {
-        updatedItem.expirationDate = calculateExpirationDate(
-          updatedItem.category,
-          updatedItem.storage,
-          updatedItem.purchasedDate
-        )
-          .toISOString()
-          .substring(0, 10);
+  const handleInputChange = useCallback((id, name, value) => {
+    if (!id || typeof id !== "string") {
+      console.error("Invalid ID provided to handleInputChange:", id);
+      return;
+    }
+
+    setFoodItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item._id === id) {
+          let updatedItem = { ...item, [name]: value };
+
+          if (["category", "storage", "purchasedDate"].includes(name)) {
+            const newExpirationDate = calculateExpirationDate(
+              updatedItem.category,
+              updatedItem.storage,
+              updatedItem.purchasedDate
+            );
+            updatedItem.expirationDate = newExpirationDate;
+            debouncedApiCall(id, {
+              [name]: value,
+              expirationDate: newExpirationDate,
+            });
+          } else {
+            debouncedApiCall(id, { [name]: value });
+          }
+
+          return updatedItem;
+        }
+        return item;
+      })
+    );
+  }, []);
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    const file = files[0];
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm((prevForm) => ({
+          ...prevForm,
+          [name]: reader.result.split(",")[1], // Only save the base64 string
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setForm((prevForm) => ({
+        ...prevForm,
+        [name]: "",
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      for (const key in form) {
+        if (form[key] !== "") {
+          formData.append(key, form[key]);
+        }
       }
 
-      await axios.patch(`/api/fooditems/${id}`, { [name]: value });
-      setFoodItems((prevItems) =>
-        prevItems.map((item) => (item._id === id ? updatedItem : item))
-      );
+      if (isEdit) {
+        const response = await axios.patch(
+          `/api/fooditems/${currentItem._id}`,
+          formData
+        );
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === currentItem._id ? response.data : item
+          )
+        );
+      } else {
+        const response = await axios.post("/api/fooditems", formData);
+        setFoodItems((prevItems) => [...prevItems, response.data]);
+      }
+      handleCloseModal();
     } catch (error) {
-      console.error("Error updating food item:", error);
+      console.error(
+        "Error saving food item:",
+        error.response ? error.response.data : error
+      );
     }
   };
 
@@ -91,85 +206,45 @@ const FoodItemsPage = () => {
 
   const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
-  const handleShowModal = (item) => {
-    if (item) {
-      setCurrentItem(item);
-      setForm({
-        ...item,
-        expirationDate: item.expirationDate
-          ? new Date(item.expirationDate).toISOString().substring(0, 10)
-          : "",
-        purchasedDate: item.purchasedDate
-          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
-          : "",
-        tenantId: item.tenantId || loggedInUser.tenantId,
-        userId: item.userId || loggedInUser.id,
+  const handleConsumeItem = (id, value) => {
+    const updatedFoodItems = foodItems.map((item) =>
+      item._id === id ? { ...item, consumed: value } : item
+    );
+    setFoodItems(updatedFoodItems);
+
+    axios
+      .patch(`/api/fooditems/${id}`, { consumed: value })
+      .then((response) => {
+        console.log("Consumed value updated successfully:", response.data);
+        fetchFoodItems();
+      })
+      .catch((error) => {
+        console.error("Error updating consumed value:", error);
       });
-    } else {
-      setCurrentItem(null);
-      setForm({
-        name: "",
-        category: "Dairy",
-        quantity: "",
-        quantityMeasurement: "L",
-        storage: "Fridge",
-        cost: "",
-        source: "",
-        expirationDate: "",
-        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
-        image: null,
-        tenantId: loggedInUser.tenantId,
-        userId: loggedInUser.id,
+  };
+
+  const handleMoveItem = (id, value) => {
+    const updatedFoodItems = foodItems.map((item) =>
+      item._id === id ? { ...item, move: value } : item
+    );
+    setFoodItems(updatedFoodItems);
+
+    axios
+      .patch(`/api/fooditems/${id}`, { move: value })
+      .then((response) => {
+        console.log("Move value updated successfully:", response.data);
+        fetchFoodItems();
+      })
+      .catch((error) => {
+        console.error("Error updating move value:", error);
       });
-    }
-    setShowModal(true);
   };
 
   const getFormattedDate = (date) => {
     return new Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(date);
   };
 
-  const handleConsumeItem = async (id, consumed) => {
-    try {
-      const updatedItem = { ...foodItems.find((item) => item._id === id) };
-      updatedItem.consumed = consumed;
-
-      if (consumed === "100") {
-        await axios.patch(`/api/fooditems/${id}`, { consumed });
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== id)
-        );
-      } else {
-        await axios.patch(`/api/fooditems/${id}`, { consumed });
-        setFoodItems((prevItems) =>
-          prevItems.map((item) => (item._id === id ? updatedItem : item))
-        );
-      }
-    } catch (error) {
-      console.error("Error updating consumed value:", error);
-    }
-  };
-
-  const handleMoveItem = async (id, move) => {
-    try {
-      const updatedItem = { ...foodItems.find((item) => item._id === id) };
-      updatedItem.move = move;
-
-      await axios.patch(`/api/fooditems/${id}`, { move });
-
-      setFoodItems((prevItems) =>
-        prevItems.map((item) => (item._id === id ? updatedItem : item))
-      );
-
-      if (move === "consumed" || move === "donate" || move === "waste") {
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== id)
-        );
-      }
-    } catch (error) {
-      console.error("Error updating move value:", error);
-    }
-  };
+  const memoizedFoodItems = useMemo(() => foodItems, [foodItems]);
 
   return (
     <Layout>
@@ -184,11 +259,20 @@ const FoodItemsPage = () => {
         </Row>
         <Button onClick={() => handleShowModal(null)}>Add Food Item</Button>
         <FoodItemTable
-          foodItems={foodItems}
+          foodItems={memoizedFoodItems}
           handleInputChange={handleInputChange}
           handleDelete={handleShowDeleteModal}
-          handleConsumeItem={handleConsumeItem}
           handleMoveItem={handleMoveItem}
+          handleConsumeItem={handleConsumeItem}
+        />
+        <FoodItemModal
+          show={showModal}
+          handleClose={handleCloseModal}
+          handleSubmit={handleSubmit}
+          handleChange={handleInputChange}
+          handleFileChange={handleFileChange}
+          form={form}
+          isEdit={isEdit}
         />
         <DeleteConfirmationModal
           show={showDeleteModal}
