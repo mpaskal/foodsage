@@ -27,7 +27,7 @@ export const useUpdateUser = () => {
 export const useAddUser = () => {
   return useRecoilCallback(({ set }) => async (user, token) => {
     try {
-      const response = await axios.post("/api/users", user, {
+      const response = await axios.post("/api/users/register-user", user, {
         headers: { Authorization: `Bearer ${token}` },
       });
       set(usersState, (oldUsers) => [...oldUsers, response.data]);

@@ -1,9 +1,8 @@
-// src/components/User/UserTable.js
 import React from "react";
 import { Table, Button } from "react-bootstrap";
 
 const UserTable = ({
-  users = [],
+  users,
   handleShowModal,
   handleDelete,
   loggedInUser,
@@ -22,7 +21,7 @@ const UserTable = ({
         </tr>
       </thead>
       <tbody>
-        {users.map((user) => (
+        {users?.map((user) => (
           <tr key={user._id}>
             <td>{user._id}</td>
             <td>{user.firstName}</td>
