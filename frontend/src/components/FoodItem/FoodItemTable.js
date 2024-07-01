@@ -5,7 +5,8 @@ const FoodItemTable = ({
   foodItems,
   handleShowModal,
   handleDelete,
-  loggedInUser,
+  handleMoveItem,
+  handleConsumeItem,
 }) => {
   const getImageSrc = (image) => {
     if (!image) return "placeholder_image_url"; // Replace with a path to a placeholder image
@@ -27,7 +28,7 @@ const FoodItemTable = ({
 
     if (expDate < today) {
       return { backgroundColor: "red", color: "white" };
-    } else if (daysToExpire <= 3) {
+    } else if (daysToExpire <= 1) {
       return { backgroundColor: "yellow", color: "black" };
     } else {
       return { backgroundColor: "green", color: "white" };
@@ -49,13 +50,15 @@ const FoodItemTable = ({
           <th>Image</th>
           <th>Name</th>
           <th>Category</th>
-          <th>Quantity</th>
-          <th>Measurement</th>
+          <th>Qty</th>
+          <th>Meas</th>
           <th>Storage</th>
           <th>Cost</th>
           <th>Source</th>
           <th>Expiration Date</th>
           <th>Purchased Date</th>
+          <th>Consumed (%)</th>
+          <th>Move</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -81,6 +84,36 @@ const FoodItemTable = ({
               {formatLocalDate(item.expirationDate)}
             </td>
             <td>{formatLocalDate(item.purchasedDate)}</td>
+            <td>
+              {getExpirationDateStyle(item.expirationDate).backgroundColor ===
+              "yellow" ? (
+                <input
+                  type="number"
+                  value={item.consumed || 0}
+                  onChange={(e) => handleConsumeItem(item._id, e.target.value)}
+                  max={100}
+                />
+              ) : (
+                "N/A"
+              )}
+            </td>
+            <td>
+              {getExpirationDateStyle(item.expirationDate).backgroundColor ===
+              "yellow" ? (
+                <select
+                  value={item.move || ""}
+                  onChange={(e) => handleMoveItem(item._id, e.target.value)}
+                >
+                  <option value="">Select</option>
+                  <option value="consume">Consume</option>
+                  <option value="consumed">Consumed</option>
+                  <option value="donate">Donate</option>
+                  <option value="waste">Waste</option>
+                </select>
+              ) : (
+                "N/A"
+              )}
+            </td>
             <td>
               <Button variant="primary" onClick={() => handleShowModal(item)}>
                 Edit
