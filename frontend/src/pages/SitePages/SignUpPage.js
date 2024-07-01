@@ -1,10 +1,6 @@
-// src/pages/SitePages/SignUpPage.js
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useSetRecoilState } from "recoil";
-import { userState } from "../../recoil/atoms";
-import { loggedInUserState } from "../../recoil/atoms";
 import Layout from "../../components/Layout/LayoutSite";
 
 const SignUpPage = () => {
@@ -15,9 +11,9 @@ const SignUpPage = () => {
     password: "",
     confirmPassword: "",
   });
+
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const setUser = useSetRecoilState(userState);
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
 
@@ -44,16 +40,15 @@ const SignUpPage = () => {
       );
 
       if (response.data && response.data.user && response.data.token) {
-        const userData = {
-          ...response.data.user,
-          token: response.data.token,
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        setUser(userData);
-        localStorage.setItem("isNewUser", "true");
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...response.data.user,
+            token: response.data.token,
+          })
+        );
+
+        navigate("/dashboard");
       } else {
         setError("User data is not returned correctly");
       }

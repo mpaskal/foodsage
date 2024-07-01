@@ -1,30 +1,14 @@
+// src/components/User/UserTable.js
 import React from "react";
 import { Table, Button } from "react-bootstrap";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import {
-  usersState,
-  userState, // Changed from loggedInUserState to userState
-  isLastAdminState,
-  selectedUserState,
-  isUserModalOpenState,
-} from "../../recoil/atoms";
 
-const UserTable = () => {
-  const users = useRecoilValue(usersState);
-  const loggedInUser = useRecoilValue(userState); // Changed from loggedInUserState to userState
-  const isLastAdmin = useRecoilValue(isLastAdminState);
-  const setSelectedUser = useSetRecoilState(selectedUserState);
-  const setIsUserModalOpen = useSetRecoilState(isUserModalOpenState);
-
-  const handleShowModal = (user) => {
-    setSelectedUser(user);
-    setIsUserModalOpen(true);
-  };
-
-  const handleDelete = (userId) => {
-    // Implement your delete logic here
-  };
-
+const UserTable = ({
+  users = [],
+  handleShowModal,
+  handleDelete,
+  loggedInUser,
+  isLastAdmin,
+}) => {
   return (
     <Table hover>
       <thead>
@@ -38,7 +22,7 @@ const UserTable = () => {
         </tr>
       </thead>
       <tbody>
-        {users?.map((user) => (
+        {users.map((user) => (
           <tr key={user._id}>
             <td>{user._id}</td>
             <td>{user.firstName}</td>

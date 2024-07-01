@@ -17,17 +17,10 @@ import {
   selectedUserState,
   adminUsersState,
   usersState,
-  userState,
+  loggedInUserState,
   isLastAdminState,
 } from "../../recoil/atoms";
-import {
-  useFetchUsers,
-  useAddUser,
-  useUpdateUser,
-  useDeleteUser,
-  useFetchSingleUser,
-  useClearSelectedUser,
-} from "../../actions/userActions";
+import { useFetchUsers, useDeleteUser } from "../../actions/userActions";
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =
@@ -35,7 +28,7 @@ const UserManagementPage = () => {
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
   const [adminUsers, setAdminUsers] = useRecoilState(adminUsersState);
   const [users, setUsers] = useRecoilState(usersState);
-  const loggedInUser = useRecoilValue(userState);
+  const loggedInUser = useRecoilValue(loggedInUserState);
   const [isLastAdmin, setIsLastAdmin] = useRecoilState(isLastAdminState);
 
   const [confirmModal, setConfirmModal] = useState(false);
@@ -47,28 +40,29 @@ const UserManagementPage = () => {
   const usersPerPage = 10; // define usersPerPage
 
   const fetchUsers = useFetchUsers();
+  const deleteUser = useDeleteUser();
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.token) {
-      fetchUsers(loggedInUser.token, page, usersPerPage, loggedInUser._id)
-        .then((result) => {
-          if (result.success) {
-            setTotalPages(result.totalPages);
-          } else {
-            setToastMessage("Error fetching users");
-            setShowToast(true);
+      console.log("Token found in Recoil state:", loggedInUser.token); // Debug log for token
+      fetchUsers(loggedInUser.token, page, usersPerPage, loggedInUser.id)
+        .then(({ success, totalPages }) => {
+          if (success) {
+            setTotalPages(totalPages);
           }
         })
         .catch((error) => {
+          console.error("Error fetching users", error);
           setToastMessage("Error fetching users");
           setShowToast(true);
         });
     } else {
       console.error("No token found");
+      console.log("Logged in user state:", loggedInUser); // Debug log for loggedInUser
       setToastMessage("No authentication token found. Please log in again.");
       setShowToast(true);
     }
-  }, [page, loggedInUser]);
+  }, [page, loggedInUser, fetchUsers]);
 
   const handleShowModal = (user = null) => {
     setSelectedUser(
@@ -82,10 +76,6 @@ const UserManagementPage = () => {
   const handleDelete = (userId) => {
     const userToDelete = users.find((user) => user._id === userId);
     const adminCount = users.filter((user) => user.role === "admin").length;
-
-    console.log(`Trying to delete user: ${userToDelete?._id}`);
-    console.log(`Logged in user: ${loggedInUser?.id}`);
-    console.log(`Is last admin: ${isLastAdmin}`);
 
     if (
       userToDelete.role === "admin" &&
@@ -155,7 +145,7 @@ const UserManagementPage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        fetchUsers(token, page, usersPerPage, loggedInUser._id);
+        fetchUsers(token, page, usersPerPage, loggedInUser.id);
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
         setShowToast(true);

@@ -4,12 +4,21 @@ import axios from "axios";
 import Layout from "../../components/Layout/LayoutSite";
 
 const SignInPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleSignIn = async (e) => {
+  const { email, password } = formData;
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(
@@ -20,39 +29,38 @@ const SignInPage = () => {
         }
       );
 
-      console.log("Login Response:", response.data); // Debugging statement
-
-      if (response.data && response.data.token) {
-        const user = {
-          token: response.data.token,
-          ...response.data.user,
-        };
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", response.data.token);
+      if (response.data && response.data.user && response.data.token) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...response.data.user,
+            token: response.data.token,
+          })
+        );
         navigate("/dashboard");
       } else {
-        setError("Invalid login credentials");
+        setError("User data is not returned correctly");
       }
     } catch (error) {
-      console.error("Error signing in", error);
-      console.log("Error Response Data:", error.response?.data); // Debugging statement
-      setError(error.response?.data?.msg || "Error signing in");
+      console.error("Error logging in user", error);
+      setError(error.response?.data?.msg || "Error logging in user");
     }
   };
 
   return (
     <Layout>
       <div className="sign-in-container">
-        <h2>Log In</h2>
-        <form onSubmit={handleSignIn}>
+        <h2>Sign In</h2>
+        <form onSubmit={handleSubmit}>
           {error && <p className="error">{error}</p>}
           <div>
             <label htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
+              name="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleChange}
               required
             />
           </div>
@@ -61,22 +69,16 @@ const SignInPage = () => {
             <input
               type="password"
               id="password"
+              name="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleChange}
               required
             />
           </div>
-          <div>
-            <input type="checkbox" id="remember" />
-            <label htmlFor="remember">Remember me</label>
-          </div>
-          <button type="submit">Login</button>
+          <button type="submit">Sign In</button>
         </form>
         <p>
-          Don't have an account? <Link to="/signup">Signup</Link>
-        </p>
-        <p>
-          Forgot password? <Link to="/forgot-password">Click here</Link>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
       </div>
     </Layout>
