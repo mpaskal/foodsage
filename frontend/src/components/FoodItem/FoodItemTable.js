@@ -1,9 +1,29 @@
 import React from "react";
 import { Table, Button } from "react-bootstrap";
 
+const categories = [
+  "Dairy",
+  "Fresh",
+  "Grains and Bread",
+  "Packaged and Snack Foods",
+  "Frozen Goods",
+  "Other",
+];
+
+const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
+
+const quantityMeasurementsByCategory = {
+  Dairy: ["L", "Oz", "Item"],
+  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
+  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
+  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Frozen Goods": ["Kg", "Lb", "Item"],
+  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
+};
+
 const FoodItemTable = ({
   foodItems,
-  handleShowModal,
+  handleInputChange,
   handleDelete,
   handleMoveItem,
   handleConsumeItem,
@@ -43,6 +63,13 @@ const FoodItemTable = ({
     return localDate.toLocaleDateString();
   };
 
+  const maxLength = (string, maxLength) => {
+    if (string.length > maxLength) {
+      return string.substring(0, maxLength) + "...";
+    }
+    return string;
+  };
+
   return (
     <Table striped bordered hover>
       <thead>
@@ -73,15 +100,106 @@ const FoodItemTable = ({
                 height="50"
               />
             </td>
-            <td>{item.name}</td>
-            <td>{item.category}</td>
-            <td>{item.quantity}</td>
-            <td>{item.quantityMeasurement}</td>
-            <td>{item.storage}</td>
-            <td>{item.cost}</td>
-            <td>{item.source}</td>
+            <td>
+              <input
+                type="text"
+                value={maxLength(item.name, 15)}
+                onChange={(e) =>
+                  handleInputChange(item._id, "name", e.target.value)
+                }
+                maxLength={15}
+                style={{ width: "100px" }}
+              />
+            </td>
+            <td>
+              <select
+                value={item.category}
+                onChange={(e) =>
+                  handleInputChange(item._id, "category", e.target.value)
+                }
+              >
+                {categories.map((category, index) => (
+                  <option key={index} value={category}>
+                    {maxLength(category, 15)}
+                  </option>
+                ))}
+              </select>
+            </td>
+            <td>
+              <input
+                type="number"
+                value={item.quantity}
+                onChange={(e) =>
+                  handleInputChange(item._id, "quantity", e.target.value)
+                }
+                maxLength={5}
+                style={{ width: "60px" }}
+              />
+            </td>
+            <td>
+              <select
+                value={item.quantityMeasurement}
+                onChange={(e) =>
+                  handleInputChange(
+                    item._id,
+                    "quantityMeasurement",
+                    e.target.value
+                  )
+                }
+              >
+                {(quantityMeasurementsByCategory[item.category] || []).map(
+                  (measurement, index) => (
+                    <option key={index} value={measurement}>
+                      {measurement}
+                    </option>
+                  )
+                )}
+              </select>
+            </td>
+            <td>
+              <select
+                value={item.storage}
+                onChange={(e) =>
+                  handleInputChange(item._id, "storage", e.target.value)
+                }
+              >
+                {storages.map((storage, index) => (
+                  <option key={index} value={storage}>
+                    {storage}
+                  </option>
+                ))}
+              </select>
+            </td>
+            <td>
+              <input
+                type="number"
+                value={item.cost}
+                onChange={(e) =>
+                  handleInputChange(item._id, "cost", e.target.value)
+                }
+                maxLength={7}
+                style={{ width: "80px" }}
+              />
+            </td>
+            <td>
+              <input
+                type="text"
+                value={maxLength(item.source, 15)}
+                onChange={(e) =>
+                  handleInputChange(item._id, "source", e.target.value)
+                }
+                maxLength={15}
+                style={{ width: "100px" }}
+              />
+            </td>
             <td style={getExpirationDateStyle(item.expirationDate)}>
-              {formatLocalDate(item.expirationDate)}
+              <input
+                type="date"
+                value={formatDateForInput(item.expirationDate)}
+                onChange={(e) =>
+                  handleInputChange(item._id, "expirationDate", e.target.value)
+                }
+              />
             </td>
             <td>{formatLocalDate(item.purchasedDate)}</td>
             <td>
@@ -92,6 +210,8 @@ const FoodItemTable = ({
                   value={item.consumed || 0}
                   onChange={(e) => handleConsumeItem(item._id, e.target.value)}
                   max={100}
+                  maxLength={5}
+                  style={{ width: "60px" }}
                 />
               ) : (
                 "N/A"
@@ -115,9 +235,6 @@ const FoodItemTable = ({
               )}
             </td>
             <td>
-              <Button variant="primary" onClick={() => handleShowModal(item)}>
-                Edit
-              </Button>
               <Button variant="danger" onClick={() => handleDelete(item)}>
                 Delete
               </Button>

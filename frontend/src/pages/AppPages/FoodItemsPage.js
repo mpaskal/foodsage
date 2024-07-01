@@ -2,16 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
-import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal";
 import { Button, Row, Col } from "react-bootstrap";
+import { calculateExpirationDate } from "../../utils/dateUtils";
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState({
     name: "",
     category: "Dairy",
@@ -42,101 +41,31 @@ const FoodItemsPage = () => {
     }
   };
 
-  const handleShowModal = (item) => {
-    if (item) {
-      setCurrentItem(item);
-      setForm({
-        ...item,
-        expirationDate: item.expirationDate
-          ? new Date(item.expirationDate).toISOString().substring(0, 10)
-          : "",
-        purchasedDate: item.purchasedDate
-          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
-          : "",
-        tenantId: item.tenantId || loggedInUser.tenantId,
-        userId: item.userId || loggedInUser.id,
-      });
-      setIsEdit(true);
-    } else {
-      setCurrentItem(null);
-      setForm({
-        name: "",
-        category: "Dairy",
-        quantity: "",
-        quantityMeasurement: "L",
-        storage: "Fridge",
-        cost: "",
-        source: "",
-        expirationDate: "",
-        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
-        image: null,
-        tenantId: loggedInUser.tenantId,
-        userId: loggedInUser.id,
-      });
-      setIsEdit(false);
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => setShowModal(false);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    const file = files[0];
-
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prevForm) => ({
-          ...prevForm,
-          [name]: reader.result.split(",")[1], // Only save the base64 string
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setForm((prevForm) => ({
-        ...prevForm,
-        [name]: "",
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleInputChange = async (id, name, value) => {
     try {
-      const formData = new FormData();
-      for (const key in form) {
-        if (form[key] !== "") {
-          formData.append(key, form[key]);
-        }
-      }
-      console.log(
-        "Form Data being sent:",
-        Object.fromEntries(formData.entries())
-      ); // Log form data for debugging
+      const updatedItem = { ...foodItems.find((item) => item._id === id) };
+      updatedItem[name] = value;
 
-      if (isEdit) {
-        console.log("Editing item with ID:", currentItem._id);
-        await axios.patch(`/api/fooditems/${currentItem._id}`, formData);
-      } else {
-        console.log("Adding new item");
-        await axios.post("/api/fooditems", formData);
+      if (
+        name === "category" ||
+        name === "storage" ||
+        name === "purchasedDate"
+      ) {
+        updatedItem.expirationDate = calculateExpirationDate(
+          updatedItem.category,
+          updatedItem.storage,
+          updatedItem.purchasedDate
+        )
+          .toISOString()
+          .substring(0, 10);
       }
-      fetchFoodItems();
-      handleCloseModal();
-    } catch (error) {
-      console.error(
-        "Error saving food item:",
-        error.response ? error.response.data : error
+
+      await axios.patch(`/api/fooditems/${id}`, { [name]: value });
+      setFoodItems((prevItems) =>
+        prevItems.map((item) => (item._id === id ? updatedItem : item))
       );
+    } catch (error) {
+      console.error("Error updating food item:", error);
     }
   };
 
@@ -162,8 +91,84 @@ const FoodItemsPage = () => {
 
   const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
+  const handleShowModal = (item) => {
+    if (item) {
+      setCurrentItem(item);
+      setForm({
+        ...item,
+        expirationDate: item.expirationDate
+          ? new Date(item.expirationDate).toISOString().substring(0, 10)
+          : "",
+        purchasedDate: item.purchasedDate
+          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
+          : "",
+        tenantId: item.tenantId || loggedInUser.tenantId,
+        userId: item.userId || loggedInUser.id,
+      });
+    } else {
+      setCurrentItem(null);
+      setForm({
+        name: "",
+        category: "Dairy",
+        quantity: "",
+        quantityMeasurement: "L",
+        storage: "Fridge",
+        cost: "",
+        source: "",
+        expirationDate: "",
+        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
+        image: null,
+        tenantId: loggedInUser.tenantId,
+        userId: loggedInUser.id,
+      });
+    }
+    setShowModal(true);
+  };
+
   const getFormattedDate = (date) => {
     return new Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(date);
+  };
+
+  const handleConsumeItem = async (id, consumed) => {
+    try {
+      const updatedItem = { ...foodItems.find((item) => item._id === id) };
+      updatedItem.consumed = consumed;
+
+      if (consumed === "100") {
+        await axios.patch(`/api/fooditems/${id}`, { consumed });
+        setFoodItems((prevItems) =>
+          prevItems.filter((item) => item._id !== id)
+        );
+      } else {
+        await axios.patch(`/api/fooditems/${id}`, { consumed });
+        setFoodItems((prevItems) =>
+          prevItems.map((item) => (item._id === id ? updatedItem : item))
+        );
+      }
+    } catch (error) {
+      console.error("Error updating consumed value:", error);
+    }
+  };
+
+  const handleMoveItem = async (id, move) => {
+    try {
+      const updatedItem = { ...foodItems.find((item) => item._id === id) };
+      updatedItem.move = move;
+
+      await axios.patch(`/api/fooditems/${id}`, { move });
+
+      setFoodItems((prevItems) =>
+        prevItems.map((item) => (item._id === id ? updatedItem : item))
+      );
+
+      if (move === "consumed" || move === "donate" || move === "waste") {
+        setFoodItems((prevItems) =>
+          prevItems.filter((item) => item._id !== id)
+        );
+      }
+    } catch (error) {
+      console.error("Error updating move value:", error);
+    }
   };
 
   return (
@@ -180,18 +185,10 @@ const FoodItemsPage = () => {
         <Button onClick={() => handleShowModal(null)}>Add Food Item</Button>
         <FoodItemTable
           foodItems={foodItems}
-          handleShowModal={handleShowModal}
+          handleInputChange={handleInputChange}
           handleDelete={handleShowDeleteModal}
-          loggedInUser={loggedInUser}
-        />
-        <FoodItemModal
-          show={showModal}
-          handleClose={handleCloseModal}
-          handleSubmit={handleSubmit}
-          handleChange={handleInputChange}
-          handleFileChange={handleFileChange}
-          form={form}
-          isEdit={isEdit}
+          handleConsumeItem={handleConsumeItem}
+          handleMoveItem={handleMoveItem}
         />
         <DeleteConfirmationModal
           show={showDeleteModal}
