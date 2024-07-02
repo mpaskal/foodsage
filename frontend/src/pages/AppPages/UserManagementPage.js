@@ -21,10 +21,10 @@ import {
   isLastAdminState,
 } from "../../recoil/atoms";
 import {
-  useFetchUsers,
-  useDeleteUser,
   useUpdateUser,
   useAddUser,
+  useFetchUsers,
+  useDeleteUser,
 } from "../../actions/userActions";
 
 const UserManagementPage = () => {
@@ -45,6 +45,9 @@ const UserManagementPage = () => {
   const usersPerPage = 10; // define usersPerPage
 
   const fetchUsers = useFetchUsers();
+  const updateUser = useUpdateUser();
+  const addUser = useAddUser();
+  const deleteUser = useDeleteUser();
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.token) {
@@ -66,17 +69,11 @@ const UserManagementPage = () => {
   }, [page, loggedInUser]);
 
   const handleShowModal = (user = null) => {
-    if (user) {
-      setSelectedUser({ ...user });
-    } else {
-      setSelectedUser({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        role: "user",
-      });
-    }
+    setSelectedUser(
+      user
+        ? { ...user }
+        : { firstName: "", lastName: "", email: "", password: "", role: "user" }
+    );
     setIsUserModalOpen(true);
   };
 
@@ -101,9 +98,7 @@ const UserManagementPage = () => {
     }
   };
 
-  const confirmDelete = useDeleteUser();
-
-  const handleDeleteConfirm = async () => {
+  const confirmDelete = async () => {
     try {
       const token = loggedInUser?.token;
       if (!token) {
@@ -113,7 +108,7 @@ const UserManagementPage = () => {
         return;
       }
 
-      const userToDelete = selectedUser;
+      const userToDelete = users.find((user) => user._id === selectedUser?._id);
       const adminCount = users.filter((user) => user.role === "admin").length;
 
       if (
@@ -145,11 +140,11 @@ const UserManagementPage = () => {
           setConfirmModal(false);
         }
       } else if (userToDelete?._id === loggedInUser.id) {
-        await confirmDelete(userToDelete._id, token);
+        await deleteUser(userToDelete._id, token);
         localStorage.clear();
         window.location.href = "/";
       } else {
-        await confirmDelete(userToDelete._id, token);
+        await deleteUser(userToDelete?._id, token);
         fetchUsers(token, page, usersPerPage, loggedInUser.id);
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
@@ -171,12 +166,15 @@ const UserManagementPage = () => {
           Add User
         </Button>
 
-        <UserModal />
+        <UserModal
+          show={isUserModalOpen}
+          handleClose={() => setIsUserModalOpen(false)}
+        />
 
         <DeleteConfirmationModal
           show={confirmModal}
           handleClose={() => setConfirmModal(false)}
-          confirmDelete={handleDeleteConfirm}
+          confirmDelete={confirmDelete}
           isLastAdmin={isLastAdmin && selectedUser?._id === loggedInUser?.id}
         />
 
