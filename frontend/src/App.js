@@ -35,24 +35,22 @@ function App() {
   return (
     <RecoilRoot>
       <InitializeState>
-        <Router>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/signin" element={<SignInPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            <Route element={<ProtectedRoute role={role} />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/fooditems" element={<FoodItemsPage />} />
-              <Route
-                path="/user-management"
-                element={<UserManagementPage />}
-                requiredRole="admin"
-              />
-            </Route>
-          </Routes>
-        </Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route element={<ProtectedRoute role={role} />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/fooditems" element={<FoodItemsPage />} />
+            <Route
+              path="/user-management"
+              element={<UserManagementPage />}
+              requiredRole="admin"
+            />
+          </Route>
+        </Routes>
       </InitializeState>
     </RecoilRoot>
   );

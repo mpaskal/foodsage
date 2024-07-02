@@ -41,7 +41,7 @@ const UserModal = ({
     }
 
     try {
-      if (selectedUser._id) {
+      if (selectedUser?._id) {
         await updateUser(selectedUser, token);
       } else {
         await addUser(selectedUser, token);
@@ -76,7 +76,7 @@ const UserModal = ({
                 <Form.Control
                   type="text"
                   name="firstName"
-                  value={user.firstName}
+                  value={user.firstName || ""}
                   onChange={handleChange}
                   required
                 />
@@ -88,7 +88,7 @@ const UserModal = ({
                 <Form.Control
                   type="text"
                   name="lastName"
-                  value={user.lastName}
+                  value={user.lastName || ""}
                   onChange={handleChange}
                   required
                 />
@@ -100,7 +100,7 @@ const UserModal = ({
             <Form.Control
               type="email"
               name="email"
-              value={user.email}
+              value={user.email || ""}
               onChange={handleChange}
               required
             />
@@ -111,7 +111,7 @@ const UserModal = ({
               <Form.Control
                 type="password"
                 name="password"
-                value={user.password}
+                value={user.password || ""}
                 onChange={handleChange}
                 required
               />
@@ -121,7 +121,7 @@ const UserModal = ({
             <Form.Label>Role</Form.Label>
             <Form.Select
               name="role"
-              value={user.role}
+              value={user.role || "user"}
               onChange={handleChange}
               required
             >
