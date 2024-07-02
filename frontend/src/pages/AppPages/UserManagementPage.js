@@ -282,9 +282,7 @@ const UserManagementPage = () => {
     <Layout>
       <div className="user-management">
         <h1>User Management</h1>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          Add User
-        </Button>
+     
 
         <UserModal
           show={modal}
@@ -330,6 +328,9 @@ const UserManagementPage = () => {
             </Pagination.Item>
           ))}
         </Pagination>
+        <Button  variant="primary" onClick={() => handleShowModal()}>
+          Add User
+        </Button>
         <ToastContainer position="top-end" className="p-3">
           <Toast
             onClose={() => setShowToast(false)}
