@@ -33,7 +33,10 @@ export const useAddUser = () => {
       set(usersState, (oldUsers) => [...oldUsers, response.data]);
       set(selectedUserState, null);
     } catch (error) {
-      console.error("Error adding user", error);
+      console.error(
+        "Error adding user",
+        error.response ? error.response.data : error
+      );
       throw error;
     }
   });
@@ -97,21 +100,21 @@ export const useClearSelectedUser = () => {
 
 export const useDeleteUser = () => {
   return useRecoilCallback(({ snapshot, set }) => async (userId, authToken) => {
+    const release = snapshot.retain(); // Retain the snapshot
     try {
+      const currentUsers = await snapshot.getPromise(usersState);
       await axios.delete(`/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-
-      const currentUsers = await snapshot.getPromise(usersState);
       set(
         usersState,
         currentUsers.filter((user) => user._id !== userId)
       );
-
-      return { success: true };
     } catch (error) {
       console.error("Error deleting user", error);
       throw error;
+    } finally {
+      release(); // Release the snapshot
     }
   });
 };
