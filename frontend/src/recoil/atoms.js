@@ -35,6 +35,16 @@ export const isLastAdminState = atom({
   default: false,
 });
 
+export const currentPageState = atom({
+  key: "currentPageState",
+  default: 1,
+});
+
+export const usersPerPageState = atom({
+  key: "usersPerPageState",
+  default: 10,
+});
+
 // Add foodItemsState
 export const foodItemsState = atom({
   key: "foodItemsState",

@@ -169,6 +169,9 @@ const UserManagementPage = () => {
         <UserModal
           show={isUserModalOpen}
           handleClose={() => setIsUserModalOpen(false)}
+          fetchUsers={fetchUsers} // Pass this function as a prop
+          page={page} // Pass current page as a prop
+          usersPerPage={usersPerPage} // Pass usersPerPage as a prop
         />
 
         <DeleteConfirmationModal

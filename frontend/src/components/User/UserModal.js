@@ -5,16 +5,24 @@ import {
   selectedUserState,
   isUserModalOpenState,
   loggedInUserState,
+  currentPageState,
+  usersPerPageState,
 } from "../../recoil/atoms";
 import { useUpdateUser, useAddUser } from "../../actions/userActions";
 
-const UserModal = () => {
+const UserModal = ({
+  fetchUsers,
+  page: propPage,
+  usersPerPage: propUsersPerPage,
+}) => {
+  const page = useRecoilValue(currentPageState);
+  const usersPerPage = useRecoilValue(usersPerPageState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
-  const [isUserModalOpen, setIsUserModalOpen] =
-    useRecoilState(isUserModalOpenState);
   const loggedInUser = useRecoilValue(loggedInUserState);
   const updateUser = useUpdateUser();
   const addUser = useAddUser();
+  const [isUserModalOpen, setIsUserModalOpen] =
+    useRecoilState(isUserModalOpenState);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +45,7 @@ const UserModal = () => {
         await updateUser(selectedUser, token);
       } else {
         await addUser(selectedUser, token);
+        fetchUsers(token, page, usersPerPage, loggedInUser.id);
       }
       setIsUserModalOpen(false);
     } catch (error) {
