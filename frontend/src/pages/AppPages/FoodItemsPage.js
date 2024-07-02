@@ -165,7 +165,7 @@ const FoodItemsPage = () => {
   return (
     <Layout>
       <div className="container">
-        <h1>Food Inventory</h1>
+        <h1 class="title">Food Inventory</h1>
         <Button onClick={() => handleShowModal(null)}>Add Food Item</Button>
         <FoodItemTable
           foodItems={foodItems}

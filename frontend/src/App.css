@@ -571,6 +571,7 @@ a:hover {
 .active>.page-link{
   background-color: #058240;
 }
+
 /* Dashboard */
 .dashboard {
   padding: 1rem;
@@ -918,6 +919,44 @@ header-site {
 
 .layout-app-content.sidebar-collapsed {
   margin-left: 60px; /* Width of collapsed sidebar */
+}
+/* Inventory page*/
+.title{
+text-align: center;
+}
+.container {
+  padding-left: 170px;
+  margin-right: auto;
+  margin-left: auto;
+  max-width: calc(100% - 170px);
+}
+.actions{
+  width: 100px;
+}
+
+.food-item-table {
+  margin-left: 170px;
+}
+
+@media (min-width: 768px) { 
+  .container {
+    padding-left: 170px;
+    max-width: calc(100% - 170px);
+  }
+}
+
+.btn-primary
+.btn-danger {
+  padding: 6px 12px;
+  margin: 2px;
+  flex-grow: 1;
+
+}
+
+@media (max-width: 600px) { /* Example breakpoint */
+  .actions-cell {
+    flex-direction: column; /* Stacks the buttons vertically on smaller screens */
+  }
 }
 
 /* Sidebar */

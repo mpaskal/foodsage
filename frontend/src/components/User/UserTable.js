@@ -18,7 +18,7 @@ const UserTable = ({
           <th>Last Name</th>
           <th>Email</th>
           <th>Role</th>
-          <th>Actions</th>
+          <th class="actions">Actions</th>
         </tr>
       </thead>
       <tbody>
