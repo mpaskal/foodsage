@@ -1,7 +1,7 @@
 // utils/dateUtils.js
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
   const purchased = new Date(purchasedDate);
-  const expirationDate = new Date(purchasedDate);
+  let expirationDate = new Date(purchasedDate); // Changed to 'let' to allow modifications
 
   switch (category) {
     case "Dairy":

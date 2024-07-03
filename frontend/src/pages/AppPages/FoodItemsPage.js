@@ -1,264 +1,153 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { foodItemsState, totalItemsState } from "../../recoil/atoms";
+import React, { useEffect } from "react";
+import axios from "axios";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import {
+  foodItemsState,
+  foodItemsWithExpirationState,
+} from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
-import {
-  Button,
-  Toast,
-  ToastContainer,
-  Spinner,
-  Pagination,
-} from "react-bootstrap";
-import {
-  useFetchFoodItems,
-  useAddFoodItem,
-  useUpdateFoodItem,
-  useDeleteFoodItem,
-} from "../../actions/foodItemActions";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
-import debounce from "lodash/debounce";
-import { calculateExpirationDate } from "../../utils/dateUtils";
+import { Button, Alert, Spinner } from "react-bootstrap";
+import { debounce } from "lodash";
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
-  const totalItems = useRecoilValue(totalItemsState);
-  const setTotalItems = useSetRecoilState(totalItemsState);
-  const fetchFoodItems = useFetchFoodItems();
-  const addFoodItem = useAddFoodItem();
-  const updateFoodItem = useUpdateFoodItem();
-  const deleteFoodItem = useDeleteFoodItem();
-
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState(null);
-  const itemsPerPage = 10;
+  const [foodItemsWithExpiration, setFoodItemsWithExpiration] = useRecoilState(
+    foodItemsWithExpirationState
+  );
+  const setFoodItemsBase = useSetRecoilState(foodItemsState);
+  const [showModal, setShowModal] = React.useState(false);
+  const [currentItem, setCurrentItem] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isUpdating, setIsUpdating] = React.useState(false);
 
   useEffect(() => {
-    fetchItems();
-  }, [page]);
-
-  const fetchItems = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetchFoodItems(page, itemsPerPage);
-      console.log("Fetch response FoodItemsPage:", response);
-      if (response.success) {
-        setFoodItems(response.items);
-        setTotalPages(response.totalPages);
-        setTotalItems(response.totalItems);
-      } else {
-        throw new Error(response.error || "Error fetching food items");
-      }
-    } catch (error) {
-      console.error("Error fetching food items", error);
-      setToastMessage("Error fetching food items");
-      setShowToast(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const [newItem, setNewItem] = useState({
-    name: "",
-    category: "",
-    storage: "",
-    purchasedDate: "",
-  });
-
-  const debouncedApiCall = debounce(async (id, data) => {
-    try {
-      await updateFoodItem(id, data);
-      console.log("Item updated successfully:", id, data);
-    } catch (error) {
-      console.error("Error updating item:", error);
-      setToastMessage("Error updating item");
-      setShowToast(true);
-    }
-  }, 500);
-
-  const handleInputChange = useCallback(
-    (id, name, value) => {
-      if (name === "category" || name === "storage") {
-        const expirationDate = calculateExpirationDate(
-          newItem.category,
-          newItem.storage,
-          new Date(newItem.purchasedDate)
-        );
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === id
-              ? { ...item, [name]: value, expirationDate: expirationDate }
-              : item
-          )
-        );
-        debouncedApiCall(id, { [name]: value, expirationDate });
-      } else {
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === id ? { ...item, [name]: value } : item
-          )
-        );
-        debouncedApiCall(id, { [name]: value });
-      }
-    },
-    [setFoodItems, newItem]
-  );
-
-  const handleShowModal = () => {
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditItem(null);
-  };
-
-  const handleEditItem = (item) => {
-    setEditItem(item);
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (formData) => {
-    try {
-      if (editItem) {
-        await updateFoodItem(editItem._id, formData);
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === editItem._id ? { ...item, ...formData } : item
-          )
-        );
-      } else {
-        await addFoodItem(formData);
-        setFoodItems((prevItems) => [...prevItems, formData]);
-      }
-      setToastMessage("Item saved successfully");
-      setShowToast(true);
-      handleCloseModal();
-    } catch (error) {
-      console.error("Error saving item:", error);
-      setToastMessage("Error saving item");
-      setShowToast(true);
-    }
-  };
-
-  const handleDelete = useCallback(
-    async (item) => {
+    const fetchFoodItems = async () => {
+      setIsLoading(true);
       try {
-        await deleteFoodItem(item._id);
-        setFoodItems((prevItems) =>
-          prevItems.filter((i) => i._id !== item._id)
-        );
-        setToastMessage("Item deleted successfully");
-        setShowToast(true);
+        const response = await axios.get("/api/fooditems");
+        if (Array.isArray(response.data.data)) {
+          setFoodItemsBase(response.data.data);
+        } else {
+          setError("Response data is not an array");
+        }
       } catch (error) {
-        console.error("Error deleting item:", error);
-        setToastMessage("Error deleting item");
-        setShowToast(true);
+        setError("Failed to fetch food items");
+      } finally {
+        setIsLoading(false);
       }
-    },
-    [deleteFoodItem, setFoodItems]
-  );
+    };
 
-  const handleMoveItem = useCallback(
-    (id, newLocation) => {
-      console.log(`Moving item ${id} to ${newLocation}`);
-      setFoodItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === id ? { ...item, storage: newLocation } : item
-        )
-      );
-      updateFoodItem(id, { storage: newLocation });
-    },
-    [setFoodItems, updateFoodItem]
-  );
+    fetchFoodItems();
+  }, [setFoodItemsBase]);
 
-  const handleConsumeItem = useCallback(
-    (id, consumedPercentage) => {
-      console.log(`Marking item ${id} as ${consumedPercentage}% consumed`);
-      setFoodItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === id ? { ...item, consumed: consumedPercentage } : item
-        )
-      );
-      updateFoodItem(id, { consumed: consumedPercentage });
-    },
-    [setFoodItems, updateFoodItem]
-  );
+  const handleInputChange = debounce(async (itemId, field, value) => {
+    if (!itemId) {
+      console.error("Error updating item: Item ID is undefined");
+      setError("An error occurred while updating the food item.");
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      let updates = { [field]: value };
+
+      const response = await axios.put(`/api/fooditems/${itemId}`, updates);
+      if (response.status === 200) {
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === itemId ? { ...item, ...updates } : item
+          )
+        );
+        setFoodItemsWithExpiration((prevItems) =>
+          prevItems.map((item) =>
+            item._id === itemId ? { ...item, ...updates } : item
+          )
+        );
+        console.log("Item updated successfully");
+      } else if (response.status === 404) {
+        setError(`The food item with ID ${itemId} was not found.`);
+        console.error(`Error updating item: Item with ID ${itemId} not found`);
+      } else {
+        setError("Failed to update the food item.");
+        console.error("Error updating item:", response.data);
+      }
+    } catch (error) {
+      setError("An error occurred while updating the food item.");
+      console.error("Error updating item:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, 300);
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const response = await axios.delete(`/api/fooditems/${itemId}`);
+      if (response.status === 200) {
+        setFoodItems((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+        setFoodItemsWithExpiration((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+        console.log("Item deleted successfully");
+      } else if (response.status === 404) {
+        setError(`The food item with ID ${itemId} was not found.`);
+        console.error(`Error deleting item: Item with ID ${itemId} not found`);
+      } else {
+        setError("Failed to delete the food item.");
+        console.error("Error deleting item:", response.data);
+      }
+    } catch (error) {
+      setError("An error occurred while deleting the food item.");
+      console.error("Error deleting item:", error);
+    }
+  };
 
   return (
     <Layout>
-      <div className="food-items">
-        <h1>Food Items</h1>
-        <div>Total Items: {totalItems}</div>
-        <Button variant="primary" onClick={handleShowModal}>
-          Add Item
-        </Button>
+      <div className="container">
+        <div className="d-flex align-items-center mb-3">
+          <h1>Food Inventory</h1>
+          <Button
+            variant="success"
+            className="ml-auto"
+            onClick={() => setShowModal(true)}
+          >
+            Add Food Item
+          </Button>
+        </div>
 
+        {error && (
+          <Alert variant="danger">
+            <strong>Error:</strong> {error}
+          </Alert>
+        )}
         {isLoading ? (
-          <div className="text-center mt-4">
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-          </div>
-        ) : (
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        ) : foodItemsWithExpiration.length > 0 ? (
           <FoodItemTable
-            foodItems={foodItems}
+            foodItems={foodItemsWithExpiration}
             handleInputChange={handleInputChange}
-            handleDelete={handleDelete}
-            handleMoveItem={handleMoveItem}
-            handleConsumeItem={handleConsumeItem}
-            handleEditItem={handleEditItem}
+            handleEdit={setShowModal}
+            handleDelete={handleDeleteItem}
+            isUpdating={isUpdating}
           />
+        ) : (
+          <p>No food items found.</p>
         )}
 
-        <Pagination className="mt-3">
-          {[...Array(totalPages).keys()].map((number) => (
-            <Pagination.Item
-              key={number + 1}
-              active={number + 1 === page}
-              onClick={() => setPage(number + 1)}
-            >
-              {number + 1}
-            </Pagination.Item>
-          ))}
-        </Pagination>
-
-        <ToastContainer position="top-end" className="p-3">
-          <Toast
-            onClose={() => setShowToast(false)}
-            show={showToast}
-            delay={3000}
-            autohide
-          >
-            <Toast.Body>{toastMessage}</Toast.Body>
-          </Toast>
-        </ToastContainer>
-
-        <FoodItemModal
-          show={showModal}
-          handleClose={handleCloseModal}
-          handleSubmit={handleSubmit}
-          handleInputChange={handleInputChange}
-          form={
-            editItem || {
-              name: "",
-              category: "",
-              storage: "",
-              quantity: 0,
-              quantityMeasurement: "",
-              cost: 0,
-              source: "",
-              expirationDate: "",
-              purchasedDate: "",
-            }
-          }
-          isEdit={!!editItem}
-        />
+        {showModal && (
+          <FoodItemModal
+            show={showModal}
+            handleClose={() => setShowModal(false)}
+            currentItem={currentItem}
+          />
+        )}
       </div>
     </Layout>
   );
