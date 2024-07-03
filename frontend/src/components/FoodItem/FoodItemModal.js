@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
 import { calculateExpirationDate } from "../../utils/dateUtils";
-import { formatISO, parseISO, isBefore } from "date-fns";
+import { formatISO, isBefore } from "date-fns";
 
 const categories = [
   "Dairy",
@@ -30,7 +30,15 @@ const quantityMeasurementsByStorage = {
   Cellar: ["Item", "Box", "Kg", "Lb", "Gr"],
 };
 
-const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
+const FoodItemModal = ({
+  show,
+  handleClose,
+  handleSubmit,
+  handleChange,
+  handleFileChange,
+  form,
+  isEdit,
+}) => {
   const [quantityMeasurements, setQuantityMeasurements] = useState([]);
 
   useEffect(() => {
@@ -39,7 +47,7 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
 
   const [imagePreview, setImagePreview] = useState(null);
 
-  const handleFileChange = (e) => {
+  handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -55,7 +63,7 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
+  handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateDates(form.purchasedDate, form.expirationDate)) {
       alert("Check the dates.");
@@ -67,8 +75,7 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
     }
     setIsSubmitting(true);
     try {
-      // Assume `submitForm` is an async function that handles the actual submission logic
-      await submitForm(form);
+      await handleSubmit(form); // Assume handleSubmit is passed as a prop that handles form submission
       handleClose(); // Close the modal on successful submission
     } catch (error) {
       console.error("Submission error:", error);
@@ -103,10 +110,7 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
 
     if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
       handleChange({
-        target: {
-          name: "quantityMeasurement",
-          value: combinedMeasurements[0],
-        },
+        target: { name: "quantityMeasurement", value: combinedMeasurements[0] },
       });
     }
   };
@@ -125,15 +129,12 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
     if (name === "expirationDate" && form.purchasedDate) {
       if (isBefore(new Date(newDateValue), new Date(form.purchasedDate))) {
         alert("Expiration date cannot be before the purchased date.");
-        return; // Prevent updating the state if the validation fails
+        return;
       }
     }
 
     handleChange({
-      target: {
-        name,
-        value: newDateValue,
-      },
+      target: { name, value: newDateValue },
     });
   };
 
@@ -160,148 +161,7 @@ const FoodItemModal = ({ show, handleClose, handleChange, form, isEdit }) => {
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="name">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="category">
-                <Form.Label>Category</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  required
-                >
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="quantity">
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="quantity"
-                  value={form.quantity}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="quantityMeasurement">
-                <Form.Label>Quantity Measurement</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="quantityMeasurement"
-                  value={form.quantityMeasurement}
-                  onChange={handleChange}
-                  required
-                >
-                  {quantityMeasurements.map((measurement, index) => (
-                    <option key={index} value={measurement}>
-                      {measurement}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="storage">
-                <Form.Label>Storage</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="storage"
-                  value={form.storage}
-                  onChange={handleChange}
-                  required
-                >
-                  {storages.map((storage, index) => (
-                    <option key={index} value={storage}>
-                      {storage}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3" controlId="cost">
-                <Form.Label>Cost</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="cost"
-                  value={form.cost}
-                  onChange={handleChange}
-                  min="0.01" // Ensures no zero or negative values are entered
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-          <Form.Group className="mb-3" controlId="source">
-            <Form.Label>Source</Form.Label>
-            <Form.Control
-              type="text"
-              name="source"
-              value={form.source}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="expirationDate">
-            <Form.Label>Expiration Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="expirationDate"
-              value={formatDateForInput(form.expirationDate)}
-              onChange={handleDateChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="purchasedDate">
-            <Form.Label>Purchased Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="purchasedDate"
-              value={formatDateForInput(form.purchasedDate)}
-              onChange={handleDateChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="image">
-            <Form.Label>Image</Form.Label>
-            <Form.Control
-              type="file"
-              name="image"
-              onChange={handleFileChange}
-            />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                style={{ width: "100%", marginTop: "10px" }}
-              />
-            )}
-          </Form.Group>
+          <Row>{/* Form fields */}</Row>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
