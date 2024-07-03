@@ -85,7 +85,7 @@ const FoodItemTable = ({
           <th>Purchased Date</th>
           <th>Consumed (%)</th>
           <th>Move</th>
-          <th class="actions">Actions</th>
+          <th className="actions">Actions</th>
         </tr>
       </thead>
       <tbody>

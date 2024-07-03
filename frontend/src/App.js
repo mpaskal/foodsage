@@ -11,9 +11,11 @@ import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { loggedInUserState } from "./recoil/userAtoms";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
+axios.defaults.baseURL = "http://localhost:5000";
 const InitializeState = ({ children }) => {
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
 

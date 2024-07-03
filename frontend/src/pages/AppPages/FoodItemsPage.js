@@ -4,6 +4,7 @@ import { useRecoilState, useSetRecoilState } from "recoil";
 import {
   foodItemsState,
   foodItemsWithExpirationState,
+  currentItemState,
 } from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
@@ -18,7 +19,7 @@ const FoodItemsPage = () => {
   );
   const setFoodItemsBase = useSetRecoilState(foodItemsState);
   const [showModal, setShowModal] = React.useState(false);
-  const [currentItem, setCurrentItem] = React.useState(null);
+  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const [error, setError] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isUpdating, setIsUpdating] = React.useState(false);
@@ -28,13 +29,20 @@ const FoodItemsPage = () => {
       setIsLoading(true);
       try {
         const response = await axios.get("/api/fooditems");
-        if (Array.isArray(response.data.data)) {
-          setFoodItemsBase(response.data.data);
+        console.log("Response received:", response.data); // Log the entire response for debugging
+
+        if (response.data && Array.isArray(response.data.data.foodItems)) {
+          setFoodItemsBase(response.data.data.foodItems);
         } else {
-          setError("Response data is not an array");
+          console.error("Unexpected response structure:", response.data);
+          setError("Unexpected response structure");
         }
       } catch (error) {
-        setError("Failed to fetch food items");
+        console.error("Error fetching food items:", error);
+        setError(
+          "Failed to fetch food items: " +
+            (error.response?.data?.message || error.message)
+        );
       } finally {
         setIsLoading(false);
       }
@@ -114,7 +122,7 @@ const FoodItemsPage = () => {
     <Layout>
       <div className="container">
         <div className="d-flex align-items-center mb-3">
-          <h1 class="title">Food Inventory</h1>
+          <h1 className="title">Food Inventory</h1>
           <Button
             variant="success"
             className="ml-auto"

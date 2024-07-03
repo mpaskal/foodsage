@@ -1,52 +1,99 @@
-exports.updateFoodItem = async (req, res) => {
-  console.log("Updating food item with ID:", req.params.id);
+// foodItemController.js
 
+const FoodItem = require("../models/FoodItem");
+const uploadMiddleware = require("../middlewares/uploadMiddleware");
+
+const handleError = (res, error, message) => {
+  console.error(message, error);
+  res.status(400).json({ message, error: error.message });
+};
+
+exports.getFoodItems = async (req, res) => {
+  try {
+    const foodItems = await FoodItem.find();
+    res.status(200).json(foodItems);
+  } catch (error) {
+    handleError(res, error, "Error fetching food items");
+  }
+};
+
+exports.getFoodItemById = async (req, res) => {
+  try {
+    const foodItem = await FoodItem.findById(req.params.id);
+    if (!foodItem) {
+      return res.status(404).json({ message: "Food item not found" });
+    }
+    res.status(200).json(foodItem);
+  } catch (error) {
+    handleError(res, error, "Error fetching food item");
+  }
+};
+
+exports.createFoodItem = async (req, res) => {
   uploadMiddleware(req, res, async (err) => {
     if (err) {
-      console.error("Error in upload middleware:", err);
-      return res
-        .status(400)
-        .json({ message: "Error processing request", error: err.message });
+      return handleError(res, err, "Error processing request");
     }
 
     try {
-      console.log("Request body after middleware:", req.body);
+      const newFoodItem = new FoodItem({
+        ...req.body,
+        image: req.file ? req.file.path : null,
+      });
 
-      // Prepare updates
-      const updates = { ...req.body };
+      await newFoodItem.save();
+      res.status(201).json({
+        message: "Food item created successfully",
+        data: newFoodItem,
+      });
+    } catch (error) {
+      handleError(res, error, "Failed to create new food item");
+    }
+  });
+};
 
-      // Handle image update
-      if (req.body.image) {
-        updates.image = req.body.image; // This will be the base64 string if a new image was uploaded
-      } else if (req.body.existingImage) {
-        updates.image = req.body.existingImage;
-      }
-      // If neither new image nor existingImage is provided, don't update the image field
+exports.updateFoodItem = async (req, res) => {
+  uploadMiddleware(req, res, async (err) => {
+    if (err) {
+      return handleError(res, err, "Error processing request");
+    }
 
-      console.log("Updates to be applied:", updates);
+    try {
+      const updates = {
+        ...req.body,
+        image: req.file
+          ? req.file.path
+          : req.body.image || req.body.existingImage,
+      };
 
-      // Update the item
       const foodItem = await FoodItem.findByIdAndUpdate(
         req.params.id,
         updates,
-        {
-          new: true,
-          runValidators: true,
-        }
+        { new: true, runValidators: true }
       );
 
       if (!foodItem) {
-        console.log("Food item not found with ID:", req.params.id);
         return res.status(404).json({ message: "Food item not found" });
       }
 
-      console.log("Food item updated successfully:", foodItem);
-      res.status(200).json(foodItem);
+      res.status(200).json({
+        message: "Food item updated successfully",
+        data: foodItem,
+      });
     } catch (error) {
-      console.error("Error updating food item:", error);
-      res
-        .status(400)
-        .json({ message: "Error updating food item", error: error.message });
+      handleError(res, error, "Error updating food item");
     }
   });
+};
+
+exports.deleteFoodItem = async (req, res) => {
+  try {
+    const foodItem = await FoodItem.findByIdAndDelete(req.params.id);
+    if (!foodItem) {
+      return res.status(404).json({ message: "Food item not found" });
+    }
+    res.status(204).send(); // No content to send back
+  } catch (error) {
+    handleError(res, error, "Error deleting food item");
+  }
 };

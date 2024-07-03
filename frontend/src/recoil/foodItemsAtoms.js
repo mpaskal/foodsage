@@ -21,3 +21,8 @@ export const foodItemsWithExpirationState = selector({
     }));
   },
 });
+
+export const currentItemState = atom({
+  key: "currentItemState",
+  default: null,
+});
