@@ -50,30 +50,41 @@ const FoodItemsPage = () => {
       return;
     }
 
+    // Optimistic update
+    setFoodItems((prevItems) =>
+      prevItems.map((item) =>
+        item._id === itemId ? { ...item, [field]: value } : item
+      )
+    );
+
     try {
       setIsUpdating(true);
       let updates = { [field]: value };
 
       const response = await axios.patch(`/api/fooditems/${itemId}`, updates);
-      if (response.status === 200) {
-        // Update only the base foodItemsState
+      if (response.status !== 200) {
+        // Revert the optimistic update if the server request fails
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === itemId ? { ...item, ...updates } : item
+            item._id === itemId ? { ...item, [field]: item[field] } : item
           )
         );
-        console.log("Item updated successfully");
-      } else {
         setError("Failed to update the food item.");
         console.error("Error updating item:", response.data);
       }
     } catch (error) {
+      // Revert the optimistic update if the server request fails
+      setFoodItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === itemId ? { ...item, [field]: item[field] } : item
+        )
+      );
       setError("An error occurred while updating the food item.");
       console.error("Error updating item:", error);
     } finally {
       setIsUpdating(false);
     }
-  }, 300);
+  }, 150);
 
   const handleDeleteItem = async (itemId) => {
     try {
@@ -103,7 +114,7 @@ const FoodItemsPage = () => {
     <Layout>
       <div className="container">
         <div className="d-flex align-items-center mb-3">
-          <h1>Food Inventory</h1>
+          <h1 class="title">Food Inventory</h1>
           <Button
             variant="success"
             className="ml-auto"
