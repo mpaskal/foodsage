@@ -50,3 +50,13 @@ export const foodItemsState = atom({
   key: "foodItemsState",
   default: [],
 });
+
+export const totalPagesState = atom({
+  key: "totalPagesState",
+  default: 0,
+});
+
+export const totalItemsState = atom({
+  key: "totalItemsState",
+  default: 0,
+});

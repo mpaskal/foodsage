@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useRecoilState, useRecoilValue } from "recoil";
-import axios from "axios";
+import React, { useState, useEffect, useCallback } from "react";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { foodItemsState, totalItemsState } from "../../recoil/atoms";
 import Layout from "../../components/Layout/LayoutApp";
 import {
   Button,
@@ -9,26 +9,34 @@ import {
   Spinner,
   Pagination,
 } from "react-bootstrap";
-import { foodItemsState } from "../../recoil/atoms";
 import {
   useFetchFoodItems,
   useAddFoodItem,
   useUpdateFoodItem,
+  useDeleteFoodItem,
 } from "../../actions/foodItemActions";
-import debounce from "lodash/debounce"; // Import debounce from lodash
-import FoodItemsTable from "../../components/FoodItem/FoodItemTable"; // Import the FoodItemsTable component
+import FoodItemTable from "../../components/FoodItem/FoodItemTable";
+import FoodItemModal from "../../components/FoodItem/FoodItemModal";
+import debounce from "lodash/debounce";
+import { calculateExpirationDate } from "../../utils/dateUtils";
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+  const totalItems = useRecoilValue(totalItemsState);
+  const setTotalItems = useSetRecoilState(totalItemsState);
   const fetchFoodItems = useFetchFoodItems();
   const addFoodItem = useAddFoodItem();
   const updateFoodItem = useUpdateFoodItem();
+  const deleteFoodItem = useDeleteFoodItem();
+
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10; // define itemsPerPage
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchItems();
@@ -38,10 +46,13 @@ const FoodItemsPage = () => {
     setIsLoading(true);
     try {
       const response = await fetchFoodItems(page, itemsPerPage);
+      console.log("Fetch response FoodItemsPage:", response);
       if (response.success) {
+        setFoodItems(response.items);
         setTotalPages(response.totalPages);
+        setTotalItems(response.totalItems);
       } else {
-        throw new Error("Error fetching food items");
+        throw new Error(response.error || "Error fetching food items");
       }
     } catch (error) {
       console.error("Error fetching food items", error);
@@ -52,46 +63,139 @@ const FoodItemsPage = () => {
     }
   };
 
-  const handleShowModal = () => {
-    // Logic to show modal for adding a new item
-  };
-
-  const handleDelete = (id) => {
-    // Logic to delete a food item
-  };
-
-  const handleInputChange = useCallback((id, name, value) => {
-    if (!id || typeof id !== "string") {
-      console.error("Invalid ID provided to handleInputChange:", id);
-      return;
-    }
-
-    setFoodItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === id ? { ...item, [name]: value } : item
-      )
-    );
-
-    debouncedApiCall(id, { [name]: value });
-  }, []);
+  const [newItem, setNewItem] = useState({
+    name: "",
+    category: "",
+    storage: "",
+    purchasedDate: "",
+  });
 
   const debouncedApiCall = debounce(async (id, data) => {
     try {
-      const response = await axios.patch(`/api/fooditems/${id}`, data);
-      console.log("Item updated successfully:", response.data);
+      await updateFoodItem(id, data);
+      console.log("Item updated successfully:", id, data);
     } catch (error) {
-      console.error(
-        "Error updating item:",
-        error.response ? error.response.data : error.message
-      );
+      console.error("Error updating item:", error);
+      setToastMessage("Error updating item");
+      setShowToast(true);
     }
   }, 500);
+
+  const handleInputChange = useCallback(
+    (id, name, value) => {
+      if (name === "category" || name === "storage") {
+        const expirationDate = calculateExpirationDate(
+          newItem.category,
+          newItem.storage,
+          new Date(newItem.purchasedDate)
+        );
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === id
+              ? { ...item, [name]: value, expirationDate: expirationDate }
+              : item
+          )
+        );
+        debouncedApiCall(id, { [name]: value, expirationDate });
+      } else {
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === id ? { ...item, [name]: value } : item
+          )
+        );
+        debouncedApiCall(id, { [name]: value });
+      }
+    },
+    [setFoodItems, newItem]
+  );
+
+  const handleShowModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditItem(null);
+  };
+
+  const handleEditItem = (item) => {
+    setEditItem(item);
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      if (editItem) {
+        await updateFoodItem(editItem._id, formData);
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === editItem._id ? { ...item, ...formData } : item
+          )
+        );
+      } else {
+        await addFoodItem(formData);
+        setFoodItems((prevItems) => [...prevItems, formData]);
+      }
+      setToastMessage("Item saved successfully");
+      setShowToast(true);
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving item:", error);
+      setToastMessage("Error saving item");
+      setShowToast(true);
+    }
+  };
+
+  const handleDelete = useCallback(
+    async (item) => {
+      try {
+        await deleteFoodItem(item._id);
+        setFoodItems((prevItems) =>
+          prevItems.filter((i) => i._id !== item._id)
+        );
+        setToastMessage("Item deleted successfully");
+        setShowToast(true);
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        setToastMessage("Error deleting item");
+        setShowToast(true);
+      }
+    },
+    [deleteFoodItem, setFoodItems]
+  );
+
+  const handleMoveItem = useCallback(
+    (id, newLocation) => {
+      console.log(`Moving item ${id} to ${newLocation}`);
+      setFoodItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === id ? { ...item, storage: newLocation } : item
+        )
+      );
+      updateFoodItem(id, { storage: newLocation });
+    },
+    [setFoodItems, updateFoodItem]
+  );
+
+  const handleConsumeItem = useCallback(
+    (id, consumedPercentage) => {
+      console.log(`Marking item ${id} as ${consumedPercentage}% consumed`);
+      setFoodItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === id ? { ...item, consumed: consumedPercentage } : item
+        )
+      );
+      updateFoodItem(id, { consumed: consumedPercentage });
+    },
+    [setFoodItems, updateFoodItem]
+  );
 
   return (
     <Layout>
       <div className="food-items">
         <h1>Food Items</h1>
-        <Button variant="primary" onClick={() => handleShowModal()}>
+        <div>Total Items: {totalItems}</div>
+        <Button variant="primary" onClick={handleShowModal}>
           Add Item
         </Button>
 
@@ -102,12 +206,16 @@ const FoodItemsPage = () => {
             </Spinner>
           </div>
         ) : (
-          <FoodItemsTable
-            items={foodItems}
+          <FoodItemTable
+            foodItems={foodItems}
             handleInputChange={handleInputChange}
             handleDelete={handleDelete}
+            handleMoveItem={handleMoveItem}
+            handleConsumeItem={handleConsumeItem}
+            handleEditItem={handleEditItem}
           />
         )}
+
         <Pagination className="mt-3">
           {[...Array(totalPages).keys()].map((number) => (
             <Pagination.Item
@@ -119,6 +227,7 @@ const FoodItemsPage = () => {
             </Pagination.Item>
           ))}
         </Pagination>
+
         <ToastContainer position="top-end" className="p-3">
           <Toast
             onClose={() => setShowToast(false)}
@@ -129,6 +238,27 @@ const FoodItemsPage = () => {
             <Toast.Body>{toastMessage}</Toast.Body>
           </Toast>
         </ToastContainer>
+
+        <FoodItemModal
+          show={showModal}
+          handleClose={handleCloseModal}
+          handleSubmit={handleSubmit}
+          handleInputChange={handleInputChange}
+          form={
+            editItem || {
+              name: "",
+              category: "",
+              storage: "",
+              quantity: 0,
+              quantityMeasurement: "",
+              cost: 0,
+              source: "",
+              expirationDate: "",
+              purchasedDate: "",
+            }
+          }
+          isEdit={!!editItem}
+        />
       </div>
     </Layout>
   );
