@@ -6,7 +6,7 @@ import {
   selectedUserState,
   isUserModalOpenState,
   loggedInUserState,
-} from "../../recoil/atoms";
+} from "../../recoil/userAtoms";
 
 const mockUpdateUser = jest.fn();
 const mockAddUser = jest.fn();

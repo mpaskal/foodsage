@@ -4,7 +4,7 @@ import {
   selectedUserState,
   adminUsersState,
   isLastAdminState,
-} from "../recoil/atoms";
+} from "../recoil/userAtoms";
 import axios from "axios";
 
 export const useUpdateUser = () => {

@@ -29,3 +29,8 @@ export const selectedUserState = atom({
   key: "selectedUserState",
   default: null,
 });
+
+export const isLastAdminState = atom({
+  key: "isLastAdminState",
+  default: false,
+});

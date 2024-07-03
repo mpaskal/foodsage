@@ -10,7 +10,7 @@ import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { loggedInUserState } from "./recoil/atoms";
+import { loggedInUserState } from "./recoil/userAtoms";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 

@@ -19,7 +19,7 @@ import {
   usersState,
   loggedInUserState,
   isLastAdminState,
-} from "../../recoil/atoms";
+} from "../../recoil/userAtoms";
 import {
   useUpdateUser,
   useAddUser,

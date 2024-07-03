@@ -1,5 +1,5 @@
 import { useSetRecoilState, useRecoilCallback } from "recoil";
-import { foodItemsState } from "../recoil/atoms"; // Make sure this path is correct
+import { foodItemsState } from "../recoil/foodItemsAtoms"; // Make sure this path is correct
 import axios from "axios";
 
 export const useFetchFoodItems = () => {

@@ -5,10 +5,12 @@ import {
   selectedUserState,
   isUserModalOpenState,
   loggedInUserState,
+} from "../../recoil/userAtoms";
+import { useUpdateUser, useAddUser } from "../../actions/userActions";
+import {
   currentPageState,
   usersPerPageState,
-} from "../../recoil/atoms";
-import { useUpdateUser, useAddUser } from "../../actions/userActions";
+} from "../../recoil/paginationAtoms";
 
 const UserModal = ({
   fetchUsers,
