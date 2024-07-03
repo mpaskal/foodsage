@@ -1,192 +1,153 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import axios from "axios";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import {
+  foodItemsState,
+  foodItemsWithExpirationState,
+} from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
-import DeleteConfirmationModal from "../../components/FoodItem/DeleteConfirmationModal";
-import { Button } from "react-bootstrap";
+import { Button, Alert, Spinner } from "react-bootstrap";
+import { debounce } from "lodash";
 
 const FoodItemsPage = () => {
-  const [foodItems, setFoodItems] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null);
-  const [isEdit, setIsEdit] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    category: "Dairy",
-    quantity: "",
-    quantityMeasurement: "L",
-    storage: "Fridge",
-    cost: "",
-    source: "",
-    expirationDate: "",
-    purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
-    image: null,
-    tenantId: "",
-    userId: "",
-  });
-
-  const loggedInUser = JSON.parse(localStorage.getItem("user"));
+  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+  const [foodItemsWithExpiration, setFoodItemsWithExpiration] = useRecoilState(
+    foodItemsWithExpirationState
+  );
+  const setFoodItemsBase = useSetRecoilState(foodItemsState);
+  const [showModal, setShowModal] = React.useState(false);
+  const [currentItem, setCurrentItem] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isUpdating, setIsUpdating] = React.useState(false);
 
   useEffect(() => {
-    fetchFoodItems();
-  }, []);
-
-  const fetchFoodItems = async () => {
-    try {
-      const response = await axios.get("/api/fooditems");
-      setFoodItems(response.data);
-    } catch (error) {
-      console.error("Error fetching food items:", error);
-    }
-  };
-
-  const handleShowModal = (item) => {
-    if (item) {
-      setCurrentItem(item);
-      setForm({
-        ...item,
-        expirationDate: item.expirationDate
-          ? new Date(item.expirationDate).toISOString().substring(0, 10)
-          : "",
-        purchasedDate: item.purchasedDate
-          ? new Date(item.purchasedDate).toISOString().substring(0, 10)
-          : "",
-        tenantId: item.tenantId || loggedInUser.tenantId,
-        userId: item.userId || loggedInUser.id,
-      });
-      setIsEdit(true);
-    } else {
-      setCurrentItem(null);
-      setForm({
-        name: "",
-        category: "Dairy",
-        quantity: "",
-        quantityMeasurement: "L",
-        storage: "Fridge",
-        cost: "",
-        source: "",
-        expirationDate: "",
-        purchasedDate: new Date().toISOString().substring(0, 10), // Default to today
-        image: null,
-        tenantId: loggedInUser.tenantId,
-        userId: loggedInUser.id,
-      });
-      setIsEdit(false);
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => setShowModal(false);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    const file = files[0];
-
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prevForm) => ({
-          ...prevForm,
-          [name]: reader.result.split(",")[1], // Only save the base64 string
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setForm((prevForm) => ({
-        ...prevForm,
-        [name]: "",
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const formData = new FormData();
-      for (const key in form) {
-        if (form[key] !== "") {
-          formData.append(key, form[key]);
+    const fetchFoodItems = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get("/api/fooditems");
+        if (Array.isArray(response.data.data)) {
+          setFoodItemsBase(response.data.data);
+        } else {
+          setError("Response data is not an array");
         }
+      } catch (error) {
+        setError("Failed to fetch food items");
+      } finally {
+        setIsLoading(false);
       }
-      console.log(
-        "Form Data being sent:",
-        Object.fromEntries(formData.entries())
-      ); // Log form data for debugging
+    };
 
-      if (isEdit) {
-        console.log("Editing item with ID:", currentItem._id);
-        await axios.patch(`/api/fooditems/${currentItem._id}`, formData);
-      } else {
-        console.log("Adding new item");
-        await axios.post("/api/fooditems", formData);
-      }
-      fetchFoodItems();
-      handleCloseModal();
-    } catch (error) {
-      console.error(
-        "Error saving food item:",
-        error.response ? error.response.data : error
-      );
-    }
-  };
+    fetchFoodItems();
+  }, [setFoodItemsBase]);
 
-  const handleDelete = async (item) => {
-    console.log("Deleting item:", item);
-    if (!item || !item._id) {
-      console.error("No valid item provided for deletion");
+  const handleInputChange = debounce(async (itemId, field, value) => {
+    if (!itemId) {
+      console.error("Error updating item: Item ID is undefined");
+      setError("An error occurred while updating the food item.");
       return;
     }
+
     try {
-      await axios.delete(`/api/fooditems/${item._id}`);
-      fetchFoodItems();
-      setShowDeleteModal(false);
+      setIsUpdating(true);
+      let updates = { [field]: value };
+
+      const response = await axios.put(`/api/fooditems/${itemId}`, updates);
+      if (response.status === 200) {
+        setFoodItems((prevItems) =>
+          prevItems.map((item) =>
+            item._id === itemId ? { ...item, ...updates } : item
+          )
+        );
+        setFoodItemsWithExpiration((prevItems) =>
+          prevItems.map((item) =>
+            item._id === itemId ? { ...item, ...updates } : item
+          )
+        );
+        console.log("Item updated successfully");
+      } else if (response.status === 404) {
+        setError(`The food item with ID ${itemId} was not found.`);
+        console.error(`Error updating item: Item with ID ${itemId} not found`);
+      } else {
+        setError("Failed to update the food item.");
+        console.error("Error updating item:", response.data);
+      }
     } catch (error) {
-      console.error("Error deleting food item:", error);
+      setError("An error occurred while updating the food item.");
+      console.error("Error updating item:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, 300);
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const response = await axios.delete(`/api/fooditems/${itemId}`);
+      if (response.status === 200) {
+        setFoodItems((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+        setFoodItemsWithExpiration((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+        console.log("Item deleted successfully");
+      } else if (response.status === 404) {
+        setError(`The food item with ID ${itemId} was not found.`);
+        console.error(`Error deleting item: Item with ID ${itemId} not found`);
+      } else {
+        setError("Failed to delete the food item.");
+        console.error("Error deleting item:", response.data);
+      }
+    } catch (error) {
+      setError("An error occurred while deleting the food item.");
+      console.error("Error deleting item:", error);
     }
   };
-
-  const handleShowDeleteModal = (item) => {
-    setCurrentItem(item);
-    setShowDeleteModal(true);
-  };
-
-  const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
   return (
     <Layout>
       <div className="container">
-        <h1>Food Inventory</h1>
-        <Button onClick={() => handleShowModal(null)}>Add Food Item</Button>
-        <FoodItemTable
-          foodItems={foodItems}
-          handleShowModal={handleShowModal}
-          handleDelete={handleShowDeleteModal}
-          loggedInUser={loggedInUser}
-        />
-        <FoodItemModal
-          show={showModal}
-          handleClose={handleCloseModal}
-          handleSubmit={handleSubmit}
-          handleChange={handleInputChange}
-          handleFileChange={handleFileChange}
-          form={form}
-          isEdit={isEdit}
-        />
-        <DeleteConfirmationModal
-          show={showDeleteModal}
-          handleClose={handleCloseDeleteModal}
-          confirmDelete={() => handleDelete(currentItem)}
-        />
+        <div className="d-flex align-items-center mb-3">
+          <h1>Food Inventory</h1>
+          <Button
+            variant="success"
+            className="ml-auto"
+            onClick={() => setShowModal(true)}
+          >
+            Add Food Item
+          </Button>
+        </div>
+
+        {error && (
+          <Alert variant="danger">
+            <strong>Error:</strong> {error}
+          </Alert>
+        )}
+        {isLoading ? (
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        ) : foodItemsWithExpiration.length > 0 ? (
+          <FoodItemTable
+            foodItems={foodItemsWithExpiration}
+            handleInputChange={handleInputChange}
+            handleEdit={setShowModal}
+            handleDelete={handleDeleteItem}
+            isUpdating={isUpdating}
+          />
+        ) : (
+          <p>No food items found.</p>
+        )}
+
+        {showModal && (
+          <FoodItemModal
+            show={showModal}
+            handleClose={() => setShowModal(false)}
+            currentItem={currentItem}
+          />
+        )}
       </div>
     </Layout>
   );

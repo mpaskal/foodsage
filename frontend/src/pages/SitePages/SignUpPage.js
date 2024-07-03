@@ -48,17 +48,12 @@ const SignUpPage = () => {
           })
         );
 
-        localStorage.setItem("isNewUser", "true");
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+        navigate("/dashboard");
       } else {
         setError("User data is not returned correctly");
       }
     } catch (error) {
       console.error("Error registering user", error);
-      console.log("Error Response Data:", error.response?.data);
       setError(error.response?.data?.msg || "Error registering user");
     }
   };

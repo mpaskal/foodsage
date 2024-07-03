@@ -22,12 +22,25 @@ exports.createFoodItem = async (req, res) => {
   });
 };
 
-// Get all food items
+// Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
   try {
-    const foodItems = await FoodItem.find();
-    res.status(200).json(foodItems);
+    const totalItems = await FoodItem.countDocuments(); // Count total items in the collection
+    const foodItems = await FoodItem.find()
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
+
+    res.status(200).json({
+      data: foodItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: Number(page),
+      totalItems: totalItems, // Include the total count in the response
+      limit: Number(limit),
+    });
   } catch (error) {
+    console.error("Error fetching food items:", error);
     res.status(500).json({ message: "Error fetching food items", error });
   }
 };

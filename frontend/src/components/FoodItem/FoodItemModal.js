@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
 import { calculateExpirationDate } from "../../utils/dateUtils";
 
@@ -10,9 +10,7 @@ const categories = [
   "Frozen Goods",
   "Other",
 ];
-
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
-
 const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
   Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
@@ -20,13 +18,6 @@ const quantityMeasurementsByCategory = {
   "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
   "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
-};
-
-const quantityMeasurementsByStorage = {
-  Fridge: ["L", "Lb", "Oz", "Item", "Kg"],
-  Freezer: ["Kg", "Lb", "Item", "L", "Oz"],
-  Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
-  Cellar: ["Item", "Box", "Kg", "Lb", "Gr"],
 };
 
 const FoodItemModal = ({
@@ -38,46 +29,22 @@ const FoodItemModal = ({
   form,
   isEdit,
 }) => {
-  const [quantityMeasurements, setQuantityMeasurements] = useState([]);
-
-  const updateQuantityMeasurements = useCallback(
-    (category, storage) => {
-      const categoryMeasurements =
-        quantityMeasurementsByCategory[category] || [];
-      const storageMeasurements = quantityMeasurementsByStorage[storage] || [];
-      const combinedMeasurements = [
-        ...new Set([...categoryMeasurements, ...storageMeasurements]),
-      ];
-      setQuantityMeasurements(combinedMeasurements);
-
-      if (!form.quantityMeasurement && combinedMeasurements.length > 0) {
-        handleChange({
-          target: {
-            name: "quantityMeasurement",
-            value: combinedMeasurements[0],
-          },
-        });
-      }
-    },
-    [form.quantityMeasurement, handleChange]
-  );
+  const quantityMeasurements = useMemo(() => {
+    const categoryMeasurements =
+      quantityMeasurementsByCategory[form.category] || [];
+    const storageMeasurements = storages.includes(form.storage)
+      ? quantityMeasurementsByCategory[form.storage]
+      : [];
+    return [...new Set([...categoryMeasurements, ...storageMeasurements])];
+  }, [form.category, form.storage]);
 
   useEffect(() => {
-    if (!form.category) {
+    if (!form.category)
       handleChange({ target: { name: "category", value: "Dairy" } });
-    }
-    if (!form.storage) {
+    if (!form.storage)
       handleChange({ target: { name: "storage", value: "Fridge" } });
-    }
-    updateQuantityMeasurements(
-      form.category || "Dairy",
-      form.storage || "Fridge"
-    );
-  }, [form.category, form.storage, handleChange, updateQuantityMeasurements]);
-
-  useEffect(() => {
     if (form.category && form.storage && form.purchasedDate) {
-      const defaultExpirationDate = calculateExpirationDate(
+      const newExpirationDate = calculateExpirationDate(
         form.category,
         form.storage,
         form.purchasedDate
@@ -85,7 +52,7 @@ const FoodItemModal = ({
       handleChange({
         target: {
           name: "expirationDate",
-          value: defaultExpirationDate.toISOString().substring(0, 10),
+          value: newExpirationDate.toISOString().substring(0, 10),
         },
       });
     }
@@ -100,7 +67,7 @@ const FoodItemModal = ({
         <Modal.Body>
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="name">
+              <Form.Group controlId="name">
                 <Form.Label>Name</Form.Label>
                 <Form.Control
                   type="text"
@@ -112,7 +79,7 @@ const FoodItemModal = ({
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="category">
+              <Form.Group controlId="category">
                 <Form.Label>Category</Form.Label>
                 <Form.Control
                   as="select"
@@ -132,7 +99,7 @@ const FoodItemModal = ({
           </Row>
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="quantity">
+              <Form.Group controlId="quantity">
                 <Form.Label>Quantity</Form.Label>
                 <Form.Control
                   type="number"
@@ -144,8 +111,8 @@ const FoodItemModal = ({
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="quantityMeasurement">
-                <Form.Label>Quantity Measurement</Form.Label>
+              <Form.Group controlId="quantityMeasurement">
+                <Form.Label>Measurement</Form.Label>
                 <Form.Control
                   as="select"
                   name="quantityMeasurement"
@@ -164,7 +131,7 @@ const FoodItemModal = ({
           </Row>
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="storage">
+              <Form.Group controlId="storage">
                 <Form.Label>Storage</Form.Label>
                 <Form.Control
                   as="select"
@@ -182,7 +149,7 @@ const FoodItemModal = ({
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group className="mb-3" controlId="cost">
+              <Form.Group controlId="cost">
                 <Form.Label>Cost</Form.Label>
                 <Form.Control
                   type="number"
@@ -194,7 +161,7 @@ const FoodItemModal = ({
               </Form.Group>
             </Col>
           </Row>
-          <Form.Group className="mb-3" controlId="source">
+          <Form.Group controlId="source">
             <Form.Label>Source</Form.Label>
             <Form.Control
               type="text"
@@ -203,7 +170,7 @@ const FoodItemModal = ({
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="expirationDate">
+          <Form.Group controlId="expirationDate">
             <Form.Label>Expiration Date</Form.Label>
             <Form.Control
               type="date"
@@ -217,7 +184,7 @@ const FoodItemModal = ({
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="purchasedDate">
+          <Form.Group controlId="purchasedDate">
             <Form.Label>Purchased Date</Form.Label>
             <Form.Control
               type="date"
@@ -231,7 +198,7 @@ const FoodItemModal = ({
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="image">
+          <Form.Group controlId="image">
             <Form.Label>Image</Form.Label>
             <Form.Control
               type="file"
