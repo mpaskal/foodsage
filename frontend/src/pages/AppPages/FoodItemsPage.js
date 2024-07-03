@@ -54,22 +54,15 @@ const FoodItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await axios.put(`/api/fooditems/${itemId}`, updates);
+      const response = await axios.patch(`/api/fooditems/${itemId}`, updates);
       if (response.status === 200) {
+        // Update only the base foodItemsState
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
             item._id === itemId ? { ...item, ...updates } : item
           )
         );
-        setFoodItemsWithExpiration((prevItems) =>
-          prevItems.map((item) =>
-            item._id === itemId ? { ...item, ...updates } : item
-          )
-        );
         console.log("Item updated successfully");
-      } else if (response.status === 404) {
-        setError(`The food item with ID ${itemId} was not found.`);
-        console.error(`Error updating item: Item with ID ${itemId} not found`);
       } else {
         setError("Failed to update the food item.");
         console.error("Error updating item:", response.data);
