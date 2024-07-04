@@ -29,10 +29,15 @@ const UserTable = ({
             <td>{user.email}</td>
             <td>{user.role}</td>
             <td>
-              <Button variant="info" onClick={() => handleShowModal(user)}>
+              <Button
+                className="btn-edit"
+                variant="info"
+                onClick={() => handleShowModal(user)}
+              >
                 Edit
               </Button>
               <Button
+                className="btn-delete ml-2"
                 variant="danger"
                 onClick={() => handleDelete(user._id)}
                 disabled={
