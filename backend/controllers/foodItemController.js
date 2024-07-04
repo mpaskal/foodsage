@@ -1,5 +1,3 @@
-// foodItemController.js
-
 const FoodItem = require("../models/FoodItem");
 const uploadMiddleware = require("../middlewares/uploadMiddleware");
 
@@ -8,24 +6,26 @@ const handleError = (res, error, message) => {
   res.status(400).json({ message, error: error.message });
 };
 
+// Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
   try {
-    const foodItems = await FoodItem.find();
-    res.status(200).json(foodItems);
-  } catch (error) {
-    handleError(res, error, "Error fetching food items");
-  }
-};
+    const totalItems = await FoodItem.countDocuments(); // Count total items in the collection
+    const foodItems = await FoodItem.find()
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
 
-exports.getFoodItemById = async (req, res) => {
-  try {
-    const foodItem = await FoodItem.findById(req.params.id);
-    if (!foodItem) {
-      return res.status(404).json({ message: "Food item not found" });
-    }
-    res.status(200).json(foodItem);
+    res.status(200).json({
+      data: foodItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: Number(page),
+      totalItems: totalItems, // Include the total count in the response
+      limit: Number(limit),
+    });
   } catch (error) {
-    handleError(res, error, "Error fetching food item");
+    console.error("Error fetching food items:", error);
+    res.status(500).json({ message: "Error fetching food items", error });
   }
 };
 

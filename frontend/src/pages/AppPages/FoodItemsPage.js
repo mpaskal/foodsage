@@ -31,8 +31,8 @@ const FoodItemsPage = () => {
         const response = await axios.get("/api/fooditems");
         console.log("Response received:", response.data); // Log the entire response for debugging
 
-        if (response.data && Array.isArray(response.data.data.foodItems)) {
-          setFoodItemsBase(response.data.data.foodItems);
+        if (response.data && Array.isArray(response.data)) {
+          setFoodItemsBase(response.data);
         } else {
           console.error("Unexpected response structure:", response.data);
           setError("Unexpected response structure");
