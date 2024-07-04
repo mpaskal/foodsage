@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const http = require("http"); // Import the http module
+const http = require("http"); // Use the http module
 require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
