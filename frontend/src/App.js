@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { RecoilRoot, useSetRecoilState } from "recoil";
 import HomePage from "./pages/SitePages/HomePage";
 import AboutPage from "./pages/SitePages/AboutPage";
-import ContactPage from "./pages/SitePages/AboutPage";
+import ContactPage from "./pages/SitePages/ContactPage";
 import SignInPage from "./pages/SitePages/SignInPage";
 import SignUpPage from "./pages/SitePages/SignUpPage";
 import DashboardPage from "./pages/AppPages/DashboardPage";
