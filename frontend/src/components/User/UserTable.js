@@ -28,7 +28,8 @@ const UserTable = ({
             <td>{user.lastName}</td>
             <td>{user.email}</td>
             <td>{user.role}</td>
-            <td>
+          
+            <td className="actions-cell">
               <Button
                 className="btn-edit"
                 variant="info"
