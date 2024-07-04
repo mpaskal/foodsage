@@ -11,7 +11,7 @@ const categories = [
   "Dairy",
   "Fresh",
   "Grains and Bread",
-  "Packaged and Snack Foods",
+  "Packaged and Snack Wastes",
   "Frozen Goods",
   "Other",
 ];
@@ -20,12 +20,12 @@ const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
   Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
   "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Packaged and Snack Wastes": ["Item", "Box", "Kg", "Lb", "Gr"],
   "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-const FoodItemModal = ({
+const WasteItemModal = ({
   show,
   handleClose,
   handleSubmit,
@@ -34,7 +34,7 @@ const FoodItemModal = ({
   form,
   isEdit,
 }) => {
-  const allFoodItemsWithExpiration = useRecoilValue(
+  const allWasteItemsWithExpiration = useRecoilValue(
     foodItemsWithExpirationState
   );
   const currentItem = useRecoilValue(currentItemState);
@@ -67,7 +67,9 @@ const FoodItemModal = ({
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>{isEdit ? "Edit Food Item" : "Add Food Item"}</Modal.Title>
+        <Modal.Title>
+          {isEdit ? "Edit Waste Item" : "Add Waste Item"}
+        </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
@@ -218,7 +220,7 @@ const FoodItemModal = ({
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {isEdit ? "Save Changes" : "Add Food Item"}
+            {isEdit ? "Save Changes" : "Add Waste Item"}
           </Button>
         </Modal.Footer>
       </Form>
@@ -226,4 +228,4 @@ const FoodItemModal = ({
   );
 };
 
-export default FoodItemModal;
+export default WasteItemModal;

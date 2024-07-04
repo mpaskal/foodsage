@@ -9,7 +9,7 @@ const categories = [
   "Dairy",
   "Fresh",
   "Grains and Bread",
-  "Packaged and Snack Foods",
+  "Packaged and Snack Wastes",
   "Frozen Goods",
   "Other",
 ];
@@ -22,13 +22,13 @@ const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
   Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
   "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Packaged and Snack Wastes": ["Item", "Box", "Kg", "Lb", "Gr"],
   "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-const FoodItemTable = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+const WasteItemTable = () => {
+  const [foodItems, setWasteItems] = useRecoilState(foodItemsState);
 
   const handleInputChange = (id, field, value) => {
     let updates = { [field]: value };
@@ -47,7 +47,7 @@ const FoodItemTable = () => {
     const updatedItems = foodItems.map((item) =>
       item._id === id ? { ...item, ...updates } : item
     );
-    setFoodItems(updatedItems);
+    setWasteItems(updatedItems);
 
     // Update all changed fields in the backend
     Object.keys(updates).forEach((updateField) => {
@@ -76,7 +76,7 @@ const FoodItemTable = () => {
   };
 
   const handleDelete = (itemToDelete) => {
-    setFoodItems((prevItems) =>
+    setWasteItems((prevItems) =>
       prevItems.filter((item) => item._id !== itemToDelete._id)
     );
   };
@@ -238,4 +238,4 @@ const FoodItemTable = () => {
   );
 };
 
-export default FoodItemTable;
+export default WasteItemTable;
