@@ -14,6 +14,8 @@ const categories = [
   "Other",
 ];
 
+const moveToOptions = ["Consume", "Consumed", "Donate", "Waste"];
+
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 
 const quantityMeasurementsByCategory = {
@@ -216,9 +218,11 @@ const FoodItemTable = () => {
             <td>
               <InlineEditControl
                 type="select"
-                options={["Consume", "Consumed", "Donate", "Waste"]} // Update as per your actual options
-                value={item.move}
-                onChange={(value) => handleInputChange(item._id, "move", value)}
+                options={moveToOptions}
+                value={item.moveTo || "Consume"}
+                onChange={(value) =>
+                  handleInputChange(item._id, "moveTo", value)
+                }
               />
             </td>
 
