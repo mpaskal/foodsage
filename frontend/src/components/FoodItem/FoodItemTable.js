@@ -1,5 +1,8 @@
 import React from "react";
 import { Table, Button } from "react-bootstrap";
+import { useRecoilState } from "recoil";
+import { foodItemsState } from "../../recoil/foodItemsAtoms";
+import InlineEditControl from "../Common/InlineEditControl";
 
 const categories = [
   "Dairy",
@@ -21,16 +24,26 @@ const quantityMeasurementsByCategory = {
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-const FoodItemTable = ({
-  foodItems,
-  handleInputChange,
-  handleDelete,
-  handleMoveItem,
-  handleConsumeItem,
-}) => {
+const FoodItemTable = () => {
+  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+
+  const handleInputChange = (id, field, value) => {
+    const updatedItems = foodItems.map((item) =>
+      item._id === id ? { ...item, [field]: value } : item
+    );
+    setFoodItems(updatedItems);
+  };
+
+  const handleDelete = (itemToDelete) => {
+    setFoodItems((prevItems) =>
+      prevItems.filter((item) => item._id !== itemToDelete._id)
+    );
+  };
+
   const getImageSrc = (image) => {
-    if (!image) return "placeholder_image_url"; // Replace with a path to a placeholder image
-    return `data:image/jpeg;base64,${image}`;
+    return image
+      ? `data:image/jpeg;base64,${image}`
+      : "path_to_placeholder_image";
   };
 
   const formatDateForInput = (date) => {
@@ -45,28 +58,11 @@ const FoodItemTable = ({
     const expDate = new Date(expirationDate);
     const timeDiff = expDate - today;
     const daysToExpire = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-    if (expDate < today) {
-      return { backgroundColor: "red", color: "white" };
-    } else if (daysToExpire <= 1) {
-      return { backgroundColor: "yellow", color: "black" };
-    } else {
-      return { backgroundColor: "green", color: "white" };
-    }
-  };
-
-  const formatLocalDate = (date) => {
-    const localDate = new Date(date);
-    localDate.setMinutes(
-      localDate.getMinutes() - localDate.getTimezoneOffset()
-    );
-    return localDate.toLocaleDateString();
-  };
-
-  const maxLength = (string = "", maxLength) => {
-    return string.length > maxLength
-      ? string.substring(0, maxLength) + "..."
-      : string;
+    return expDate < today
+      ? { backgroundColor: "red", color: "white" }
+      : daysToExpire <= 1
+      ? { backgroundColor: "yellow", color: "black" }
+      : { backgroundColor: "green", color: "white" };
   };
 
   return (
@@ -85,7 +81,7 @@ const FoodItemTable = ({
           <th>Purchased Date</th>
           <th>Consumed (%)</th>
           <th>Move</th>
-          <th className="actions">Actions</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -95,144 +91,81 @@ const FoodItemTable = ({
               <img
                 src={getImageSrc(item.image)}
                 alt={item.name}
-                width="50"
-                height="50"
+                style={{ width: "50px", height: "50px" }}
               />
             </td>
             <td>
-              <input
-                type="text"
-                value={maxLength(item.name, 15)}
-                onChange={(e) =>
-                  handleInputChange(item._id, "name", e.target.value)
-                }
-                maxLength={15}
-                style={{ width: "100px" }}
+              <InlineEditControl
+                value={item.name}
+                onChange={(value) => handleInputChange(item._id, "name", value)}
               />
             </td>
             <td>
-              <select
+              <InlineEditControl
+                type="select"
+                options={categories}
                 value={item.category}
-                onChange={(e) =>
-                  handleInputChange(item._id, "category", e.target.value)
+                onChange={(value) =>
+                  handleInputChange(item._id, "category", value)
                 }
-              >
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {maxLength(category, 15)}
-                  </option>
-                ))}
-              </select>
-            </td>
-            <td>
-              <input
-                type="number"
-                value={item.quantity}
-                onChange={(e) =>
-                  handleInputChange(item._id, "quantity", e.target.value)
-                }
-                maxLength={5}
-                style={{ width: "60px" }}
               />
             </td>
             <td>
-              <select
+              <InlineEditControl
+                type="number"
+                value={item.quantity.toString()}
+                onChange={(value) =>
+                  handleInputChange(item._id, "quantity", value)
+                }
+              />
+            </td>
+            <td>
+              <InlineEditControl
+                type="select"
+                options={quantityMeasurementsByCategory[item.category] || []}
                 value={item.quantityMeasurement}
-                onChange={(e) =>
-                  handleInputChange(
-                    item._id,
-                    "quantityMeasurement",
-                    e.target.value
-                  )
+                onChange={(value) =>
+                  handleInputChange(item._id, "quantityMeasurement", value)
                 }
-              >
-                {(quantityMeasurementsByCategory[item.category] || []).map(
-                  (measurement, index) => (
-                    <option key={index} value={measurement}>
-                      {measurement}
-                    </option>
-                  )
-                )}
-              </select>
-            </td>
-            <td>
-              <select
-                value={item.storage}
-                onChange={(e) =>
-                  handleInputChange(item._id, "storage", e.target.value)
-                }
-              >
-                {storages.map((storage, index) => (
-                  <option key={index} value={storage}>
-                    {storage}
-                  </option>
-                ))}
-              </select>
-            </td>
-            <td>
-              <input
-                type="number"
-                value={item.cost}
-                onChange={(e) =>
-                  handleInputChange(item._id, "cost", e.target.value)
-                }
-                maxLength={7}
-                style={{ width: "80px" }}
               />
             </td>
             <td>
-              <input
-                type="text"
-                value={maxLength(item.source, 15)}
-                onChange={(e) =>
-                  handleInputChange(item._id, "source", e.target.value)
+              <InlineEditControl
+                type="select"
+                options={storages}
+                value={item.storage}
+                onChange={(value) =>
+                  handleInputChange(item._id, "storage", value)
                 }
-                maxLength={15}
-                style={{ width: "100px" }}
+              />
+            </td>
+            <td>
+              <InlineEditControl
+                type="number"
+                value={item.cost.toString()}
+                onChange={(value) => handleInputChange(item._id, "cost", value)}
+              />
+            </td>
+            <td>
+              <InlineEditControl
+                value={item.source}
+                onChange={(value) =>
+                  handleInputChange(item._id, "source", value)
+                }
               />
             </td>
             <td style={getExpirationDateStyle(item.expirationDate)}>
-              <input
+              <InlineEditControl
                 type="date"
                 value={formatDateForInput(item.expirationDate)}
-                onChange={(e) =>
-                  handleInputChange(item._id, "expirationDate", e.target.value)
+                onChange={(value) =>
+                  handleInputChange(item._id, "expirationDate", value)
                 }
               />
             </td>
-            <td>{formatLocalDate(item.purchasedDate)}</td>
-            <td>
-              {getExpirationDateStyle(item.expirationDate).backgroundColor ===
-              "yellow" ? (
-                <input
-                  type="number"
-                  value={item.consumed || 0}
-                  onChange={(e) => handleConsumeItem(item._id, e.target.value)}
-                  max={100}
-                  maxLength={5}
-                  style={{ width: "60px" }}
-                />
-              ) : (
-                "N/A"
-              )}
-            </td>
-            <td>
-              {getExpirationDateStyle(item.expirationDate).backgroundColor ===
-              "yellow" ? (
-                <select
-                  value={item.move || ""}
-                  onChange={(e) => handleMoveItem(item._id, e.target.value)}
-                >
-                  <option value="">Select</option>
-                  <option value="consume">Consume</option>
-                  <option value="consumed">Consumed</option>
-                  <option value="donate">Donate</option>
-                  <option value="waste">Waste</option>
-                </select>
-              ) : (
-                "N/A"
-              )}
-            </td>
+            <td>{formatDateForInput(item.purchasedDate)}</td>
+            <td>{item.consumed || "N/A"}</td>
+            <td>{item.move || "N/A"}</td>
             <td>
               <Button variant="danger" onClick={() => handleDelete(item)}>
                 Delete
