@@ -29,9 +29,9 @@ mongoose
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Use Routes
-app.use("/api", userRoutes); // Mount user routes at /api
+app.use("/api/users", userRoutes); // Mount user routes at /api/users
 app.use("/api/tenants", tenantRoutes);
-app.use("/api", foodItemRoutes);
+app.use("/api/fooditems", foodItemRoutes); // Mount foodItemRoutes at /api/fooditems
 
 const port = process.env.PORT || 5000;
 
