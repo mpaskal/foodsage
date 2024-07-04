@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
-import { calculateExpirationDate } from "../../utils/dateUtils";
+import { useRecoilValue } from "recoil";
+import {
+  foodItemsWithExpirationState,
+  currentItemState,
+} from "../../recoil/foodItemsAtoms";
 
 const categories = [
   "Dairy",
@@ -29,6 +33,11 @@ const FoodItemModal = ({
   form,
   isEdit,
 }) => {
+  const allFoodItemsWithExpiration = useRecoilValue(
+    foodItemsWithExpirationState
+  );
+  const currentItem = useRecoilValue(currentItemState);
+
   const quantityMeasurements = useMemo(() => {
     const categoryMeasurements =
       quantityMeasurementsByCategory[form.category] || [];
@@ -39,24 +48,20 @@ const FoodItemModal = ({
   }, [form.category, form.storage]);
 
   useEffect(() => {
-    if (!form.category)
-      handleChange({ target: { name: "category", value: "Dairy" } });
-    if (!form.storage)
-      handleChange({ target: { name: "storage", value: "Fridge" } });
-    if (form.category && form.storage && form.purchasedDate) {
-      const newExpirationDate = calculateExpirationDate(
-        form.category,
-        form.storage,
-        form.purchasedDate
-      );
+    if (currentItem) {
+      // Synchronize form state with current item details including expiration date
       handleChange({
         target: {
           name: "expirationDate",
-          value: newExpirationDate.toISOString().substring(0, 10),
+          value: currentItem.expirationDate
+            ? new Date(currentItem.expirationDate)
+                .toISOString()
+                .substring(0, 10)
+            : "",
         },
       });
     }
-  }, [form.category, form.storage, form.purchasedDate, handleChange]);
+  }, [currentItem, handleChange]);
 
   return (
     <Modal show={show} onHide={handleClose}>

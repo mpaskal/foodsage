@@ -11,6 +11,24 @@ const foodItemRoutes = require("./routes/foodItemRoutes");
 
 const app = express();
 
+const WebSocket = require("ws");
+
+const wss = new WebSocket.Server({ noServer: true });
+
+server.on("upgrade", function upgrade(request, socket, head) {
+  wss.handleUpgrade(request, socket, head, function done(ws) {
+    wss.emit("connection", ws, request);
+  });
+});
+
+wss.on("connection", function connection(ws) {
+  ws.on("message", function message(data) {
+    console.log("received: %s", data);
+  });
+
+  ws.send("something");
+});
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));

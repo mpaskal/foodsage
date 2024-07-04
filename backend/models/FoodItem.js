@@ -1,29 +1,27 @@
-const mongoose = require("mongoose");
-
 const foodItemSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    category: { type: String, required: true },
+    name: { type: String, required: true, index: true },
+    category: { type: String, required: true, index: true },
     quantity: { type: Number, required: true },
     quantityMeasurement: { type: String, required: true },
-    storage: { type: String, required: true },
+    storage: { type: String, required: true, index: true },
     cost: { type: Number, required: true },
-    source: { type: String, required: true },
-    expirationDate: { type: Date, required: true },
-    purchasedDate: { type: Date, required: true },
+    source: { type: String, required: true, index: true },
+    expirationDate: { type: Date, required: true, index: true },
+    purchasedDate: { type: Date, required: true, index: true },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",
       required: true,
+      index: true,
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    image: { type: String }, // Path to the uploaded image file
+    category: { type: String, required: true, index: true },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    indexes: [{ fields: ["tenantId", "category"], unique: false }],
+  }
 );
 
-module.exports = mongoose.model("FoodItem", foodItemSchema);
+FoodItem.createIndex({ name: 1 });
+FoodItem.createIndex({ category: 1 });
