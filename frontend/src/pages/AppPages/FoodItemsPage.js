@@ -51,6 +51,14 @@ const FoodItemsPage = () => {
     fetchFoodItems();
   }, [setFoodItemsBase]);
 
+  const getCurrentDateFormatted = () => {
+    const currentDate = new Date();
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return currentDate.toLocaleDateString("en-US", options);
+  };
+
+  const currentDate = getCurrentDateFormatted();
+
   const handleInputChange = debounce(async (itemId, field, value) => {
     if (!itemId) {
       console.error("Error updating item: Item ID is undefined");
@@ -121,8 +129,11 @@ const FoodItemsPage = () => {
   return (
     <Layout>
       <div className="container">
-        <div className="d-flex align-items-center mb-3">
+        <div className="d-flex justify-content-between my-3">
           <h1 className="title">Food Inventory</h1>
+          <h2>{currentDate}</h2>
+        </div>
+        <div className="d-flex justify-content-end mb-1">
           <Button
             variant="success"
             className="ml-auto"
