@@ -29,39 +29,48 @@ const FoodItemTable = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
 
   const handleInputChange = (id, field, value) => {
-    // Process date input before setting state if the field is a date
-    const processedValue =
-      field === "purchasedDate" || field === "expirationDate"
-        ? processDateInput(value)
-        : value;
+    let updates = { [field]: value };
 
-    const saveChanges = async (id, field, value) => {
-      try {
-        const response = await fetch("/api/fooditems/" + id, {
-          method: "PATCH", // Assuming a REST API, adjust according to your API setup
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ [field]: value }),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to save changes");
-        }
-        // Optionally handle response data
-        const data = await response.json();
-        console.log("Save successful:", data);
-      } catch (error) {
-        console.error("Error saving changes:", error);
-      }
-    };
+    // Process date input before setting state if the field is a date
+    if (field === "purchasedDate" || field === "expirationDate") {
+      updates[field] = processDateInput(value);
+    }
+
+    // If the category changes, update the measurement to the first available option for the new category
+    if (field === "category") {
+      const defaultMeasurement = quantityMeasurementsByCategory[value][0];
+      updates["quantityMeasurement"] = defaultMeasurement;
+    }
 
     const updatedItems = foodItems.map((item) =>
-      item._id === id ? { ...item, [field]: processedValue } : item
+      item._id === id ? { ...item, ...updates } : item
     );
     setFoodItems(updatedItems);
 
-    // Assuming a function saveChanges() exists that sends updates to the backend
-    saveChanges(id, field, processedValue);
+    // Update all changed fields in the backend
+    Object.keys(updates).forEach((updateField) => {
+      saveChanges(id, updateField, updates[updateField]);
+    });
+  };
+
+  const saveChanges = async (id, field, value) => {
+    try {
+      const response = await fetch("/api/fooditems/" + id, {
+        method: "PATCH", // Assuming a REST API, adjust according to your API setup
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to save changes");
+      }
+      // Optionally handle response data
+      const data = await response.json();
+      console.log("Save successful:", data);
+    } catch (error) {
+      console.error("Error saving changes:", error);
+    }
   };
 
   const handleDelete = (itemToDelete) => {
