@@ -3,6 +3,7 @@ import { Table, Button } from "react-bootstrap";
 import { useRecoilState } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
+import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
 
 const categories = [
   "Dairy",
@@ -28,10 +29,39 @@ const FoodItemTable = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
 
   const handleInputChange = (id, field, value) => {
+    // Process date input before setting state if the field is a date
+    const processedValue =
+      field === "purchasedDate" || field === "expirationDate"
+        ? processDateInput(value)
+        : value;
+
+    const saveChanges = async (id, field, value) => {
+      try {
+        const response = await fetch("/api/fooditems/" + id, {
+          method: "PATCH", // Assuming a REST API, adjust according to your API setup
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ [field]: value }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to save changes");
+        }
+        // Optionally handle response data
+        const data = await response.json();
+        console.log("Save successful:", data);
+      } catch (error) {
+        console.error("Error saving changes:", error);
+      }
+    };
+
     const updatedItems = foodItems.map((item) =>
-      item._id === id ? { ...item, [field]: value } : item
+      item._id === id ? { ...item, [field]: processedValue } : item
     );
     setFoodItems(updatedItems);
+
+    // Assuming a function saveChanges() exists that sends updates to the backend
+    saveChanges(id, field, processedValue);
   };
 
   const handleDelete = (itemToDelete) => {
@@ -44,13 +74,6 @@ const FoodItemTable = () => {
     return image
       ? `data:image/jpeg;base64,${image}`
       : "path_to_placeholder_image";
-  };
-
-  const formatDateForInput = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().split("T")[0];
   };
 
   const getExpirationDateStyle = (expirationDate) => {
@@ -157,15 +180,39 @@ const FoodItemTable = () => {
             <td style={getExpirationDateStyle(item.expirationDate)}>
               <InlineEditControl
                 type="date"
-                value={formatDateForInput(item.expirationDate)}
+                value={formatDateForDisplay(item.expirationDate)}
                 onChange={(value) =>
                   handleInputChange(item._id, "expirationDate", value)
                 }
               />
             </td>
-            <td>{formatDateForInput(item.purchasedDate)}</td>
-            <td>{item.consumed || "N/A"}</td>
-            <td>{item.move || "N/A"}</td>
+            <td>
+              <InlineEditControl
+                type="date"
+                value={formatDateForDisplay(item.purchasedDate)}
+                onChange={(value) =>
+                  handleInputChange(item._id, "purchasedDate", value)
+                }
+              />
+            </td>
+            <td>
+              <InlineEditControl
+                type="number"
+                value={item.consumed ? item.consumed.toString() : "0"} // Default to '0' if undefined
+                onChange={(value) =>
+                  handleInputChange(item._id, "consumed", value)
+                }
+              />
+            </td>
+            <td>
+              <InlineEditControl
+                type="select"
+                options={["Consume", "Consumed", "Donate", "Waste"]} // Update as per your actual options
+                value={item.move}
+                onChange={(value) => handleInputChange(item._id, "move", value)}
+              />
+            </td>
+
             <td>
               <Button variant="danger" onClick={() => handleDelete(item)}>
                 Delete
