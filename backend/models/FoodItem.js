@@ -1,4 +1,7 @@
-const foodItemSchema = new mongoose.Schema(
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+const foodItemSchema = new Schema(
   {
     name: { type: String, required: true, index: true },
     category: { type: String, required: true, index: true },
@@ -15,13 +18,17 @@ const foodItemSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    category: { type: String, required: true, index: true },
   },
   {
     timestamps: true,
-    indexes: [{ fields: ["tenantId", "category"], unique: false }],
   }
 );
 
-FoodItem.createIndex({ name: 1 });
-FoodItem.createIndex({ category: 1 });
+// Ensure the indexes are created by Mongoose
+foodItemSchema.index({ name: 1 });
+foodItemSchema.index({ category: 1 });
+foodItemSchema.index({ tenantId: 1, category: 1 });
+
+const FoodItem = mongoose.model("FoodItem", foodItemSchema);
+
+module.exports = FoodItem;

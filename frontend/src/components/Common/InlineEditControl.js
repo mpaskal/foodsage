@@ -5,7 +5,8 @@ const InlineEditControl = ({
   value,
   onChange,
   type = "text",
-  validator = null,
+  options = [],
+  validator,
   formatDisplay = (val) => val,
 }) => {
   const [editMode, setEditMode] = useState(false);
@@ -24,14 +25,34 @@ const InlineEditControl = ({
     setEditMode(false);
   };
 
+  const handleChange = (e) => {
+    setLocalValue(e.target.value);
+  };
+
   return editMode ? (
-    <Form.Control
-      type={type}
-      value={localValue}
-      onChange={(e) => setLocalValue(e.target.value)}
-      onBlur={handleBlur}
-      autoFocus
-    />
+    type === "select" ? (
+      <Form.Control
+        as="select"
+        value={localValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        autoFocus
+      >
+        {options.map((option, index) => (
+          <option key={index} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Control>
+    ) : (
+      <Form.Control
+        type={type}
+        value={localValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        autoFocus
+      />
+    )
   ) : (
     <div onClick={() => setEditMode(true)}>{formatDisplay(value)}</div>
   );

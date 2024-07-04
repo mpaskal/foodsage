@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const http = require("http"); // Import the http module
 require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
@@ -12,6 +13,9 @@ const foodItemRoutes = require("./routes/foodItemRoutes");
 const app = express();
 
 const WebSocket = require("ws");
+
+// Create an HTTP server
+const server = http.createServer(app);
 
 const wss = new WebSocket.Server({ noServer: true });
 
@@ -43,7 +47,20 @@ const db = process.env.MONGO_URI;
 // Connect to MongoDB
 mongoose
   .connect(db)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+    console.log("MongoDB connected");
+
+    // Ensure indexes are created
+    const FoodItem = require("./models/FoodItem");
+
+    FoodItem.init()
+      .then(() => {
+        console.log("Indexes ensured for FoodItem");
+      })
+      .catch((err) => {
+        console.error("Error ensuring indexes for FoodItem", err);
+      });
+  })
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Use Routes
@@ -53,4 +70,4 @@ app.use("/api/fooditems", foodItemRoutes); // Mount foodItemRoutes at /api/foodi
 
 const port = process.env.PORT || 5000;
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+server.listen(port, () => console.log(`Server running on port ${port}`));
