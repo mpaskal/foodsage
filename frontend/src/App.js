@@ -15,7 +15,6 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-axios.defaults.baseURL = "http://localhost:5000";
 const InitializeState = ({ children }) => {
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
 
