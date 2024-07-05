@@ -534,23 +534,50 @@ a:hover {
 .table td {
   padding: 0.75rem;
   border: 1px solid #dee2e6;
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .table-hover tbody tr:hover {
   background-color: #f5f5f5;
 }
 
+/* Container for the buttons, ensuring they are in a flex container */
 .actions-cell {
   display: flex;
-  justify-content: start; /* Align buttons to the start of the cell */
-  gap: 10px; /* Space between buttons */
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 2px; 
 }
 
-.btn {
-  padding: 6px 12px; /* Button padding */
-  border-radius: 4px; /* Button border radius */
+/* Style for all buttons inside the actions cell */
+.actions-cell .btn {
+  flex: 1; 
+  margin: 0 4px; 
 }
+
+
+/* Styling for the Edit button */
+.btn-info {
+  background-color: orange !important; /* Normal state background color */
+  color: white !important; /* Text color */
+}
+
+.btn-info:hover {
+  background-color: yellow !important; /* Hover state background color */
+  color: black !important; /* Hover state text color */
+}
+
+/* Styling for the Delete button */
+.btn-danger {
+  background-color: red !important; /* Normal state background color */
+  color: white !important; /* Text color */
+}
+
+.btn-danger:hover {
+  background-color: darkred !important; /* Hover state background color */
+}
+
 
 /* Responsive settings for smaller screens */
 @media (max-width: 768px) {
