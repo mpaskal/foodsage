@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Table, Button } from "react-bootstrap";
 
 const UserTable = ({
@@ -8,6 +8,10 @@ const UserTable = ({
   loggedInUser,
   isLastAdmin,
 }) => {
+  useEffect(() => {
+    console.log("UserTable users prop:", users);
+  }, [users]);
+
   return (
     <Table hover>
       <thead>
@@ -28,7 +32,6 @@ const UserTable = ({
             <td>{user.lastName}</td>
             <td>{user.email}</td>
             <td>{user.role}</td>
-          
             <td className="actions-cell">
               <Button
                 className="btn-edit"

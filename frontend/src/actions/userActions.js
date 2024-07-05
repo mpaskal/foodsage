@@ -2,8 +2,7 @@ import { useRecoilCallback } from "recoil";
 import {
   usersState,
   selectedUserState,
-  adminUsersState,
-  isLastAdminState,
+  userManagementState,
 } from "../recoil/userAtoms";
 import axios from "axios";
 
@@ -43,35 +42,72 @@ export const useAddUser = () => {
 };
 
 export const useFetchUsers = () => {
+  console.log("useFetchUsers called");
   return useRecoilCallback(
     ({ set }) =>
       async (authToken, page, usersPerPage, loggedInUserId) => {
         try {
-          const response = await axios.get(
-            `/api/users?page=${page}&limit=${usersPerPage}`,
-            {
+          console.log("Fetching users...");
+          const [usersResponse, adminResponse] = await Promise.all([
+            axios.get(`/api/users?page=${page}&limit=${usersPerPage}`, {
               headers: { Authorization: `Bearer ${authToken}` },
-            }
-          );
+            }),
+            axios.get("/api/users/admin", {
+              headers: { Authorization: `Bearer ${authToken}` },
+            }),
+          ]);
 
-          if (response.data && Array.isArray(response.data.users)) {
-            set(usersState, response.data.users);
-            const adminUsersList = response.data.users.filter(
+          console.log("Users Response:", usersResponse.data);
+          console.log("Admin Response:", adminResponse.data);
+
+          if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
+            const adminTenantId = adminResponse.data.tenantId;
+
+            const filteredUsers = usersResponse.data.users.filter(
+              (user) => user.tenantId === adminTenantId
+            );
+
+            console.log("Filtered Users:", filteredUsers);
+
+            const adminUsersList = filteredUsers.filter(
               (u) => u.role === "admin"
             );
-            set(adminUsersState, adminUsersList);
-            set(
-              isLastAdminState,
-              adminUsersList.length === 1 &&
-                adminUsersList[0]._id === loggedInUserId
-            );
-            return { success: true, totalPages: response.data.totalPages };
+
+            console.log("Admin Users List:", adminUsersList);
+
+            set(userManagementState, (prevState) => {
+              const newState = {
+                ...prevState,
+                users: filteredUsers,
+                adminUsers: adminUsersList,
+                isLastAdmin:
+                  adminUsersList.length === 1 &&
+                  adminUsersList[0]._id === loggedInUserId,
+              };
+              console.log("New User Management State:", newState);
+              return newState;
+            });
+
+            return {
+              success: true,
+              totalPages: Math.ceil(filteredUsers.length / usersPerPage),
+            };
           } else {
             throw new Error("Invalid response structure");
           }
         } catch (error) {
-          console.error("Error fetching users", error);
-          throw error;
+          console.error(
+            "Error fetching users",
+            error.response?.data || error.message
+          );
+          set(userManagementState, (prevState) => ({
+            ...prevState,
+            error: error.response?.data?.message || "Failed to fetch users",
+          }));
+          return {
+            success: false,
+            error: error.response?.data?.message || "Failed to fetch users",
+          };
         }
       }
   );
