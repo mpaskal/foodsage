@@ -549,7 +549,11 @@ a:hover {
   align-items: center; 
   padding: 2px; 
 }
-
+.button-container-add {
+  display: flex;
+  justify-content: flex-end; /* Aligns the button to the right */
+  width: 100%; /* Ensures the container takes the full width */
+}
 /* Style for all buttons inside the actions cell */
 .actions-cell .btn {
   flex: 1; 
