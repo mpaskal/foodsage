@@ -30,6 +30,7 @@ const SignInPage = () => {
       );
 
       if (response.data && response.data.user && response.data.token) {
+        console.log("User logged in", response.data);
         localStorage.setItem(
           "user",
           JSON.stringify({

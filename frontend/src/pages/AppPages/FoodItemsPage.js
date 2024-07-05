@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-import axios from "axios";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import React, { useEffect, useCallback, useState } from "react";
+import api from "../../utils/api"; // Import the custom Axios instance
+import { useRecoilState, useRecoilValue } from "recoil";
 import {
   foodItemsState,
   foodItemsWithExpirationState,
@@ -11,53 +11,41 @@ import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { debounce } from "lodash";
+import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
 
 const FoodItemsPage = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
-  const [foodItemsWithExpiration, setFoodItemsWithExpiration] = useRecoilState(
-    foodItemsWithExpirationState
-  );
-  const setFoodItemsBase = useSetRecoilState(foodItemsState);
-  const [showModal, setShowModal] = React.useState(false);
+  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [error, setError] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const fetchFoodItems = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/fooditems"); // Use custom Axios instance
+      if (response.data && Array.isArray(response.data.data)) {
+        setFoodItems(response.data.data);
+      } else {
+        console.error("Unexpected response structure:", response.data);
+        setError("Unexpected response structure");
+      }
+    } catch (error) {
+      console.error("Error fetching food items:", error);
+      setError(
+        "Failed to fetch food items: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setFoodItems]);
 
   useEffect(() => {
-    const fetchFoodItems = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get("/api/fooditems");
-        console.log("Response received:", response.data); // Log the entire response for debugging
-
-        if (response.data && Array.isArray(response.data.data)) {
-          setFoodItemsBase(response.data.data);
-        } else {
-          console.error("Unexpected response structure:", response.data);
-          setError("Unexpected response structure");
-        }
-      } catch (error) {
-        console.error("Error fetching food items:", error);
-        setError(
-          "Failed to fetch food items: " +
-            (error.response?.data?.message || error.message)
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchFoodItems();
-  }, [setFoodItemsBase]);
-
-  const getCurrentDateFormatted = () => {
-    const currentDate = new Date();
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return currentDate.toLocaleDateString("en-US", options);
-  };
-
-  const currentDate = getCurrentDateFormatted();
+  }, [fetchFoodItems]);
 
   const handleInputChange = debounce(async (itemId, field, value) => {
     if (!itemId) {
@@ -77,7 +65,7 @@ const FoodItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await axios.patch(`/api/fooditems/${itemId}`, updates);
+      const response = await api.patch(`/fooditems/${itemId}`, updates); // Use custom Axios instance
       if (response.status !== 200) {
         // Revert the optimistic update if the server request fails
         setFoodItems((prevItems) =>
@@ -104,12 +92,9 @@ const FoodItemsPage = () => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      const response = await axios.delete(`/api/fooditems/${itemId}`);
+      const response = await api.delete(`/fooditems/${itemId}`); // Use custom Axios instance
       if (response.status === 200) {
         setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        setFoodItemsWithExpiration((prevItems) =>
           prevItems.filter((item) => item._id !== itemId)
         );
         console.log("Item deleted successfully");
@@ -126,6 +111,66 @@ const FoodItemsPage = () => {
     }
   };
 
+  const handleSubmit = async (newItem) => {
+    try {
+      setIsUpdating(true);
+      const formData = new FormData();
+      for (const key in newItem) {
+        if (key === "image" && newItem[key] instanceof File) {
+          formData.append(key, newItem[key], newItem[key].name);
+        } else {
+          formData.append(key, newItem[key]);
+        }
+      }
+
+      console.log("Sending data to server:", Object.fromEntries(formData));
+
+      const response = await api.post("/fooditems", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }); // Use custom Axios instance
+
+      if (response.status === 201) {
+        setFoodItems((prevItems) => [...prevItems, response.data]);
+        setShowModal(false);
+        setCurrentItem(null);
+        fetchFoodItems(); // Refresh the list after adding
+      } else {
+        throw new Error("Failed to add the food item.");
+      }
+    } catch (error) {
+      console.error("Error adding item:", error);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+        setError(
+          "Failed to add the food item: " +
+            (error.response.data.message || error.response.statusText)
+        );
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        setError("No response received from the server. Please try again.");
+      } else {
+        console.error("Error setting up request:", error.message);
+        setError(
+          "An error occurred while setting up the request: " + error.message
+        );
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const getCurrentDateFormatted = () => {
+    const currentDate = new Date();
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return currentDate.toLocaleDateString("en-US", options);
+  };
+
+  const currentDate = getCurrentDateFormatted();
+
   return (
     <Layout>
       <div className="container">
@@ -137,7 +182,10 @@ const FoodItemsPage = () => {
           <Button
             variant="success"
             className="ml-auto"
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setCurrentItem(null);
+              setShowModal(true);
+            }}
           >
             Add Food Item
           </Button>
@@ -156,7 +204,10 @@ const FoodItemsPage = () => {
           <FoodItemTable
             foodItems={foodItemsWithExpiration}
             handleInputChange={handleInputChange}
-            handleEdit={setShowModal}
+            handleEdit={(item) => {
+              setCurrentItem(item);
+              setShowModal(true);
+            }}
             handleDelete={handleDeleteItem}
             isUpdating={isUpdating}
           />
@@ -167,8 +218,11 @@ const FoodItemsPage = () => {
         {showModal && (
           <FoodItemModal
             show={showModal}
-            handleClose={() => setShowModal(false)}
-            currentItem={currentItem}
+            handleClose={() => {
+              setShowModal(false);
+              setCurrentItem(null);
+            }}
+            handleSubmit={handleSubmit}
           />
         )}
       </div>

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import Layout from "../../components/Layout/LayoutApp";
 import UserTable from "../../components/User/UserTable";
 import UserModal from "../../components/User/UserModal";
 import DeleteConfirmationModal from "../../components/User/DeleteConfirmationModal";
-import axios from "axios";
+import api from "../../utils/api"; // Use custom Axios instance
 import {
   Button,
   Toast,
@@ -34,46 +34,55 @@ const UserManagementPage = () => {
   const currentPage = useRecoilValue(currentPageState);
   const users = useRecoilValue(usersState);
   const adminUsers = useRecoilValue(adminUsersState);
+  const setUsers = useSetRecoilState(usersState);
+  const setIsLoading = useSetRecoilState(isLoadingState);
+  const setTotalPages = useSetRecoilState(totalPagesState);
+  const setCurrentPage = useSetRecoilState(currentPageState);
+  const setAdminUsers = useSetRecoilState(adminUsersState);
 
   const [confirmModal, setConfirmModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const usersPerPage = 10;
-
-  const fetchUsers = useFetchUsers();
   const deleteUser = useDeleteUser();
 
-  const loadUsers = async () => {
-    if (loggedInUser?.token) {
-      try {
-        console.log("Fetching users in loadUsers...");
-        const result = await fetchUsers(
-          loggedInUser.token,
-          currentPage,
-          usersPerPage,
-          loggedInUser.id
-        );
-        if (!result.success) {
-          setToastMessage("Error fetching users in loadUsers");
-          setShowToast(true);
-        } else {
-          setShowToast(false); // Hide the error toast if the fetch is successful
-        }
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        setToastMessage("Error fetching users in loadUsers setToastMessage");
-        setShowToast(true);
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const token = JSON.parse(localStorage.getItem("user"))?.token;
+      console.log("token", token); // Get token from localStorage
+      if (!token) {
+        throw new Error("No authentication token found");
       }
-    } else {
-      console.error("No token found");
-      setToastMessage("No authentication token found. Please log in again.");
+      const usersResponse = await api.get(
+        `/users?page=${currentPage}&limit=${usersPerPage}`
+      );
+      if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
+        const filteredUsers = usersResponse.data.users;
+        const adminUsersList = filteredUsers.filter((u) => u.role === "admin");
+
+        setUsers(filteredUsers);
+        setAdminUsers(adminUsersList);
+        setTotalPages(usersResponse.data.totalPages);
+        setCurrentPage(currentPage);
+        setShowToast(false);
+      } else {
+        throw new Error("Invalid response structure");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setToastMessage(
+        "Error fetching users: " + (error.message || "Unknown error")
+      );
       setShowToast(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    fetchUsers();
+  }, [loggedInUser?.token, currentPage]);
 
   const handleShowModal = (user = null) => {
     setSelectedUser(
@@ -109,14 +118,10 @@ const UserManagementPage = () => {
 
   const confirmDelete = async () => {
     try {
-      const token = loggedInUser?.token;
+      const token = localStorage.getItem("authToken"); // Get token from localStorage
       if (!token) {
-        setToastMessage("No authentication token found. Please log in again.");
-        setShowToast(true);
-        setConfirmModal(false);
-        return;
+        throw new Error("No authentication token found");
       }
-
       const userToDelete = users.find((user) => user._id === selectedUser?._id);
       const adminCount = adminUsers.length;
 
@@ -134,9 +139,7 @@ const UserManagementPage = () => {
         }
 
         try {
-          await axios.delete(`/api/tenants/${userToDelete.tenantId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          await api.delete(`/tenants/${userToDelete.tenantId}`);
           localStorage.clear();
           window.location.href = "/";
         } catch (error) {
@@ -147,12 +150,12 @@ const UserManagementPage = () => {
           setConfirmModal(false);
         }
       } else if (userToDelete?._id === loggedInUser.id) {
-        await deleteUser(userToDelete._id, token);
+        await deleteUser(userToDelete._id);
         localStorage.clear();
         window.location.href = "/";
       } else {
-        await deleteUser(userToDelete?._id, token);
-        loadUsers();
+        await deleteUser(userToDelete?._id);
+        fetchUsers();
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
         setShowToast(true);
@@ -168,7 +171,6 @@ const UserManagementPage = () => {
   const handlePageChange = (newPage) => {
     if (newPage !== currentPage) {
       setCurrentPage(newPage);
-      loadUsers();
     }
   };
 
@@ -180,7 +182,7 @@ const UserManagementPage = () => {
         <UserModal
           show={isUserModalOpen}
           handleClose={() => setIsUserModalOpen(false)}
-          fetchUsers={loadUsers}
+          fetchUsers={fetchUsers}
           page={currentPage}
           usersPerPage={usersPerPage}
         />

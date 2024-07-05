@@ -1,5 +1,6 @@
 import { useRecoilCallback } from "recoil";
 import axios from "axios";
+import api from "../utils/api";
 import {
   usersState,
   adminUsersState,

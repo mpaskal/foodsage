@@ -1,6 +1,9 @@
-// foodItemAtoms.js
+// foodItemsAtoms.js
 import { atom, selector } from "recoil";
-import { calculateExpirationDate } from "../utils/dateUtils";
+import {
+  calculateExpirationDate,
+  formatDateForDisplay,
+} from "../utils/dateUtils";
 
 export const foodItemsState = atom({
   key: "foodItemsState",
@@ -13,10 +16,8 @@ export const foodItemsWithExpirationState = selector({
     const foodItems = get(foodItemsState);
     return foodItems.map((item) => ({
       ...item,
-      expirationDate: calculateExpirationDate(
-        item.category,
-        item.storage,
-        item.purchasedDate
+      expirationDate: formatDateForDisplay(
+        calculateExpirationDate(item.category, item.storage, item.purchasedDate)
       ),
     }));
   },
