@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
-import axios from "axios";
 import Layout from "../../components/Layout/LayoutApp";
 import UserTable from "../../components/User/UserTable";
 import UserModal from "../../components/User/UserModal";
 import DeleteConfirmationModal from "../../components/User/DeleteConfirmationModal";
+import axios from "axios";
 import {
   Button,
   Toast,
@@ -15,75 +15,87 @@ import {
 import {
   isUserModalOpenState,
   selectedUserState,
-  adminUsersState,
-  usersState,
   loggedInUserState,
   isLastAdminState,
+  userManagementState,
 } from "../../recoil/userAtoms";
-import {
-  useUpdateUser,
-  useAddUser,
-  useFetchUsers,
-  useDeleteUser,
-} from "../../actions/userActions";
+import { useFetchUsers, useDeleteUser } from "../../actions/userActions";
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =
     useRecoilState(isUserModalOpenState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
-  const [adminUsers, setAdminUsers] = useRecoilState(adminUsersState);
-  const [users, setUsers] = useRecoilState(usersState);
   const loggedInUser = useRecoilValue(loggedInUserState);
-  const [isLastAdmin, setIsLastAdmin] = useRecoilState(isLastAdminState);
+  const isLastAdmin = useRecoilValue(isLastAdminState);
+  const [userManagement, setUserManagement] =
+    useRecoilState(userManagementState);
 
   const [confirmModal, setConfirmModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const usersPerPage = 10; // define usersPerPage
+  const usersPerPage = 10;
 
   const fetchUsers = useFetchUsers();
-  const updateUser = useUpdateUser();
-  const addUser = useAddUser();
   const deleteUser = useDeleteUser();
 
-  useEffect(() => {
-    if (loggedInUser && loggedInUser.token) {
-      fetchUsers(loggedInUser.token, page, usersPerPage, loggedInUser.id).then(
-        (result) => {
-          if (result.success) {
-            setTotalPages(result.totalPages);
-          } else {
-            setToastMessage("Error fetching users");
-            setShowToast(true);
-          }
+  const loadUsers = async () => {
+    if (loggedInUser?.token) {
+      setUserManagement((prev) => ({ ...prev, isLoading: true }));
+      try {
+        console.log("Fetching users in loadUsers...");
+        const result = await fetchUsers(
+          loggedInUser.token,
+          page,
+          usersPerPage,
+          loggedInUser.id
+        );
+        if (!result.success) {
+          setToastMessage("Error fetching users in loadUsers");
+          setShowToast(true);
+        } else {
+          setShowToast(false); // Hide the error toast if the fetch is successful
         }
-      );
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setToastMessage("Error fetching users in loadUsers setToastMessage");
+        setShowToast(true);
+      } finally {
+        setUserManagement((prev) => ({ ...prev, isLoading: false }));
+      }
     } else {
       console.error("No token found");
       setToastMessage("No authentication token found. Please log in again.");
       setShowToast(true);
     }
-  }, [page, loggedInUser]);
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   const handleShowModal = (user = null) => {
     setSelectedUser(
       user
         ? { ...user }
-        : { firstName: "", lastName: "", email: "", password: "", role: "user" }
+        : {
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "",
+            role: "user",
+          }
     );
     setIsUserModalOpen(true);
   };
 
   const handleDelete = (userId) => {
-    const userToDelete = users.find((user) => user._id === userId);
-    const adminCount = users.filter((user) => user.role === "admin").length;
-
-    console.log(`Trying to delete user: ${userToDelete?._id}`);
-    console.log(`Logged in user: ${loggedInUser?.id}`);
-    console.log(`Is last admin: ${isLastAdmin}`);
+    const userToDelete = userManagement.users.find(
+      (user) => user._id === userId
+    );
+    const adminCount = userManagement.users.filter(
+      (user) => user.role === "admin"
+    ).length;
 
     if (
       userToDelete.role === "admin" &&
@@ -108,8 +120,12 @@ const UserManagementPage = () => {
         return;
       }
 
-      const userToDelete = users.find((user) => user._id === selectedUser?._id);
-      const adminCount = users.filter((user) => user.role === "admin").length;
+      const userToDelete = userManagement.users.find(
+        (user) => user._id === selectedUser?._id
+      );
+      const adminCount = userManagement.users.filter(
+        (user) => user.role === "admin"
+      ).length;
 
       if (
         userToDelete?.role === "admin" &&
@@ -126,9 +142,7 @@ const UserManagementPage = () => {
 
         try {
           await axios.delete(`/api/tenants/${userToDelete.tenantId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
           localStorage.clear();
           window.location.href = "/";
@@ -145,7 +159,7 @@ const UserManagementPage = () => {
         window.location.href = "/";
       } else {
         await deleteUser(userToDelete?._id, token);
-        fetchUsers(token, page, usersPerPage, loggedInUser.id);
+        loadUsers();
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
         setShowToast(true);
@@ -158,6 +172,12 @@ const UserManagementPage = () => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage !== page) {
+      setPage(newPage);
+    }
+  };
+
   return (
     <Layout>
       <div className="user-management">
@@ -166,9 +186,9 @@ const UserManagementPage = () => {
         <UserModal
           show={isUserModalOpen}
           handleClose={() => setIsUserModalOpen(false)}
-          fetchUsers={fetchUsers} // Pass this function as a prop
-          page={page} // Pass current page as a prop
-          usersPerPage={usersPerPage} // Pass usersPerPage as a prop
+          fetchUsers={loadUsers}
+          page={page}
+          usersPerPage={usersPerPage}
         />
 
         <DeleteConfirmationModal
@@ -178,7 +198,7 @@ const UserManagementPage = () => {
           isLastAdmin={isLastAdmin && selectedUser?._id === loggedInUser?.id}
         />
 
-        {isLoading ? (
+        {userManagement.isLoading ? (
           <div className="text-center mt-4">
             <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
@@ -186,19 +206,20 @@ const UserManagementPage = () => {
           </div>
         ) : (
           <UserTable
-            users={users}
+            users={userManagement.users}
             handleShowModal={handleShowModal}
             handleDelete={handleDelete}
             loggedInUser={loggedInUser}
             isLastAdmin={isLastAdmin}
           />
         )}
+
         <Pagination className="mt-3">
-          {[...Array(totalPages).keys()].map((number) => (
+          {[...Array(userManagement.totalPages).keys()].map((number) => (
             <Pagination.Item
               key={number + 1}
               active={number + 1 === page}
-              onClick={() => setPage(number + 1)}
+              onClick={() => handlePageChange(number + 1)}
             >
               {number + 1}
             </Pagination.Item>

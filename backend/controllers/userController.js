@@ -180,7 +180,10 @@ const getAllUsers = async (req, res) => {
     console.error("Error in getAllUsers:", error);
     res
       .status(500)
-      .json({ message: "Error fetching users", error: error.message });
+      .json({
+        message: "Error fetching users in useController",
+        error: error.message,
+      });
   }
 };
 

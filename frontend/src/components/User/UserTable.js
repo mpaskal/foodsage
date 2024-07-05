@@ -8,10 +8,6 @@ const UserTable = ({
   loggedInUser,
   isLastAdmin,
 }) => {
-  useEffect(() => {
-    console.log("UserTable users prop:", users);
-  }, [users]);
-
   return (
     <Table hover>
       <thead>

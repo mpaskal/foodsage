@@ -7,26 +7,36 @@ const User = require("../models/User");
 router.post("/register", userController.registerFirstUser);
 router.post("/register-user", userAuth, userController.registerUser);
 router.post("/login", userController.loginUser);
-router.get("/", userAuth, userController.getAllUsers);
+router.get("/", userAuth, async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const users = await User.find({ tenantId: req.user.tenantId })
+      .skip(skip)
+      .limit(Number(limit))
+      .select("-password");
+
+    const total = await User.countDocuments({ tenantId: req.user.tenantId });
+
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+      currentPage: Number(page),
+      total,
+    });
+  } catch (error) {
+    console.error("Error in GET /api/users:", error);
+    res
+      .status(500)
+      .json({
+        message: "Error fetching users in userRoutes",
+        error: error.message,
+      });
+  }
+});
 router.get("/profile", userAuth, userController.getUserProfile);
 router.put("/:id", userAuth, userController.updateUser);
 router.delete("/:id", userAuth, userController.deleteUser);
-
-// Add this new route for /admin
-router.get("/admin", userAuth, async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin only." });
-    }
-    const admin = await User.findById(req.user.id).select("-password");
-    res.json(admin);
-  } catch (error) {
-    console.error("Error in GET /api/users/admin:", error);
-    res.status(500).json({
-      message: "Error fetching admin information",
-      error: error.message,
-    });
-  }
-});
 
 module.exports = router;

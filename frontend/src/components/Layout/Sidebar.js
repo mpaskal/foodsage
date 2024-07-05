@@ -101,7 +101,7 @@ const Sidebar = () => {
               </div>
               {expandedItems["Admin Panel"] && (
                 <div className="sidebar-dropdown-content">
-                  <NavLink to="/admin" className="sidebar-sublink">
+                  <NavLink to="/users" className="sidebar-sublink">
                     <span>User Management</span>
                   </NavLink>
                 </div>
