@@ -1,6 +1,13 @@
-import axios from "axios";
 import { useRecoilCallback } from "recoil";
-import { selectedUserState, userManagementState } from "../recoil/userAtoms";
+import axios from "axios";
+import {
+  usersState,
+  adminUsersState,
+  isLoadingState,
+  totalPagesState,
+  currentPageState,
+  selectedUserState,
+} from "../recoil/userAtoms";
 
 export const useFetchUsers = () => {
   return useRecoilCallback(
@@ -23,59 +30,49 @@ export const useFetchUsers = () => {
               (u) => u.role === "admin"
             );
 
-            const newState = {
-              users: filteredUsers,
-              adminUsers: adminUsersList,
-              isLastAdmin:
-                adminUsersList.length === 1 &&
-                adminUsersList[0]._id === loggedInUserId,
-              totalPages: usersResponse.data.totalPages,
-              currentPage: page,
-              isLoading: false,
-              error: null,
-            };
+            set(usersState, filteredUsers);
+            set(adminUsersState, adminUsersList);
+            set(isLoadingState, false);
+            set(totalPagesState, usersResponse.data.totalPages);
+            set(currentPageState, page);
 
-            set(userManagementState, newState);
-
-            console.log("New User Management State:", newState);
-            return { success: true, ...newState };
+            return { success: true };
           } else {
             throw new Error("Invalid response structure");
           }
         } catch (error) {
           console.error(
-            "Error fetching users in userActions",
+            "Error fetching users",
             error.response?.data || error.message
           );
-          const errorState = {
+          set(isLoadingState, false);
+          return {
+            success: false,
             error: error.response?.data?.message || "Failed to fetch users",
-            isLoading: false,
           };
-          set(userManagementState, (prevState) => ({
-            ...prevState,
-            ...errorState,
-          }));
-          return { success: false, ...errorState };
         }
       }
   );
 };
 
 export const useUpdateUser = () => {
-  return useRecoilCallback(({ set }) => async (user, token) => {
+  return useRecoilCallback(({ set, snapshot }) => async (user, token) => {
     try {
       const response = await axios.put(`/api/users/${user._id}`, user, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      set(userManagementState, (prevState) => ({
-        ...prevState,
-        users: prevState.users.map((u) =>
-          u._id === user._id ? response.data : u
-        ),
-        adminUsers: prevState.adminUsers.map((u) =>
-          u._id === user._id ? response.data : u
-        ),
-      }));
+
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      set(
+        usersState,
+        users.map((u) => (u._id === user._id ? response.data : u))
+      );
+      set(
+        adminUsersState,
+        adminUsers.map((u) => (u._id === user._id ? response.data : u))
+      );
       set(selectedUserState, null);
     } catch (error) {
       console.error("Error updating user", error);
@@ -85,19 +82,19 @@ export const useUpdateUser = () => {
 };
 
 export const useAddUser = () => {
-  return useRecoilCallback(({ set }) => async (user, token) => {
+  return useRecoilCallback(({ set, snapshot }) => async (user, token) => {
     try {
       const response = await axios.post("/api/users/register-user", user, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      set(userManagementState, (prevState) => ({
-        ...prevState,
-        users: [...prevState.users, response.data],
-        adminUsers:
-          response.data.role === "admin"
-            ? [...prevState.adminUsers, response.data]
-            : prevState.adminUsers,
-      }));
+
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      set(usersState, [...users, response.data]);
+      if (response.data.role === "admin") {
+        set(adminUsersState, [...adminUsers, response.data]);
+      }
       set(selectedUserState, null);
     } catch (error) {
       console.error(
@@ -117,21 +114,40 @@ export const useClearSelectedUser = () => {
 
 export const useDeleteUser = () => {
   return useRecoilCallback(({ snapshot, set }) => async (userId, authToken) => {
-    const release = snapshot.retain();
     try {
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      const userToDelete = users.find((user) => user._id === userId);
+      if (!userToDelete) {
+        throw new Error("User not found");
+      }
+
+      const adminCount = adminUsers.length;
+      if (userToDelete.role === "admin" && adminCount === 1) {
+        throw new Error("Cannot delete the last admin user");
+      }
+
       await axios.delete(`/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      set(userManagementState, (prevState) => ({
-        ...prevState,
-        users: prevState.users.filter((user) => user._id !== userId),
-        adminUsers: prevState.adminUsers.filter((user) => user._id !== userId),
-      }));
+
+      const newUsers = users.filter((user) => user._id !== userId);
+      const newAdminUsers = adminUsers.filter((user) => user._id !== userId);
+
+      set(usersState, newUsers);
+      set(adminUsersState, newAdminUsers);
+
+      return { success: true };
     } catch (error) {
-      console.error("Error deleting user", error);
-      throw error;
-    } finally {
-      release();
+      console.error(
+        "Error deleting user",
+        error.response?.data || error.message
+      );
+      return {
+        success: false,
+        error: error.response?.data?.message || "Failed to delete user",
+      };
     }
   });
 };

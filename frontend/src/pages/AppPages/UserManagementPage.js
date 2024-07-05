@@ -16,8 +16,11 @@ import {
   isUserModalOpenState,
   selectedUserState,
   loggedInUserState,
-  isLastAdminState,
-  userManagementState,
+  adminUsersState,
+  isLoadingState,
+  totalPagesState,
+  currentPageState,
+  usersState,
 } from "../../recoil/userAtoms";
 import { useFetchUsers, useDeleteUser } from "../../actions/userActions";
 
@@ -26,14 +29,15 @@ const UserManagementPage = () => {
     useRecoilState(isUserModalOpenState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
   const loggedInUser = useRecoilValue(loggedInUserState);
-  const isLastAdmin = useRecoilValue(isLastAdminState);
-  const [userManagement, setUserManagement] =
-    useRecoilState(userManagementState);
+  const isLoading = useRecoilValue(isLoadingState);
+  const totalPages = useRecoilValue(totalPagesState);
+  const currentPage = useRecoilValue(currentPageState);
+  const users = useRecoilValue(usersState);
+  const adminUsers = useRecoilValue(adminUsersState);
 
   const [confirmModal, setConfirmModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [page, setPage] = useState(1);
   const usersPerPage = 10;
 
   const fetchUsers = useFetchUsers();
@@ -41,12 +45,11 @@ const UserManagementPage = () => {
 
   const loadUsers = async () => {
     if (loggedInUser?.token) {
-      setUserManagement((prev) => ({ ...prev, isLoading: true }));
       try {
         console.log("Fetching users in loadUsers...");
         const result = await fetchUsers(
           loggedInUser.token,
-          page,
+          currentPage,
           usersPerPage,
           loggedInUser.id
         );
@@ -60,8 +63,6 @@ const UserManagementPage = () => {
         console.error("Error fetching users:", error);
         setToastMessage("Error fetching users in loadUsers setToastMessage");
         setShowToast(true);
-      } finally {
-        setUserManagement((prev) => ({ ...prev, isLoading: false }));
       }
     } else {
       console.error("No token found");
@@ -90,12 +91,8 @@ const UserManagementPage = () => {
   };
 
   const handleDelete = (userId) => {
-    const userToDelete = userManagement.users.find(
-      (user) => user._id === userId
-    );
-    const adminCount = userManagement.users.filter(
-      (user) => user.role === "admin"
-    ).length;
+    const userToDelete = users.find((user) => user._id === userId);
+    const adminCount = adminUsers.length;
 
     if (
       userToDelete.role === "admin" &&
@@ -120,12 +117,8 @@ const UserManagementPage = () => {
         return;
       }
 
-      const userToDelete = userManagement.users.find(
-        (user) => user._id === selectedUser?._id
-      );
-      const adminCount = userManagement.users.filter(
-        (user) => user.role === "admin"
-      ).length;
+      const userToDelete = users.find((user) => user._id === selectedUser?._id);
+      const adminCount = adminUsers.length;
 
       if (
         userToDelete?.role === "admin" &&
@@ -173,8 +166,9 @@ const UserManagementPage = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage !== page) {
-      setPage(newPage);
+    if (newPage !== currentPage) {
+      setCurrentPage(newPage);
+      loadUsers();
     }
   };
 
@@ -187,7 +181,7 @@ const UserManagementPage = () => {
           show={isUserModalOpen}
           handleClose={() => setIsUserModalOpen(false)}
           fetchUsers={loadUsers}
-          page={page}
+          page={currentPage}
           usersPerPage={usersPerPage}
         />
 
@@ -195,10 +189,12 @@ const UserManagementPage = () => {
           show={confirmModal}
           handleClose={() => setConfirmModal(false)}
           confirmDelete={confirmDelete}
-          isLastAdmin={isLastAdmin && selectedUser?._id === loggedInUser?.id}
+          isLastAdmin={
+            adminUsers.length === 1 && selectedUser?._id === loggedInUser?.id
+          }
         />
 
-        {userManagement.isLoading ? (
+        {isLoading ? (
           <div className="text-center mt-4">
             <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
@@ -206,19 +202,19 @@ const UserManagementPage = () => {
           </div>
         ) : (
           <UserTable
-            users={userManagement.users}
+            users={users}
             handleShowModal={handleShowModal}
             handleDelete={handleDelete}
             loggedInUser={loggedInUser}
-            isLastAdmin={isLastAdmin}
+            isLastAdmin={adminUsers.length === 1}
           />
         )}
 
         <Pagination className="mt-3">
-          {[...Array(userManagement.totalPages).keys()].map((number) => (
+          {[...Array(totalPages).keys()].map((number) => (
             <Pagination.Item
               key={number + 1}
-              active={number + 1 === page}
+              active={number + 1 === currentPage}
               onClick={() => handlePageChange(number + 1)}
             >
               {number + 1}

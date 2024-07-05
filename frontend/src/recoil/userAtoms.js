@@ -1,4 +1,4 @@
-import { atom, selector } from "recoil";
+import { atom } from "recoil";
 
 export const loggedInUserState = atom({
   key: "loggedInUserState",
@@ -15,23 +15,27 @@ export const selectedUserState = atom({
   default: null,
 });
 
-export const userManagementState = atom({
-  key: "userManagementState",
-  default: {
-    users: [],
-    adminUsers: [],
-    isLoading: false,
-    error: null,
-    totalPages: 0,
-    currentPage: 1,
-  },
+export const usersState = atom({
+  key: "usersState",
+  default: [],
 });
 
-export const isLastAdminState = selector({
-  key: "isLastAdminState",
-  get: ({ get }) => {
-    const { adminUsers } = get(userManagementState);
-    const loggedInUser = get(loggedInUserState);
-    return adminUsers.length === 1 && adminUsers[0]._id === loggedInUser?.id;
-  },
+export const adminUsersState = atom({
+  key: "adminUsersState",
+  default: [],
+});
+
+export const isLoadingState = atom({
+  key: "isLoadingState",
+  default: false,
+});
+
+export const totalPagesState = atom({
+  key: "totalPagesState",
+  default: 0,
+});
+
+export const currentPageState = atom({
+  key: "currentPageState",
+  default: 1,
 });
