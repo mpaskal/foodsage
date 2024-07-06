@@ -40,7 +40,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     name: "",
     category: "Dairy",
     quantity: "",
-    quantityMeasurement: "",
+    quantityMeasurement: "L",
     storage: "Fridge",
     cost: "",
     source: "",
@@ -137,7 +137,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
           {currentItem ? "Edit Food Item" : "Add Food Item"}
         </Modal.Title>
       </Modal.Header>
-      <Form onSubmit={handleFormSubmit}>
+      <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           <Row>

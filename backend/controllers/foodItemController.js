@@ -30,10 +30,15 @@ exports.getFoodItems = async (req, res) => {
 };
 
 exports.createFoodItem = async (req, res) => {
+  console.error("Error oops 1:", req.body);
   uploadMiddleware(req, res, async (err) => {
+    console.log("req.file", req);
+    console.log("err", err);
     if (err) {
+      console.error("Error oops:", err);
       return handleError(res, err, "Error processing request");
     }
+    console.log("req.body", req.body);
 
     try {
       const newFoodItem = new FoodItem({
