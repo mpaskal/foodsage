@@ -29,6 +29,7 @@ const UserManagementPage = () => {
     useRecoilState(isUserModalOpenState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
   const loggedInUser = useRecoilValue(loggedInUserState);
+  //console.log("loggedInUser", loggedInUser);
   const isLoading = useRecoilValue(isLoadingState);
   const totalPages = useRecoilValue(totalPagesState);
   const currentPage = useRecoilValue(currentPageState);
@@ -81,6 +82,7 @@ const UserManagementPage = () => {
   };
 
   useEffect(() => {
+    console.log("loggedInUser", loggedInUser);
     fetchUsers();
   }, [loggedInUser?.token, currentPage]);
 
@@ -118,7 +120,7 @@ const UserManagementPage = () => {
 
   const confirmDelete = async () => {
     try {
-      const token = localStorage.getItem("authToken"); // Get token from localStorage
+      const token = JSON.parse(localStorage.getItem("user"))?.token; // Get token from localStorage
       if (!token) {
         throw new Error("No authentication token found");
       }
@@ -150,11 +152,11 @@ const UserManagementPage = () => {
           setConfirmModal(false);
         }
       } else if (userToDelete?._id === loggedInUser.id) {
-        await deleteUser(userToDelete._id);
+        await deleteUser(userToDelete._id, token);
         localStorage.clear();
         window.location.href = "/";
       } else {
-        await deleteUser(userToDelete?._id);
+        await deleteUser(userToDelete?._id, token);
         fetchUsers();
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
@@ -192,7 +194,7 @@ const UserManagementPage = () => {
           handleClose={() => setConfirmModal(false)}
           confirmDelete={confirmDelete}
           isLastAdmin={
-            adminUsers.length === 1 && selectedUser?._id === loggedInUser?.id
+            adminUsers.length === 1 && selectedUser?.id === loggedInUser?.id
           }
         />
 

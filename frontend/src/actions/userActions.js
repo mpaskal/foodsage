@@ -11,49 +11,44 @@ import {
 } from "../recoil/userAtoms";
 
 export const useFetchUsers = () => {
-  return useRecoilCallback(
-    ({ set }) =>
-      async (authToken, page, usersPerPage, loggedInUserId) => {
-        try {
-          console.log("Fetching users...");
-          const usersResponse = await axios.get(
-            `/api/users?page=${page}&limit=${usersPerPage}`,
-            {
-              headers: { Authorization: `Bearer ${authToken}` },
-            }
-          );
-
-          console.log("Users Response:", usersResponse.data);
-
-          if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
-            const filteredUsers = usersResponse.data.users;
-            const adminUsersList = filteredUsers.filter(
-              (u) => u.role === "admin"
-            );
-
-            set(usersState, filteredUsers);
-            set(adminUsersState, adminUsersList);
-            set(isLoadingState, false);
-            set(totalPagesState, usersResponse.data.totalPages);
-            set(currentPageState, page);
-
-            return { success: true };
-          } else {
-            throw new Error("Invalid response structure");
-          }
-        } catch (error) {
-          console.error(
-            "Error fetching users",
-            error.response?.data || error.message
-          );
-          set(isLoadingState, false);
-          return {
-            success: false,
-            error: error.response?.data?.message || "Failed to fetch users",
-          };
+  return useRecoilCallback(({ set }) => async (token, page, usersPerPage) => {
+    try {
+      console.log("Fetching users123...");
+      const usersResponse = await axios.get(
+        `/api/users?page=${page}&limit=${usersPerPage}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
+      );
+
+      console.log("Users Response:", usersResponse.data);
+
+      if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
+        const filteredUsers = usersResponse.data.users;
+        const adminUsersList = filteredUsers.filter((u) => u.role === "admin");
+
+        set(usersState, filteredUsers);
+        set(adminUsersState, adminUsersList);
+        set(isLoadingState, false);
+        set(totalPagesState, usersResponse.data.totalPages);
+        set(currentPageState, page);
+
+        return { success: true };
+      } else {
+        throw new Error("Invalid response structure");
       }
-  );
+    } catch (error) {
+      console.error(
+        "Error fetching users",
+        error.response?.data || error.message
+      );
+      set(isLoadingState, false);
+      return {
+        success: false,
+        error: error.response?.data?.message || "Failed to fetch users",
+      };
+    }
+  });
 };
 
 export const useUpdateUser = () => {
@@ -114,7 +109,7 @@ export const useClearSelectedUser = () => {
 };
 
 export const useDeleteUser = () => {
-  return useRecoilCallback(({ snapshot, set }) => async (userId, authToken) => {
+  return useRecoilCallback(({ snapshot, set }) => async (userId, token) => {
     try {
       const users = await snapshot.getPromise(usersState);
       const adminUsers = await snapshot.getPromise(adminUsersState);
@@ -130,7 +125,7 @@ export const useDeleteUser = () => {
       }
 
       await axios.delete(`/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const newUsers = users.filter((user) => user._id !== userId);

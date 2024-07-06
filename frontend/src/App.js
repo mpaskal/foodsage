@@ -19,8 +19,8 @@ const InitializeState = ({ children }) => {
 
   React.useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
+    console.log("User retrieved from local storage:", user); // Debug log
     if (user && user.token) {
-      console.log("User retrieved from local storage:", user); // Debug log
       setLoggedInUser(user);
     }
   }, [setLoggedInUser]);
