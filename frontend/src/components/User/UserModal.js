@@ -134,7 +134,7 @@ const UserModal = ({
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {user._id ? "Save Changes" : "Add User"}
+            {user._id ? "Save Changes" : "Save User"}
           </Button>
         </Modal.Footer>
       </Form>

@@ -76,7 +76,7 @@ const DonationItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await axios.patch(
+      const response = await axios.post(
         `/api/donationitems/${itemId}`,
         updates
       );

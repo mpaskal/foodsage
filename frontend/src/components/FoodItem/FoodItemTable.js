@@ -58,7 +58,7 @@ const FoodItemTable = () => {
   const saveChanges = async (id, field, value) => {
     try {
       const response = await fetch("/api/fooditems/" + id, {
-        method: "PATCH", // Assuming a REST API, adjust according to your API setup
+        method: "POST", // Assuming a REST API, adjust according to your API setup
         headers: {
           "Content-Type": "application/json",
         },
@@ -130,7 +130,7 @@ const FoodItemTable = () => {
             </td>
             <td>
               <InlineEditControl
-                value={item.name}
+                value={item.name || ""}
                 onChange={(value) => handleInputChange(item._id, "name", value)}
               />
             </td>
@@ -138,7 +138,7 @@ const FoodItemTable = () => {
               <InlineEditControl
                 type="select"
                 options={categories}
-                value={item.category}
+                value={item.category || ""}
                 onChange={(value) =>
                   handleInputChange(item._id, "category", value)
                 }
@@ -147,7 +147,7 @@ const FoodItemTable = () => {
             <td>
               <InlineEditControl
                 type="number"
-                value={item.quantity.toString()}
+                value={item.quantity ? item.quantity.toString() : ""}
                 onChange={(value) =>
                   handleInputChange(item._id, "quantity", value)
                 }
@@ -157,7 +157,7 @@ const FoodItemTable = () => {
               <InlineEditControl
                 type="select"
                 options={quantityMeasurementsByCategory[item.category] || []}
-                value={item.quantityMeasurement}
+                value={item.quantityMeasurement || ""}
                 onChange={(value) =>
                   handleInputChange(item._id, "quantityMeasurement", value)
                 }
@@ -167,7 +167,7 @@ const FoodItemTable = () => {
               <InlineEditControl
                 type="select"
                 options={storages}
-                value={item.storage}
+                value={item.storage || ""}
                 onChange={(value) =>
                   handleInputChange(item._id, "storage", value)
                 }
@@ -176,13 +176,13 @@ const FoodItemTable = () => {
             <td>
               <InlineEditControl
                 type="number"
-                value={item.cost.toString()}
+                value={item.cost ? item.cost.toString() : ""}
                 onChange={(value) => handleInputChange(item._id, "cost", value)}
               />
             </td>
             <td>
               <InlineEditControl
-                value={item.source}
+                value={item.source || ""}
                 onChange={(value) =>
                   handleInputChange(item._id, "source", value)
                 }
@@ -191,7 +191,11 @@ const FoodItemTable = () => {
             <td style={getExpirationDateStyle(item.expirationDate)}>
               <InlineEditControl
                 type="date"
-                value={formatDateForDisplay(item.expirationDate)}
+                value={
+                  item.expirationDate
+                    ? formatDateForDisplay(item.expirationDate)
+                    : ""
+                }
                 onChange={(value) =>
                   handleInputChange(item._id, "expirationDate", value)
                 }
@@ -200,7 +204,11 @@ const FoodItemTable = () => {
             <td>
               <InlineEditControl
                 type="date"
-                value={formatDateForDisplay(item.purchasedDate)}
+                value={
+                  item.purchasedDate
+                    ? formatDateForDisplay(item.purchasedDate)
+                    : ""
+                }
                 onChange={(value) =>
                   handleInputChange(item._id, "purchasedDate", value)
                 }
@@ -225,7 +233,6 @@ const FoodItemTable = () => {
                 }
               />
             </td>
-
             <td>
               <Button variant="danger" onClick={() => handleDelete(item)}>
                 Delete

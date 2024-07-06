@@ -21,7 +21,7 @@ const userAuth = async (req, res, next) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    req.user.tenantId = user.tenantId;
+    req.user.tenantId = user.tenantId; // Attach tenantId to req.user
     next();
   } catch (err) {
     console.error(err);

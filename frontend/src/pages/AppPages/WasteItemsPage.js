@@ -76,7 +76,7 @@ const WasteItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await axios.patch(`/api/wasteitems/${itemId}`, updates);
+      const response = await axios.post(`/api/wasteitems/${itemId}`, updates);
       if (response.status !== 200) {
         // Revert the optimistic update if the server request fails
         setWasteItems((prevItems) =>

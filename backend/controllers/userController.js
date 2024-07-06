@@ -5,17 +5,21 @@ const Tenant = require("../models/Tenant");
 
 // Register First User (Admin)
 const registerFirstUser = async (req, res) => {
+  // Destructure the request body
   const { firstName, lastName, email, password } = req.body;
 
+  // Check if the user already exists
   try {
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
+    // Create a new tenant
     const tenant = new Tenant({ name: email });
     await tenant.save();
 
+    // Create a new user
     user = new User({
       firstName,
       lastName,
@@ -25,11 +29,14 @@ const registerFirstUser = async (req, res) => {
       role: "admin",
     });
 
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
+    // Save the user
     await user.save();
 
+    // Create a JWT token
     const payload = {
       user: {
         id: user.id,
@@ -38,6 +45,7 @@ const registerFirstUser = async (req, res) => {
       },
     };
 
+    // Sign the token
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
@@ -65,14 +73,17 @@ const registerFirstUser = async (req, res) => {
 
 // Register User (by Admin)
 const registerUser = async (req, res) => {
+  // Destructure the request body
   const { firstName, lastName, email, password, role } = req.body;
 
+  // Check if the user already exists
   try {
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
+    // Create a new user
     user = new User({
       firstName,
       lastName,
@@ -82,11 +93,14 @@ const registerUser = async (req, res) => {
       role: role || "user",
     });
 
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
+    // Save the user
     await user.save();
 
+    // Return the user
     res.json({
       user: {
         id: user.id,
@@ -178,12 +192,10 @@ const getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getAllUsers:", error);
-    res
-      .status(500)
-      .json({
-        message: "Error fetching users in useController",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error fetching users in useController",
+      error: error.message,
+    });
   }
 };
 

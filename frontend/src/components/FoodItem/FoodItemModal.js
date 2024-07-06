@@ -5,7 +5,10 @@ import {
   currentItemState,
   foodItemsWithExpirationState,
 } from "../../recoil/foodItemsAtoms";
-import { formatDateForDisplay } from "../../utils/dateUtils";
+import {
+  formatDateForDisplay,
+  calculateExpirationDate,
+} from "../../utils/dateUtils";
 
 const categories = [
   "Dairy",
@@ -69,7 +72,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         name: "",
         category: "Dairy",
         quantity: "",
-        quantityMeasurement: "",
+        quantityMeasurement: "L", // Ensures default value is set
         storage: "Fridge",
         cost: "",
         source: "",
@@ -80,12 +83,38 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     }
   }, [currentItem, foodItemsWithExpiration]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const calculateAndSetExpirationDate = (category, storage, purchasedDate) => {
+    const expirationDate = calculateExpirationDate(
+      category,
+      storage,
+      purchasedDate
+    );
     setForm((prevForm) => ({
       ...prevForm,
-      [name]: value,
+      expirationDate: formatDateForDisplay(expirationDate),
     }));
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => {
+      const updatedForm = { ...prevForm, [name]: value };
+
+      // Recalculate expiration date if category, storage, or purchased date changes
+      if (
+        name === "category" ||
+        name === "storage" ||
+        name === "purchasedDate"
+      ) {
+        calculateAndSetExpirationDate(
+          name === "category" ? value : updatedForm.category,
+          name === "storage" ? value : updatedForm.storage,
+          name === "purchasedDate" ? value : updatedForm.purchasedDate
+        );
+      }
+
+      return updatedForm;
+    });
   };
 
   const handleFileChange = (e) => {
@@ -100,7 +129,13 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     setError(null);
 
     // Check if all required fields are filled
-    const requiredFields = ["name", "quantity", "cost", "purchasedDate"];
+    const requiredFields = [
+      "name",
+      "quantity",
+      "cost",
+      "purchasedDate",
+      "quantityMeasurement",
+    ]; // Added quantityMeasurement
     const missingFields = requiredFields.filter((field) => !form[field]);
 
     if (missingFields.length > 0) {
