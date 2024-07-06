@@ -6,12 +6,12 @@ const foodItemController = require("../controllers/foodItemController");
 
 router.get("/", userAuth, foodItemController.getFoodItems);
 router.post("/", userAuth, uploadMiddleware, foodItemController.createFoodItem);
-router.put(
-  "/:id",
+router.post(
+  "/update/:id",
   userAuth,
   uploadMiddleware,
   foodItemController.updateFoodItem
-);
-router.delete("/:id", userAuth, foodItemController.deleteFoodItem);
+); // Changed to use a POST request with 'update' in the path
+router.post("/delete", userAuth, foodItemController.deleteFoodItem); // Changed to use a POST request
 
 module.exports = router;

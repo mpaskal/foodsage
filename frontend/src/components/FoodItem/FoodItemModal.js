@@ -68,16 +68,24 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         });
       }
     } else {
+      const category = "Dairy";
+      const storage = "Fridge";
+      const purchasedDate = getCurrentDate();
+      const expirationDate = calculateExpirationDate(
+        category,
+        storage,
+        purchasedDate
+      );
       setForm({
         name: "",
-        category: "Dairy",
+        category: category,
         quantity: "",
-        quantityMeasurement: "L", // Ensures default value is set
-        storage: "Fridge",
+        quantityMeasurement: "L",
+        storage: storage,
         cost: "",
         source: "",
-        purchasedDate: getCurrentDate(),
-        expirationDate: "",
+        purchasedDate: purchasedDate,
+        expirationDate: formatDateForDisplay(expirationDate),
         image: null,
       });
     }
@@ -113,15 +121,30 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         );
       }
 
+      // Update quantityMeasurement if category changes
+      if (name === "category") {
+        const newMeasurements = quantityMeasurementsByCategory[value] || [];
+        if (!newMeasurements.includes(updatedForm.quantityMeasurement)) {
+          updatedForm.quantityMeasurement = newMeasurements[0] || "";
+        }
+      }
+
       return updatedForm;
     });
   };
 
   const handleFileChange = (e) => {
-    setForm((prevForm) => ({
-      ...prevForm,
-      image: e.target.files[0],
-    }));
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm((prevForm) => ({
+          ...prevForm,
+          image: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleFormSubmit = async (e) => {
@@ -135,7 +158,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       "cost",
       "purchasedDate",
       "quantityMeasurement",
-    ]; // Added quantityMeasurement
+    ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
     if (missingFields.length > 0) {
@@ -305,6 +328,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               name="expirationDate"
               value={form.expirationDate}
               onChange={handleChange}
+              readOnly
             />
           </Form.Group>
         </Modal.Body>

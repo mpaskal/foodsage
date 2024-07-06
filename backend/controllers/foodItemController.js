@@ -75,7 +75,8 @@ exports.updateFoodItem = async (req, res) => {
 
 exports.deleteFoodItem = async (req, res) => {
   try {
-    const foodItem = await FoodItem.findByIdAndDelete(req.params.id);
+    const { _id } = req.body; // Get the ID from the request body
+    const foodItem = await FoodItem.findByIdAndDelete(_id);
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
     }
