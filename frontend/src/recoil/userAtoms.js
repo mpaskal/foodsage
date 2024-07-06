@@ -1,23 +1,8 @@
 import { atom } from "recoil";
 
-export const usersState = atom({
-  key: "usersState",
-  default: [],
-});
-
 export const loggedInUserState = atom({
   key: "loggedInUserState",
   default: null,
-});
-
-export const userState = atom({
-  key: "userState",
-  default: null,
-});
-
-export const adminUsersState = atom({
-  key: "adminUsersState",
-  default: [],
 });
 
 export const isUserModalOpenState = atom({
@@ -30,7 +15,32 @@ export const selectedUserState = atom({
   default: null,
 });
 
-export const isLastAdminState = atom({
-  key: "isLastAdminState",
+export const usersState = atom({
+  key: "usersState",
+  default: [],
+});
+
+export const adminUsersState = atom({
+  key: "adminUsersState",
+  default: [],
+});
+
+export const isLoadingState = atom({
+  key: "isLoadingState",
   default: false,
+});
+
+export const totalPagesState = atom({
+  key: "totalPagesState",
+  default: 0,
+});
+
+export const currentPageState = atom({
+  key: "currentPageState",
+  default: 1,
+});
+
+export const usersPerPageState = atom({
+  key: "usersPerPageState",
+  default: 10,
 });

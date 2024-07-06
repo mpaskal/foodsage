@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useResetRecoilState } from "recoil";
 import {
   FaSearch,
   FaQuestionCircle,
@@ -7,13 +8,40 @@ import {
   FaBell,
   FaUser,
 } from "react-icons/fa";
+import {
+  loggedInUserState,
+  usersState,
+  adminUsersState,
+  isLoadingState,
+  totalPagesState,
+  currentPageState,
+  selectedUserState,
+  isUserModalOpenState,
+} from "../../recoil/userAtoms";
 
 const HeaderApp = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
+  const resetLoggedInUserState = useResetRecoilState(loggedInUserState);
+  const resetUsersState = useResetRecoilState(usersState);
+  const resetAdminUsersState = useResetRecoilState(adminUsersState);
+  const resetIsLoadingState = useResetRecoilState(isLoadingState);
+  const resetTotalPagesState = useResetRecoilState(totalPagesState);
+  const resetCurrentPageState = useResetRecoilState(currentPageState);
+  const resetSelectedUserState = useResetRecoilState(selectedUserState);
+  const resetIsUserModalOpenState = useResetRecoilState(isUserModalOpenState);
+
   const handleSignOut = () => {
+    resetLoggedInUserState();
+    resetUsersState();
+    resetAdminUsersState();
+    resetIsLoadingState();
+    resetTotalPagesState();
+    resetCurrentPageState();
+    resetSelectedUserState();
+    resetIsUserModalOpenState();
     localStorage.clear();
     navigate("/");
   };

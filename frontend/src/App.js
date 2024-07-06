@@ -11,7 +11,6 @@ import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { loggedInUserState } from "./recoil/userAtoms";
-import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
@@ -20,8 +19,8 @@ const InitializeState = ({ children }) => {
 
   React.useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
+    console.log("User retrieved from local storage:", user); // Debug log
     if (user && user.token) {
-      console.log("User retrieved from local storage:", user); // Debug log
       setLoggedInUser(user);
     }
   }, [setLoggedInUser]);
@@ -46,7 +45,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/fooditems" element={<FoodItemsPage />} />
             <Route
-              path="/user-management"
+              path="/users"
               element={<UserManagementPage />}
               requiredRole="admin"
             />

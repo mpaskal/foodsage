@@ -1,20 +1,73 @@
 import { useRecoilCallback } from "recoil";
+import axios from "axios";
+import api from "../utils/api";
 import {
   usersState,
-  selectedUserState,
   adminUsersState,
-  isLastAdminState,
+  isLoadingState,
+  totalPagesState,
+  currentPageState,
+  selectedUserState,
 } from "../recoil/userAtoms";
-import axios from "axios";
+
+export const useFetchUsers = () => {
+  return useRecoilCallback(({ set }) => async (token, page, usersPerPage) => {
+    try {
+      console.log("Fetching users123...");
+      const usersResponse = await axios.get(
+        `/api/users?page=${page}&limit=${usersPerPage}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("Users Response:", usersResponse.data);
+
+      if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
+        const filteredUsers = usersResponse.data.users;
+        const adminUsersList = filteredUsers.filter((u) => u.role === "admin");
+
+        set(usersState, filteredUsers);
+        set(adminUsersState, adminUsersList);
+        set(isLoadingState, false);
+        set(totalPagesState, usersResponse.data.totalPages);
+        set(currentPageState, page);
+
+        return { success: true };
+      } else {
+        throw new Error("Invalid response structure");
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching users",
+        error.response?.data || error.message
+      );
+      set(isLoadingState, false);
+      return {
+        success: false,
+        error: error.response?.data?.message || "Failed to fetch users",
+      };
+    }
+  });
+};
 
 export const useUpdateUser = () => {
-  return useRecoilCallback(({ set }) => async (user, token) => {
+  return useRecoilCallback(({ set, snapshot }) => async (user, token) => {
     try {
       const response = await axios.put(`/api/users/${user._id}`, user, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      set(usersState, (oldUsers) =>
-        oldUsers.map((u) => (u._id === user._id ? response.data : u))
+
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      set(
+        usersState,
+        users.map((u) => (u._id === user._id ? response.data : u))
+      );
+      set(
+        adminUsersState,
+        adminUsers.map((u) => (u._id === user._id ? response.data : u))
       );
       set(selectedUserState, null);
     } catch (error) {
@@ -25,68 +78,25 @@ export const useUpdateUser = () => {
 };
 
 export const useAddUser = () => {
-  return useRecoilCallback(({ set }) => async (user, token) => {
+  return useRecoilCallback(({ set, snapshot }) => async (user, token) => {
     try {
       const response = await axios.post("/api/users/register-user", user, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      set(usersState, (oldUsers) => [...oldUsers, response.data]);
+
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      set(usersState, [...users, response.data]);
+      if (response.data.role === "admin") {
+        set(adminUsersState, [...adminUsers, response.data]);
+      }
       set(selectedUserState, null);
     } catch (error) {
       console.error(
         "Error adding user",
         error.response ? error.response.data : error
       );
-      throw error;
-    }
-  });
-};
-
-export const useFetchUsers = () => {
-  return useRecoilCallback(
-    ({ set }) =>
-      async (authToken, page, usersPerPage, loggedInUserId) => {
-        try {
-          const response = await axios.get(
-            `/api/users?page=${page}&limit=${usersPerPage}`,
-            {
-              headers: { Authorization: `Bearer ${authToken}` },
-            }
-          );
-
-          if (response.data && Array.isArray(response.data.users)) {
-            set(usersState, response.data.users);
-            const adminUsersList = response.data.users.filter(
-              (u) => u.role === "admin"
-            );
-            set(adminUsersState, adminUsersList);
-            set(
-              isLastAdminState,
-              adminUsersList.length === 1 &&
-                adminUsersList[0]._id === loggedInUserId
-            );
-            return { success: true, totalPages: response.data.totalPages };
-          } else {
-            throw new Error("Invalid response structure");
-          }
-        } catch (error) {
-          console.error("Error fetching users", error);
-          throw error;
-        }
-      }
-  );
-};
-
-export const useFetchSingleUser = () => {
-  return useRecoilCallback(({ set }) => async (userId, token) => {
-    try {
-      const response = await axios.get(`/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      set(selectedUserState, response.data);
-      return { success: true };
-    } catch (error) {
-      console.error("Error fetching single user", error);
       throw error;
     }
   });
@@ -99,22 +109,41 @@ export const useClearSelectedUser = () => {
 };
 
 export const useDeleteUser = () => {
-  return useRecoilCallback(({ snapshot, set }) => async (userId, authToken) => {
-    const release = snapshot.retain(); // Retain the snapshot
+  return useRecoilCallback(({ snapshot, set }) => async (userId, token) => {
     try {
-      const currentUsers = await snapshot.getPromise(usersState);
+      const users = await snapshot.getPromise(usersState);
+      const adminUsers = await snapshot.getPromise(adminUsersState);
+
+      const userToDelete = users.find((user) => user._id === userId);
+      if (!userToDelete) {
+        throw new Error("User not found");
+      }
+
+      const adminCount = adminUsers.length;
+      if (userToDelete.role === "admin" && adminCount === 1) {
+        throw new Error("Cannot delete the last admin user");
+      }
+
       await axios.delete(`/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      set(
-        usersState,
-        currentUsers.filter((user) => user._id !== userId)
-      );
+
+      const newUsers = users.filter((user) => user._id !== userId);
+      const newAdminUsers = adminUsers.filter((user) => user._id !== userId);
+
+      set(usersState, newUsers);
+      set(adminUsersState, newAdminUsers);
+
+      return { success: true };
     } catch (error) {
-      console.error("Error deleting user", error);
-      throw error;
-    } finally {
-      release(); // Release the snapshot
+      console.error(
+        "Error deleting user",
+        error.response?.data || error.message
+      );
+      return {
+        success: false,
+        error: error.response?.data?.message || "Failed to delete user",
+      };
     }
   });
 };

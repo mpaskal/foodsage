@@ -156,26 +156,34 @@ const loginUser = async (req, res) => {
 // Get all users for the same tenant
 const getAllUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
-    const users = await User.find({ tenantId: req.user.tenantId })
-      .select("-password")
-      .skip(skip)
-      .limit(limit);
+    console.log("Fetching users for tenantId:", req.user.tenantId);
 
-    const totalUsers = await User.countDocuments({
-      tenantId: req.user.tenantId,
-    });
+    const users = await User.find({ tenantId: req.user.tenantId })
+      .skip(skip)
+      .limit(Number(limit))
+      .select("-password");
+
+    const total = await User.countDocuments({ tenantId: req.user.tenantId });
+
+    console.log("Users fetched:", users.length);
+    console.log("Total users for this tenant:", total);
 
     res.json({
       users,
-      totalPages: Math.ceil(totalUsers / limit),
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
     });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+  } catch (error) {
+    console.error("Error in getAllUsers:", error);
+    res
+      .status(500)
+      .json({
+        message: "Error fetching users in useController",
+        error: error.message,
+      });
   }
 };
 

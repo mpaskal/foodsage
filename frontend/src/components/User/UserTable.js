@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Table, Button } from "react-bootstrap";
 
 const UserTable = ({
@@ -28,7 +28,6 @@ const UserTable = ({
             <td>{user.lastName}</td>
             <td>{user.email}</td>
             <td>{user.role}</td>
-          
             <td className="actions-cell">
               <Button
                 className="btn-edit"

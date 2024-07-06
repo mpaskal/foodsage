@@ -7,10 +7,7 @@ import {
   loggedInUserState,
 } from "../../recoil/userAtoms";
 import { useUpdateUser, useAddUser } from "../../actions/userActions";
-import {
-  currentPageState,
-  usersPerPageState,
-} from "../../recoil/paginationAtoms";
+import { currentPageState, usersPerPageState } from "../../recoil/userAtoms";
 
 const UserModal = ({
   fetchUsers,
@@ -47,7 +44,7 @@ const UserModal = ({
         await updateUser(selectedUser, token);
       } else {
         await addUser(selectedUser, token);
-        fetchUsers(token, page, usersPerPage, loggedInUser.id);
+        fetchUsers(token, page, usersPerPage);
       }
       setIsUserModalOpen(false);
     } catch (error) {

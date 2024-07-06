@@ -21,10 +21,15 @@ const userAuth = async (req, res, next) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    req.tenantId = user.tenantId;
+    req.user.tenantId = user.tenantId;
     next();
   } catch (err) {
     console.error(err);
+    if (err.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ msg: "Token has expired", expiredToken: true });
+    }
     res.status(401).json({ msg: "Token is not valid" });
   }
 };

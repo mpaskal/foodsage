@@ -27,12 +27,16 @@ function checkFileType(file, cb) {
 
 const uploadMiddleware = (req, res, next) => {
   upload(req, res, function (err) {
+    console.log("req middleware", req.body);
+    console.log("err middleware", err);
     if (err instanceof multer.MulterError) {
       // A Multer error occurred when uploading.
       return res.status(400).json({ message: "Error uploading file", err });
     } else if (err) {
       // An unknown error occurred when uploading.
-      return res.status(400).json({ message: "Error uploading file", err });
+      return res
+        .status(400)
+        .json({ message: "Unknown Error uploading file", err });
     }
 
     // If there is a file, convert it to base64 and add to req.body

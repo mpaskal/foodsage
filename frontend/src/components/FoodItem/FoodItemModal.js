@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import InlineEditControl from "../Common/InlineEditControl";
-import { Modal, Form, Button, Row, Col } from "react-bootstrap";
-import { useRecoilValue } from "recoil";
+import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
+import { useRecoilValue, useRecoilState } from "recoil";
 import {
-  foodItemsWithExpirationState,
   currentItemState,
+  foodItemsWithExpirationState,
 } from "../../recoil/foodItemsAtoms";
+import { formatDateForDisplay } from "../../utils/dateUtils";
 
 const categories = [
   "Dairy",
@@ -23,54 +23,123 @@ const quantityMeasurementsByCategory = {
   "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
   "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
+  Fridge: ["L", "Oz", "Item", "Gr", "Kg", "Lb"],
+  Freezer: ["Kg", "Lb", "Item"],
+  Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
+  Cellar: ["L", "Item", "Box"],
 };
 
-const FoodItemModal = ({
-  show,
-  handleClose,
-  handleSubmit,
-  handleChange,
-  handleFileChange,
-  form,
-  isEdit,
-}) => {
-  const allFoodItemsWithExpiration = useRecoilValue(
-    foodItemsWithExpirationState
-  );
-  const currentItem = useRecoilValue(currentItemState);
+const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
+  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
+  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const [error, setError] = useState(null);
+
+  const getCurrentDate = () => new Date().toISOString().slice(0, 10);
+
+  const [form, setForm] = useState({
+    name: "",
+    category: "Dairy",
+    quantity: "",
+    quantityMeasurement: "L",
+    storage: "Fridge",
+    cost: "",
+    source: "",
+    purchasedDate: getCurrentDate(),
+    expirationDate: "",
+    image: null,
+  });
+
+  useEffect(() => {
+    if (currentItem) {
+      const itemWithExpiration = foodItemsWithExpiration.find(
+        (item) => item._id === currentItem._id
+      );
+      if (itemWithExpiration) {
+        setForm({
+          ...itemWithExpiration,
+          purchasedDate:
+            formatDateForDisplay(itemWithExpiration.purchasedDate) ||
+            getCurrentDate(),
+          expirationDate:
+            formatDateForDisplay(itemWithExpiration.expirationDate) || "",
+        });
+      }
+    } else {
+      setForm({
+        name: "",
+        category: "Dairy",
+        quantity: "",
+        quantityMeasurement: "",
+        storage: "Fridge",
+        cost: "",
+        source: "",
+        purchasedDate: getCurrentDate(),
+        expirationDate: "",
+        image: null,
+      });
+    }
+  }, [currentItem, foodItemsWithExpiration]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    setForm((prevForm) => ({
+      ...prevForm,
+      image: e.target.files[0],
+    }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    // Check if all required fields are filled
+    const requiredFields = ["name", "quantity", "cost", "purchasedDate"];
+    const missingFields = requiredFields.filter((field) => !form[field]);
+
+    if (missingFields.length > 0) {
+      setError(
+        `Please fill in all required fields: ${missingFields.join(", ")}`
+      );
+      return;
+    }
+
+    try {
+      await handleSubmit(form);
+      handleClose();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setError(
+        error.response?.data?.message ||
+          "An error occurred while submitting the form."
+      );
+    }
+  };
 
   const quantityMeasurements = useMemo(() => {
     const categoryMeasurements =
       quantityMeasurementsByCategory[form.category] || [];
-    const storageMeasurements = storages.includes(form.storage)
-      ? quantityMeasurementsByCategory[form.storage]
-      : [];
+    const storageMeasurements =
+      quantityMeasurementsByCategory[form.storage] || [];
     return [...new Set([...categoryMeasurements, ...storageMeasurements])];
   }, [form.category, form.storage]);
-
-  useEffect(() => {
-    if (currentItem) {
-      // Synchronize form state with current item details including expiration date
-      handleChange({
-        target: {
-          name: "expirationDate",
-          value: currentItem.expirationDate
-            ? new Date(currentItem.expirationDate)
-                .toISOString()
-                .substring(0, 10)
-            : "",
-        },
-      });
-    }
-  }, [currentItem, handleChange]);
 
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>{isEdit ? "Edit Food Item" : "Add Food Item"}</Modal.Title>
+        <Modal.Title>
+          {currentItem ? "Edit Food Item" : "Add Food Item"}
+        </Modal.Title>
       </Modal.Header>
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
+          {error && <Alert variant="danger">{error}</Alert>}
           <Row>
             <Col md={6}>
               <Form.Group controlId="name">
@@ -176,30 +245,12 @@ const FoodItemModal = ({
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group controlId="expirationDate">
-            <Form.Label>Expiration Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="expirationDate"
-              value={
-                form.expirationDate
-                  ? new Date(form.expirationDate).toISOString().substring(0, 10)
-                  : ""
-              }
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
           <Form.Group controlId="purchasedDate">
             <Form.Label>Purchased Date</Form.Label>
             <Form.Control
               type="date"
               name="purchasedDate"
-              value={
-                form.purchasedDate
-                  ? new Date(form.purchasedDate).toISOString().substring(0, 10)
-                  : ""
-              }
+              value={form.purchasedDate}
               onChange={handleChange}
               required
             />
@@ -212,13 +263,22 @@ const FoodItemModal = ({
               onChange={handleFileChange}
             />
           </Form.Group>
+          <Form.Group controlId="expirationDate">
+            <Form.Label>Expiration Date</Form.Label>
+            <Form.Control
+              type="date"
+              name="expirationDate"
+              value={form.expirationDate}
+              onChange={handleChange}
+            />
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {isEdit ? "Save Changes" : "Add Food Item"}
+            {currentItem ? "Save Changes" : "Add Food Item"}
           </Button>
         </Modal.Footer>
       </Form>

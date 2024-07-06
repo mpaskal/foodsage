@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../../components/Layout/LayoutApp";
+import { useSetRecoilState } from "recoil";
+import { loggedInUserState } from "../../recoil/userAtoms";
 import Img1 from "../../assets/images/dashboard-img1.jpg";
 import Img2 from "../../assets/images/dashboard-img2.jpg";
 
 const DashboardPage = () => {
   const [user, setUser] = useState({});
+  // console.log("loggedInUserState Dashboard", loggedInUserState);
+
+  const setLoggedInUser = useSetRecoilState(loggedInUserState);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser && storedUser !== "undefined") {
       setUser(JSON.parse(storedUser));
+      setLoggedInUser(JSON.parse(storedUser));
     }
-  }, []);
+  }, [setLoggedInUser]);
 
   return (
     <Layout>

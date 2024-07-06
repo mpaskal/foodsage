@@ -8,7 +8,7 @@ const AdminRoutes = () => (
   <Router>
     <Switch>
       <Route path="/admin/tenant-management" component={TenantManagementPage} />
-      <Route path="/admin/user-management" component={UserManagementPage} />
+      <Route path="/admin" component={UserManagementPage} />
       {/* Define other admin routes similarly */}
     </Switch>
   </Router>
