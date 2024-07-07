@@ -6,9 +6,11 @@ const handleError = require("../utils/handleError");
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
+  const tenantId = req.user.tenantId; // Extract tenantId from the authenticated user
+
   try {
-    const totalItems = await FoodItem.countDocuments(); // Count total items in the collection
-    const foodItems = await FoodItem.find()
+    const totalItems = await FoodItem.countDocuments({ tenantId }); // Count total items for this tenant
+    const foodItems = await FoodItem.find({ tenantId })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -17,7 +19,7 @@ exports.getFoodItems = async (req, res) => {
       data: foodItems,
       totalPages: Math.ceil(totalItems / limit),
       currentPage: Number(page),
-      totalItems: totalItems, // Include the total count in the response
+      totalItems: totalItems,
       limit: Number(limit),
     });
   } catch (error) {
@@ -30,14 +32,14 @@ exports.createFoodItem = async (req, res) => {
   console.log("req.body", req.body);
 
   try {
-    const tenantId = req.user.tenantId; // Extract tenantId from the authenticated user
+    const tenantId = req.user.tenantId;
 
     const newFoodItem = new FoodItem({
       ...req.body,
       image: req.body.image || null,
-      tenantId, // Add tenantId to the new food item
-      moveTo: req.body.moveTo || "consume", // Provide default value if not present
-      consumed: req.body.consumed || 0, // Provide default value if not present
+      tenantId,
+      moveTo: req.body.moveTo || "consume",
+      consumed: req.body.consumed || 0,
     });
 
     await newFoodItem.save();
@@ -52,15 +54,20 @@ exports.createFoodItem = async (req, res) => {
 
 exports.updateFoodItem = async (req, res) => {
   try {
+    const tenantId = req.user.tenantId;
     const updates = {
       ...req.body,
       image: req.body.image || req.body.existingImage,
     };
 
-    const foodItem = await FoodItem.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const foodItem = await FoodItem.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
@@ -77,12 +84,13 @@ exports.updateFoodItem = async (req, res) => {
 
 exports.deleteFoodItem = async (req, res) => {
   try {
-    const { _id } = req.body; // Get the ID from the request body
-    const foodItem = await FoodItem.findByIdAndDelete(_id);
+    const { _id } = req.body;
+    const tenantId = req.user.tenantId;
+    const foodItem = await FoodItem.findOneAndDelete({ _id, tenantId });
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
     }
-    res.status(204).send(); // No content to send back
+    res.status(204).send();
   } catch (error) {
     handleError(res, error, "Error deleting food item");
   }

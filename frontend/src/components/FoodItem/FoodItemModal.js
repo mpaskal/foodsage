@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useRecoilValue, useRecoilState } from "recoil";
-import { processImage } from "../../utils/imageUtils";
 import {
   currentItemState,
   foodItemsWithExpirationState,
@@ -109,7 +108,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     setForm((prevForm) => {
       const updatedForm = { ...prevForm, [name]: value };
 
-      // Recalculate expiration date if category, storage, or purchased date changes
       if (
         name === "category" ||
         name === "storage" ||
@@ -122,7 +120,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         );
       }
 
-      // Update quantityMeasurement if category changes
       if (name === "category") {
         const newMeasurements = quantityMeasurementsByCategory[value] || [];
         if (!newMeasurements.includes(updatedForm.quantityMeasurement)) {
@@ -134,18 +131,17 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     });
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      try {
-        const base64Data = await processImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
         setForm((prevForm) => ({
           ...prevForm,
-          image: base64Data,
+          image: reader.result.split(",")[1],
         }));
-      } catch (error) {
-        setError(error.message);
-      }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -153,7 +149,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     e.preventDefault();
     setError(null);
 
-    // Check if all required fields are filled
     const requiredFields = [
       "name",
       "quantity",
@@ -185,10 +180,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const quantityMeasurements = useMemo(() => {
     const categoryMeasurements =
       quantityMeasurementsByCategory[form.category] || [];
-    const storageMeasurements =
-      quantityMeasurementsByCategory[form.storage] || [];
-    return [...new Set([...categoryMeasurements, ...storageMeasurements])];
-  }, [form.category, form.storage]);
+    return [...categoryMeasurements];
+  }, [form.category]);
 
   return (
     <Modal show={show} onHide={handleClose}>
@@ -330,7 +323,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               name="expirationDate"
               value={form.expirationDate}
               onChange={handleChange}
-              readOnly
             />
           </Form.Group>
         </Modal.Body>
