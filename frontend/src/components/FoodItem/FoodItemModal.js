@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useRecoilValue, useRecoilState } from "recoil";
+import { processImage } from "../../utils/imageUtils";
 import {
   currentItemState,
   foodItemsWithExpirationState,
@@ -133,17 +134,18 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     });
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        const base64Data = await processImage(file);
         setForm((prevForm) => ({
           ...prevForm,
-          image: reader.result,
+          image: base64Data,
         }));
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        setError(error.message);
+      }
     }
   };
 

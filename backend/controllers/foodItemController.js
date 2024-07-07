@@ -1,3 +1,5 @@
+// controllers/foodItemController.js
+
 const FoodItem = require("../models/FoodItem");
 const handleError = require("../utils/handleError");
 

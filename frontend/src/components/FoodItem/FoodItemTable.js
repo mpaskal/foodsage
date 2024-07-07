@@ -3,13 +3,14 @@ import { Table, Button } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
+import { processImage } from "../../utils/imageUtils";
 import {
   formatDateForDisplay,
   processDateInput,
   calculateExpirationDate,
 } from "../../utils/dateUtils";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { loggedInUserState } from "../../recoil/userAtoms"; // Import the logged-in user state
+import { loggedInUserState } from "../../recoil/userAtoms";
 
 const categories = [
   "Dairy",
@@ -37,24 +38,21 @@ const FoodItemTable = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const loggedInUser = useRecoilValue(loggedInUserState); // Access the logged-in user state
+  const loggedInUser = useRecoilValue(loggedInUserState);
 
   const handleInputChange = (id, field, value) => {
     let updates = { [field]: value };
 
-    // Process date input before setting state if the field is a date
     if (field === "purchasedDate" || field === "expirationDate") {
       updates[field] = processDateInput(value);
     }
 
     const itemToUpdate = foodItems.find((item) => item._id === id);
-    if (!itemToUpdate) return; // Ensure itemToUpdate is not null
+    if (!itemToUpdate) return;
 
-    // If the category changes, update the measurement to the first available option for the new category
     if (field === "category") {
       const defaultMeasurement = quantityMeasurementsByCategory[value][0];
       updates["quantityMeasurement"] = defaultMeasurement;
-      // Recalculate expiration date
       updates["expirationDate"] = calculateExpirationDate(
         value,
         updates.storage || itemToUpdate.storage,
@@ -63,7 +61,6 @@ const FoodItemTable = () => {
     }
 
     if (field === "storage") {
-      // Recalculate expiration date
       updates["expirationDate"] = calculateExpirationDate(
         itemToUpdate.category,
         value,
@@ -72,7 +69,6 @@ const FoodItemTable = () => {
     }
 
     if (field === "purchasedDate") {
-      // Recalculate expiration date
       updates["expirationDate"] = calculateExpirationDate(
         itemToUpdate.category,
         itemToUpdate.storage,
@@ -85,7 +81,6 @@ const FoodItemTable = () => {
     );
     setFoodItems(updatedItems);
 
-    // Update all changed fields in the backend
     Object.keys(updates).forEach((updateField) => {
       saveChanges(id, updateField, updates[updateField]);
     });
@@ -94,10 +89,10 @@ const FoodItemTable = () => {
   const saveChanges = async (id, field, value) => {
     try {
       const response = await fetch("/api/fooditems/update/" + id, {
-        method: "POST", // Changed to POST
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`, // Include the token in the headers
+          Authorization: `Bearer ${loggedInUser.token}`,
         },
         body: JSON.stringify({ [field]: value }),
       });
@@ -119,12 +114,12 @@ const FoodItemTable = () => {
   const confirmDelete = async () => {
     try {
       const response = await fetch("/api/fooditems/delete", {
-        method: "POST", // Changed to POST
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`, // Include the token in the headers
+          Authorization: `Bearer ${loggedInUser.token}`,
         },
-        body: JSON.stringify({ _id: itemToDelete._id }), // Send the ID in the body
+        body: JSON.stringify({ _id: itemToDelete._id }),
       });
       if (!response.ok) {
         throw new Error("Failed to delete item");
@@ -139,9 +134,21 @@ const FoodItemTable = () => {
   };
 
   const getImageSrc = (image) => {
-    return image
-      ? `data:image/jpeg;base64,${image}`
-      : "path_to_placeholder_image";
+    if (image && typeof image === "string" && image.length > 0) {
+      if (image.startsWith("data:image")) {
+        return image; // Already a valid data URL
+      }
+      // Assume it's base64 data and try to determine the format
+      if (image.startsWith("/9j/")) {
+        return `data:image/jpeg;base64,${image}`;
+      } else if (image.startsWith("iVBORw0KGgo")) {
+        return `data:image/png;base64,${image}`;
+      } else {
+        // Default to JPEG if format can't be determined
+        return `data:image/jpeg;base64,${image}`;
+      }
+    }
+    return `Bad image`;
   };
 
   const getExpirationDateStyle = (expirationDate) => {
@@ -156,16 +163,18 @@ const FoodItemTable = () => {
       : { backgroundColor: "green", color: "white" };
   };
 
-  const handleFileChange = (id, file) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
+  const handleFileChange = async (id, file) => {
+    try {
+      const base64Data = await processImage(file);
       const updatedItems = foodItems.map((item) =>
-        item._id === id ? { ...item, image: reader.result.split(",")[1] } : item
+        item._id === id ? { ...item, image: base64Data } : item
       );
       setFoodItems(updatedItems);
-      saveChanges(id, "image", reader.result.split(",")[1]);
-    };
-    reader.readAsDataURL(file);
+      saveChanges(id, "image", base64Data);
+    } catch (error) {
+      console.error("Error processing image:", error);
+      // Handle error (e.g., show an alert to the user)
+    }
   };
 
   return (
@@ -195,14 +204,8 @@ const FoodItemTable = () => {
                 <InlineEditControl
                   type="file"
                   value={item.image || ""}
-                  onChange={(e) =>
-                    handleFileChange(item._id, e.target.files[0])
-                  }
-                />
-                <img
-                  src={getImageSrc(item.image)}
-                  alt={item.name}
-                  style={{ width: "50px", height: "50px" }}
+                  onChange={(file) => handleFileChange(item._id, file)}
+                  getImageSrc={getImageSrc}
                 />
               </td>
               <td>
@@ -298,7 +301,7 @@ const FoodItemTable = () => {
               <td>
                 <InlineEditControl
                   type="number"
-                  value={item.consumed ? item.consumed.toString() : "0"} // Default to '0' if undefined
+                  value={item.consumed ? item.consumed.toString() : "0"}
                   onChange={(value) =>
                     handleInputChange(item._id, "consumed", value)
                   }
