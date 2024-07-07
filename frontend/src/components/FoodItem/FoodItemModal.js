@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useRecoilValue, useRecoilState } from "recoil";
+import { processImage } from "../../utils/imageUtils";
 import {
   currentItemState,
   foodItemsWithExpirationState,
 } from "../../recoil/foodItemsAtoms";
-import { formatDateForDisplay } from "../../utils/dateUtils";
+import {
+  formatDateForDisplay,
+  calculateExpirationDate,
+} from "../../utils/dateUtils";
 
 const categories = [
   "Dairy",
@@ -65,34 +69,84 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         });
       }
     } else {
+      const category = "Dairy";
+      const storage = "Fridge";
+      const purchasedDate = getCurrentDate();
+      const expirationDate = calculateExpirationDate(
+        category,
+        storage,
+        purchasedDate
+      );
       setForm({
         name: "",
-        category: "Dairy",
+        category: category,
         quantity: "",
-        quantityMeasurement: "",
-        storage: "Fridge",
+        quantityMeasurement: "L",
+        storage: storage,
         cost: "",
         source: "",
-        purchasedDate: getCurrentDate(),
-        expirationDate: "",
+        purchasedDate: purchasedDate,
+        expirationDate: formatDateForDisplay(expirationDate),
         image: null,
       });
     }
   }, [currentItem, foodItemsWithExpiration]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const calculateAndSetExpirationDate = (category, storage, purchasedDate) => {
+    const expirationDate = calculateExpirationDate(
+      category,
+      storage,
+      purchasedDate
+    );
     setForm((prevForm) => ({
       ...prevForm,
-      [name]: value,
+      expirationDate: formatDateForDisplay(expirationDate),
     }));
   };
 
-  const handleFileChange = (e) => {
-    setForm((prevForm) => ({
-      ...prevForm,
-      image: e.target.files[0],
-    }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => {
+      const updatedForm = { ...prevForm, [name]: value };
+
+      // Recalculate expiration date if category, storage, or purchased date changes
+      if (
+        name === "category" ||
+        name === "storage" ||
+        name === "purchasedDate"
+      ) {
+        calculateAndSetExpirationDate(
+          name === "category" ? value : updatedForm.category,
+          name === "storage" ? value : updatedForm.storage,
+          name === "purchasedDate" ? value : updatedForm.purchasedDate
+        );
+      }
+
+      // Update quantityMeasurement if category changes
+      if (name === "category") {
+        const newMeasurements = quantityMeasurementsByCategory[value] || [];
+        if (!newMeasurements.includes(updatedForm.quantityMeasurement)) {
+          updatedForm.quantityMeasurement = newMeasurements[0] || "";
+        }
+      }
+
+      return updatedForm;
+    });
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const base64Data = await processImage(file);
+        setForm((prevForm) => ({
+          ...prevForm,
+          image: base64Data,
+        }));
+      } catch (error) {
+        setError(error.message);
+      }
+    }
   };
 
   const handleFormSubmit = async (e) => {
@@ -100,7 +154,13 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     setError(null);
 
     // Check if all required fields are filled
-    const requiredFields = ["name", "quantity", "cost", "purchasedDate"];
+    const requiredFields = [
+      "name",
+      "quantity",
+      "cost",
+      "purchasedDate",
+      "quantityMeasurement",
+    ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
     if (missingFields.length > 0) {
@@ -270,6 +330,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               name="expirationDate"
               value={form.expirationDate}
               onChange={handleChange}
+              readOnly
             />
           </Form.Group>
         </Modal.Body>

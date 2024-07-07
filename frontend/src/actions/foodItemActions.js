@@ -10,7 +10,7 @@ export const useFetchFoodItems = () => {
       const response = await axios.get(
         `/api/fooditems?page=${page}&itemsPerPage=${itemsPerPage}`
       );
-      console.log("Raw API response:", response.data);
+      console.log("Raw API response for food items state:", response.data);
 
       // Assuming the API directly returns an array of items
       const items = Array.isArray(response.data) ? response.data : [];
@@ -47,7 +47,7 @@ export const useAddFoodItem = () => {
 export const useUpdateFoodItem = () => {
   return useRecoilCallback(({ set }) => async (id, data) => {
     try {
-      const response = await axios.patch(`/api/fooditems/${id}`, data);
+      const response = await axios.post(`/api/fooditems/${id}`, data);
       set(foodItemsState, (oldItems) =>
         oldItems.map((item) => (item._id === id ? response.data : item))
       );

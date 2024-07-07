@@ -1,6 +1,5 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 
 // Set storage engine
 const storage = multer.memoryStorage();
@@ -44,6 +43,9 @@ const uploadMiddleware = (req, res, next) => {
       const fileBuffer = req.file.buffer;
       req.body.image = fileBuffer.toString("base64");
     }
+
+    // Convert req.body from FormData to an object if needed
+    req.body = Object.fromEntries(new Map(Object.entries(req.body)));
 
     // Everything went fine.
     next();

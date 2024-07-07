@@ -1,14 +1,16 @@
-// utils/dateUtils.js
-
 /**
  * Calculates the expiration date based on the category, storage, and purchased date.
  * @param {string} category - The category of the item.
  * @param {string} storage - The storage condition of the item.
- * @param {Date} purchasedDate - The date the item was purchased.
- * @returns {Date} - The calculated expiration date.
+ * @param {Date|string|null} purchasedDate - The date the item was purchased.
+ * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
  */
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
+  if (!purchasedDate) return null;
+
   const purchased = new Date(purchasedDate);
+  if (isNaN(purchased.getTime())) return null; // Check for invalid date
+
   let expirationDate = new Date(purchasedDate); // Initialize with purchased date
 
   // Define expiration logic based on category and storage
@@ -82,42 +84,42 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
       expirationDate = null;
   }
 
-  return expirationDate;
+  return expirationDate ? expirationDate.toISOString() : null;
 };
 
 /**
  * Formats the given date in the "yyyy-mm-dd" format.
- * @param {Date} date - The date to be formatted.
- * @returns {string} - The formatted date in the "yyyy-mm-dd" format.
+ * @param {Date|string|null} date - The date to be formatted.
+ * @returns {string} - The formatted date in the "yyyy-mm-dd" format or an empty string if the date is invalid.
  */
 export const formatDateForDisplay = (date) => {
-  console.log("date in db", date);
   if (!date) return "";
 
   const localDate = new Date(date);
+  if (isNaN(localDate.getTime())) return ""; // Check for invalid date
+
   localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
 
   const year = localDate.getFullYear();
   const month = String(localDate.getMonth() + 1).padStart(2, "0");
   const day = String(localDate.getDate() + 1).padStart(2, "0");
-  console.log("date in db formatted", `${year}-${month}-${day}`);
 
   return `${year}-${month}-${day}`;
 };
 
 /**
  * Processes the date input from the UI and converts it to the ISO string format.
- * @param {string} date - The date input from the UI.
+ * @param {string|null} date - The date input from the UI.
  * @returns {string} - The date in the ISO string format, or an empty string if the input is invalid.
  */
 export const processDateInput = (date) => {
-  console.log("date input", date);
   if (!date) return "";
 
   // Construct a new date assuming the date is in YYYY-MM-DD format
   const parts = date.split("-");
   const inputDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
 
-  console.log("date for db", inputDate.toISOString());
+  if (isNaN(inputDate.getTime())) return ""; // Check for invalid date
+
   return inputDate.toISOString();
 };

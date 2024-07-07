@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form } from "react-bootstrap";
+import { Form, Image } from "react-bootstrap";
 
 const InlineEditControl = ({
   value,
@@ -8,17 +8,18 @@ const InlineEditControl = ({
   options = [],
   validator,
   formatDisplay = (val) => val,
+  getImageSrc,
 }) => {
   const [editMode, setEditMode] = useState(false);
   const [localValue, setLocalValue] = useState(value);
 
   useEffect(() => {
-    setLocalValue(value); // Sync with external changes
+    setLocalValue(value);
   }, [value]);
 
   const handleBlur = () => {
     if (validator && !validator(localValue)) {
-      setLocalValue(value); // Revert if invalid
+      setLocalValue(value);
     } else {
       onChange(localValue);
     }
@@ -26,8 +27,41 @@ const InlineEditControl = ({
   };
 
   const handleChange = (e) => {
-    setLocalValue(e.target.value);
+    if (type === "file") {
+      onChange(e.target.files[0]);
+      setEditMode(false);
+    } else {
+      setLocalValue(e.target.value);
+    }
   };
+
+  if (type === "file") {
+    return (
+      <div>
+        <Form.Control
+          type="file"
+          onChange={handleChange}
+          style={{ display: editMode ? "block" : "none" }}
+        />
+        <Image
+          src={getImageSrc(value)}
+          alt="Food item"
+          style={{
+            width: "50px",
+            height: "50px",
+            objectFit: "cover",
+            cursor: "pointer",
+            display: editMode ? "none" : "block",
+          }}
+          onClick={() => setEditMode(true)}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = `${process.env.PUBLIC_URL}/placeholder.jpeg`;
+          }}
+        />
+      </div>
+    );
+  }
 
   return editMode ? (
     type === "select" ? (

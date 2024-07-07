@@ -1,10 +1,7 @@
-const FoodItem = require("../models/FoodItem");
-const uploadMiddleware = require("../middlewares/uploadMiddleware");
+// controllers/foodItemController.js
 
-const handleError = (res, error, message) => {
-  console.error(message, error);
-  res.status(400).json({ message, error: error.message });
-};
+const FoodItem = require("../models/FoodItem");
+const handleError = require("../utils/handleError");
 
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
@@ -30,70 +27,58 @@ exports.getFoodItems = async (req, res) => {
 };
 
 exports.createFoodItem = async (req, res) => {
-  console.error("Error oops 1:", req.body);
-  uploadMiddleware(req, res, async (err) => {
-    console.log("req.file", req);
-    console.log("err", err);
-    if (err) {
-      console.error("Error oops:", err);
-      return handleError(res, err, "Error processing request");
-    }
-    console.log("req.body", req.body);
+  console.log("req.body", req.body);
 
-    try {
-      const newFoodItem = new FoodItem({
-        ...req.body,
-        image: req.file ? req.file.path : null,
-      });
+  try {
+    const tenantId = req.user.tenantId; // Extract tenantId from the authenticated user
 
-      await newFoodItem.save();
-      res.status(201).json({
-        message: "Food item created successfully",
-        data: newFoodItem,
-      });
-    } catch (error) {
-      handleError(res, error, "Failed to create new food item");
-    }
-  });
+    const newFoodItem = new FoodItem({
+      ...req.body,
+      image: req.body.image || null,
+      tenantId, // Add tenantId to the new food item
+      moveTo: req.body.moveTo || "consume", // Provide default value if not present
+      consumed: req.body.consumed || 0, // Provide default value if not present
+    });
+
+    await newFoodItem.save();
+    res.status(201).json({
+      message: "Food item created successfully",
+      data: newFoodItem,
+    });
+  } catch (error) {
+    handleError(res, error, "Failed to create new food item");
+  }
 };
 
 exports.updateFoodItem = async (req, res) => {
-  uploadMiddleware(req, res, async (err) => {
-    if (err) {
-      return handleError(res, err, "Error processing request");
+  try {
+    const updates = {
+      ...req.body,
+      image: req.body.image || req.body.existingImage,
+    };
+
+    const foodItem = await FoodItem.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!foodItem) {
+      return res.status(404).json({ message: "Food item not found" });
     }
 
-    try {
-      const updates = {
-        ...req.body,
-        image: req.file
-          ? req.file.path
-          : req.body.image || req.body.existingImage,
-      };
-
-      const foodItem = await FoodItem.findByIdAndUpdate(
-        req.params.id,
-        updates,
-        { new: true, runValidators: true }
-      );
-
-      if (!foodItem) {
-        return res.status(404).json({ message: "Food item not found" });
-      }
-
-      res.status(200).json({
-        message: "Food item updated successfully",
-        data: foodItem,
-      });
-    } catch (error) {
-      handleError(res, error, "Error updating food item");
-    }
-  });
+    res.status(200).json({
+      message: "Food item updated successfully",
+      data: foodItem,
+    });
+  } catch (error) {
+    handleError(res, error, "Error updating food item");
+  }
 };
 
 exports.deleteFoodItem = async (req, res) => {
   try {
-    const foodItem = await FoodItem.findByIdAndDelete(req.params.id);
+    const { _id } = req.body; // Get the ID from the request body
+    const foodItem = await FoodItem.findByIdAndDelete(_id);
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
     }

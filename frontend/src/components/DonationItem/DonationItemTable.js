@@ -58,7 +58,7 @@ const WasteItemTable = () => {
   const saveChanges = async (id, field, value) => {
     try {
       const response = await fetch("/api/donationitems/" + id, {
-        method: "PATCH", // Assuming a REST API, adjust according to your API setup
+        method: "POST", // Assuming a REST API, adjust according to your API setup
         headers: {
           "Content-Type": "application/json",
         },

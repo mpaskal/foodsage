@@ -65,7 +65,7 @@ const FoodItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await api.patch(`/fooditems/${itemId}`, updates); // Use custom Axios instance
+      const response = await api.post(`/fooditems/${itemId}`, updates); // Use custom Axios instance
       if (response.status !== 200) {
         // Revert the optimistic update if the server request fails
         setFoodItems((prevItems) =>

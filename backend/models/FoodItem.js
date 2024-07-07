@@ -12,8 +12,9 @@ const foodItemSchema = new Schema(
     source: { type: String, required: true, index: true },
     expirationDate: { type: Date, required: true, index: true },
     purchasedDate: { type: Date, required: true, index: true },
-    consumed: { type: String, required: true, index: true },
-    moveTo: { type: String, required: true, index: true },
+    image: { type: String, required: false },
+    consumed: { type: Number, required: true, default: 0, index: true },
+    moveTo: { type: String, required: true, default: "consume", index: true },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",
