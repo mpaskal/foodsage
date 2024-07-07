@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, Button } from "react-bootstrap";
+import { Table, Button, FormControl } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
@@ -45,8 +45,20 @@ const FoodItemTable = () => {
     direction: "ascending",
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredFoodItems = React.useMemo(() => {
+    return foodItems.filter((item) =>
+      Object.values(item).some(
+        (value) =>
+          typeof value === "string" &&
+          value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }, [foodItems, searchQuery]);
+
   const sortedFoodItems = React.useMemo(() => {
-    let sortableItems = [...foodItems];
+    let sortableItems = [...filteredFoodItems];
     sortableItems.sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === "ascending" ? -1 : 1;
@@ -57,7 +69,7 @@ const FoodItemTable = () => {
       return 0;
     });
     return sortableItems;
-  }, [foodItems, sortConfig]);
+  }, [filteredFoodItems, sortConfig]);
 
   const requestSort = (key) => {
     let direction = "ascending";
@@ -210,6 +222,13 @@ const FoodItemTable = () => {
 
   return (
     <>
+      <FormControl
+        type="text"
+        placeholder="Search"
+        className="mb-3"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
       <Table striped bordered hover>
         <thead>
           <tr>
