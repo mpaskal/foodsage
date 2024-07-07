@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Table, Button } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
@@ -65,6 +65,13 @@ const FoodItemTable = () => {
       direction = "descending";
     }
     setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === "ascending" ? "▲" : "▼";
+    }
+    return null;
   };
 
   const handleInputChange = (id, field, value) => {
@@ -206,20 +213,42 @@ const FoodItemTable = () => {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th onClick={() => requestSort("image")}>Image</th>
-            <th onClick={() => requestSort("name")}>Name</th>
-            <th onClick={() => requestSort("category")}>Category</th>
-            <th onClick={() => requestSort("quantity")}>Qty</th>
-            <th onClick={() => requestSort("quantityMeasurement")}>Meas</th>
-            <th onClick={() => requestSort("storage")}>Storage</th>
-            <th onClick={() => requestSort("cost")}>Cost</th>
-            <th onClick={() => requestSort("source")}>Source</th>
-            <th onClick={() => requestSort("expirationDate")}>
-              Expiration Date
+            <th onClick={() => requestSort("image")}>
+              Image {getSortIndicator("image")}
             </th>
-            <th onClick={() => requestSort("purchasedDate")}>Purchased Date</th>
-            <th onClick={() => requestSort("consumed")}>Consumed (%)</th>
-            <th onClick={() => requestSort("moveTo")}>Move</th>
+            <th onClick={() => requestSort("name")}>
+              Name {getSortIndicator("name")}
+            </th>
+            <th onClick={() => requestSort("category")}>
+              Category {getSortIndicator("category")}
+            </th>
+            <th onClick={() => requestSort("quantity")}>
+              Qty {getSortIndicator("quantity")}
+            </th>
+            <th onClick={() => requestSort("quantityMeasurement")}>
+              Meas {getSortIndicator("quantityMeasurement")}
+            </th>
+            <th onClick={() => requestSort("storage")}>
+              Storage {getSortIndicator("storage")}
+            </th>
+            <th onClick={() => requestSort("cost")}>
+              Cost {getSortIndicator("cost")}
+            </th>
+            <th onClick={() => requestSort("source")}>
+              Source {getSortIndicator("source")}
+            </th>
+            <th onClick={() => requestSort("expirationDate")}>
+              Expiration Date {getSortIndicator("expirationDate")}
+            </th>
+            <th onClick={() => requestSort("purchasedDate")}>
+              Purchased Date {getSortIndicator("purchasedDate")}
+            </th>
+            <th onClick={() => requestSort("consumed")}>
+              Consumed (%) {getSortIndicator("consumed")}
+            </th>
+            <th onClick={() => requestSort("moveTo")}>
+              Move {getSortIndicator("moveTo")}
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
