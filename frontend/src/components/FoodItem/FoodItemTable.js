@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, Button, FormControl } from "react-bootstrap";
+import { Table, Button, FormControl, Pagination } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
@@ -46,7 +46,10 @@ const FoodItemTable = () => {
   });
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
+  // Filtering items based on the search query
   const filteredFoodItems = React.useMemo(() => {
     return foodItems.filter((item) =>
       Object.values(item).some(
@@ -57,6 +60,7 @@ const FoodItemTable = () => {
     );
   }, [foodItems, searchQuery]);
 
+  // Sorting the filtered items
   const sortedFoodItems = React.useMemo(() => {
     let sortableItems = [...filteredFoodItems];
     sortableItems.sort((a, b) => {
@@ -70,6 +74,14 @@ const FoodItemTable = () => {
     });
     return sortableItems;
   }, [filteredFoodItems, sortConfig]);
+
+  // Paginating the sorted and filtered items
+  const paginatedFoodItems = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedFoodItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedFoodItems, currentPage]);
+
+  const totalPages = Math.ceil(filteredFoodItems.length / itemsPerPage);
 
   const requestSort = (key) => {
     let direction = "ascending";
@@ -272,7 +284,7 @@ const FoodItemTable = () => {
           </tr>
         </thead>
         <tbody>
-          {sortedFoodItems.map((item) => (
+          {paginatedFoodItems.map((item) => (
             <tr key={item._id}>
               <td>
                 <InlineEditControl
@@ -400,6 +412,27 @@ const FoodItemTable = () => {
           ))}
         </tbody>
       </Table>
+      <Pagination>
+        <Pagination.Prev
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        />
+        {Array.from({ length: totalPages }, (_, index) => (
+          <Pagination.Item
+            key={index + 1}
+            active={index + 1 === currentPage}
+            onClick={() => setCurrentPage(index + 1)}
+          >
+            {index + 1}
+          </Pagination.Item>
+        ))}
+        <Pagination.Next
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        />
+      </Pagination>
       <DeleteConfirmationModal
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
