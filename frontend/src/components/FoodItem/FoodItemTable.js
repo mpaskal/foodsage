@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Button } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
@@ -39,6 +39,33 @@ const FoodItemTable = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const loggedInUser = useRecoilValue(loggedInUserState);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "expirationDate",
+    direction: "ascending",
+  });
+
+  const sortedFoodItems = React.useMemo(() => {
+    let sortableItems = [...foodItems];
+    sortableItems.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
+    return sortableItems;
+  }, [foodItems, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
 
   const handleInputChange = (id, field, value) => {
     let updates = { [field]: value };
@@ -136,15 +163,13 @@ const FoodItemTable = () => {
   const getImageSrc = (image) => {
     if (image && typeof image === "string" && image.length > 0) {
       if (image.startsWith("data:image")) {
-        return image; // Already a valid data URL
+        return image;
       }
-      // Assume it's base64 data and try to determine the format
       if (image.startsWith("/9j/")) {
         return `data:image/jpeg;base64,${image}`;
       } else if (image.startsWith("iVBORw0KGgo")) {
         return `data:image/png;base64,${image}`;
       } else {
-        // Default to JPEG if format can't be determined
         return `data:image/jpeg;base64,${image}`;
       }
     }
@@ -173,7 +198,6 @@ const FoodItemTable = () => {
       saveChanges(id, "image", base64Data);
     } catch (error) {
       console.error("Error processing image:", error);
-      // Handle error (e.g., show an alert to the user)
     }
   };
 
@@ -182,23 +206,25 @@ const FoodItemTable = () => {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Qty</th>
-            <th>Meas</th>
-            <th>Storage</th>
-            <th>Cost</th>
-            <th>Source</th>
-            <th>Expiration Date</th>
-            <th>Purchased Date</th>
-            <th>Consumed (%)</th>
-            <th>Move</th>
+            <th onClick={() => requestSort("image")}>Image</th>
+            <th onClick={() => requestSort("name")}>Name</th>
+            <th onClick={() => requestSort("category")}>Category</th>
+            <th onClick={() => requestSort("quantity")}>Qty</th>
+            <th onClick={() => requestSort("quantityMeasurement")}>Meas</th>
+            <th onClick={() => requestSort("storage")}>Storage</th>
+            <th onClick={() => requestSort("cost")}>Cost</th>
+            <th onClick={() => requestSort("source")}>Source</th>
+            <th onClick={() => requestSort("expirationDate")}>
+              Expiration Date
+            </th>
+            <th onClick={() => requestSort("purchasedDate")}>Purchased Date</th>
+            <th onClick={() => requestSort("consumed")}>Consumed (%)</th>
+            <th onClick={() => requestSort("moveTo")}>Move</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {foodItems.map((item) => (
+          {sortedFoodItems.map((item) => (
             <tr key={item._id}>
               <td>
                 <InlineEditControl
