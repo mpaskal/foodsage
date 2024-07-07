@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, Button } from "react-bootstrap";
+import { Table, Button, FormControl, Pagination } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
@@ -39,6 +39,64 @@ const FoodItemTable = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const loggedInUser = useRecoilValue(loggedInUserState);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "expirationDate",
+    direction: "ascending",
+  });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Filtering items based on the search query
+  const filteredFoodItems = React.useMemo(() => {
+    return foodItems.filter((item) =>
+      Object.values(item).some(
+        (value) =>
+          typeof value === "string" &&
+          value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }, [foodItems, searchQuery]);
+
+  // Sorting the filtered items
+  const sortedFoodItems = React.useMemo(() => {
+    let sortableItems = [...filteredFoodItems];
+    sortableItems.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
+    return sortableItems;
+  }, [filteredFoodItems, sortConfig]);
+
+  // Paginating the sorted and filtered items
+  const paginatedFoodItems = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedFoodItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedFoodItems, currentPage]);
+
+  const totalPages = Math.ceil(filteredFoodItems.length / itemsPerPage);
+
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === "ascending" ? "▲" : "▼";
+    }
+    return null;
+  };
 
   const handleInputChange = (id, field, value) => {
     let updates = { [field]: value };
@@ -136,15 +194,13 @@ const FoodItemTable = () => {
   const getImageSrc = (image) => {
     if (image && typeof image === "string" && image.length > 0) {
       if (image.startsWith("data:image")) {
-        return image; // Already a valid data URL
+        return image;
       }
-      // Assume it's base64 data and try to determine the format
       if (image.startsWith("/9j/")) {
         return `data:image/jpeg;base64,${image}`;
       } else if (image.startsWith("iVBORw0KGgo")) {
         return `data:image/png;base64,${image}`;
       } else {
-        // Default to JPEG if format can't be determined
         return `data:image/jpeg;base64,${image}`;
       }
     }
@@ -173,32 +229,62 @@ const FoodItemTable = () => {
       saveChanges(id, "image", base64Data);
     } catch (error) {
       console.error("Error processing image:", error);
-      // Handle error (e.g., show an alert to the user)
     }
   };
 
   return (
     <>
+      <FormControl
+        type="text"
+        placeholder="Search"
+        className="mb-3"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Qty</th>
-            <th>Meas</th>
-            <th>Storage</th>
-            <th>Cost</th>
-            <th>Source</th>
-            <th>Expiration Date</th>
-            <th>Purchased Date</th>
-            <th>Consumed (%)</th>
-            <th>Move</th>
+            <th onClick={() => requestSort("image")}>
+              Image {getSortIndicator("image")}
+            </th>
+            <th onClick={() => requestSort("name")}>
+              Name {getSortIndicator("name")}
+            </th>
+            <th onClick={() => requestSort("category")}>
+              Category {getSortIndicator("category")}
+            </th>
+            <th onClick={() => requestSort("quantity")}>
+              Qty {getSortIndicator("quantity")}
+            </th>
+            <th onClick={() => requestSort("quantityMeasurement")}>
+              Meas {getSortIndicator("quantityMeasurement")}
+            </th>
+            <th onClick={() => requestSort("storage")}>
+              Storage {getSortIndicator("storage")}
+            </th>
+            <th onClick={() => requestSort("cost")}>
+              Cost {getSortIndicator("cost")}
+            </th>
+            <th onClick={() => requestSort("source")}>
+              Source {getSortIndicator("source")}
+            </th>
+            <th onClick={() => requestSort("expirationDate")}>
+              Expiration Date {getSortIndicator("expirationDate")}
+            </th>
+            <th onClick={() => requestSort("purchasedDate")}>
+              Purchased Date {getSortIndicator("purchasedDate")}
+            </th>
+            <th onClick={() => requestSort("consumed")}>
+              Consumed (%) {getSortIndicator("consumed")}
+            </th>
+            <th onClick={() => requestSort("moveTo")}>
+              Move {getSortIndicator("moveTo")}
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {foodItems.map((item) => (
+          {paginatedFoodItems.map((item) => (
             <tr key={item._id}>
               <td>
                 <InlineEditControl
@@ -326,6 +412,27 @@ const FoodItemTable = () => {
           ))}
         </tbody>
       </Table>
+      <Pagination>
+        <Pagination.Prev
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        />
+        {Array.from({ length: totalPages }, (_, index) => (
+          <Pagination.Item
+            key={index + 1}
+            active={index + 1 === currentPage}
+            onClick={() => setCurrentPage(index + 1)}
+          >
+            {index + 1}
+          </Pagination.Item>
+        ))}
+        <Pagination.Next
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        />
+      </Pagination>
       <DeleteConfirmationModal
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
