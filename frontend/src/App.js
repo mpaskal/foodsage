@@ -9,6 +9,8 @@ import SignUpPage from "./pages/SitePages/SignUpPage";
 import DashboardPage from "./pages/AppPages/DashboardPage";
 import UserManagementPage from "./pages/AppPages/UserManagementPage";
 import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
+import WasteItemsPage from "./pages/AppPages/WasteItemsPage";
+import WasteInsightsPage from "./pages/AppPages/WasteInsightsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { loggedInUserState } from "./recoil/userAtoms";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -44,9 +46,15 @@ function App() {
           <Route element={<ProtectedRoute role={role} />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/fooditems" element={<FoodItemsPage />} />
+            <Route path="/wasteitems" element={<WasteItemsPage />} />
             <Route
               path="/users"
               element={<UserManagementPage />}
+              requiredRole="admin"
+            />
+            <Route
+              path="/wasteinsights"
+              element={<WasteInsightsPage />}
               requiredRole="admin"
             />
           </Route>

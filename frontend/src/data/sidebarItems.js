@@ -17,27 +17,45 @@ export const sidebarItems = [
     name: "Inventory",
     icon: MdOutlineInventory,
     items: [
-      { name: "All", path: "/fooditems" },
+      { name: "Food Tracker", path: "/fooditems" },
       { name: "High-Risk Items", path: "/fooditems/high-risk-items" },
       { name: "Pantry Manager", path: "/fooditems/pantry-manager" },
       { name: "Stock Overview", path: "/fooditems/stock-overview" },
     ],
   },
   {
-    name: "Waste Goals",
+    name: "Waste",
     icon: FcExpired,
     items: [
-      { name: "Waste Tracker", path: "/waste-goals/waste-tracker" },
+      { name: "Waste Tracker", path: "/wasteitems" },
       {
-        name: "Sustainability Goals",
-        path: "/waste-goals/sustainability-goals",
+        name: "Waste Insights",
+        path: "/wasteinsights",
       },
-      { name: "Waste Analysis", path: "/waste-goals/waste-analysis" },
     ],
   },
-  { name: "Money Saving", path: "/money-saving", icon: GiReceiveMoney },
-  { name: "Donation", path: "/donation", icon: GiFoodTruck },
-  { name: "Insights", path: "/insights", icon: MdOutlineInsights },
+  {
+    name: "Donation",
+    icon: GiFoodTruck,
+    items: [
+      { name: "Donation Tracker", path: "/donationitems" },
+      {
+        name: "Donation Insights",
+        path: "/donationinsights",
+      },
+    ],
+  },
+  {
+    name: "Money Saving",
+    icon: GiReceiveMoney,
+    items: [
+      { name: "Money Saving Tracker", path: "/money" },
+      {
+        name: "Money Saving Insights",
+        path: "/moneyinsights",
+      },
+    ],
+  },
 ];
 
 export default sidebarItems;

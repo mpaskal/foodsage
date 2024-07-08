@@ -1,127 +1,66 @@
-import React, { useEffect } from "react";
-import axios from "axios";
-import { useRecoilState, useSetRecoilState } from "recoil";
-import {
-  wasteItemsState,
-  wasteItemsWithExpirationState,
-  currentItemState,
-} from "../../recoil/wasteItemsAtoms";
+import React, { useEffect, useCallback, useState } from "react";
+import api from "../../utils/api";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { foodItemsState, currentItemState } from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import WasteItemTable from "../../components/WasteItem/WasteItemTable";
 import WasteItemModal from "../../components/WasteItem/WasteItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
-import { debounce } from "lodash";
 
 const WasteItemsPage = () => {
-  const [wasteItems, setWasteItems] = useRecoilState(wasteItemsState);
-  const [wasteItemsWithExpiration, setWasteItemsWithExpiration] =
-    useRecoilState(wasteItemsWithExpirationState);
-  const setWasteItemsBase = useSetRecoilState(wasteItemsState);
-  const [showModal, setShowModal] = React.useState(false);
+  const [wasteItems, setWasteItems] = useRecoilState(foodItemsState);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [error, setError] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const fetchWasteItems = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/wasteItems"); // Use custom Axios instance
+      if (response.data && Array.isArray(response.data.data)) {
+        setWasteItems(response.data.data);
+      } else {
+        console.error("Unexpected response structure:", response.data);
+        setError("Unexpected response structure");
+      }
+    } catch (error) {
+      console.error("Error fetching waste items:", error);
+      setError(
+        "Failed to fetch waste items: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setWasteItems]);
 
   useEffect(() => {
-    const fetchWasteItems = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get("/api/wasteitems");
-        console.log("Response received:", response.data); // Log the entire response for debugging
-
-        if (response.data && Array.isArray(response.data.data)) {
-          setWasteItemsBase(response.data.data);
-        } else {
-          console.error("Unexpected response structure:", response.data);
-          setError("Unexpected response structure");
-        }
-      } catch (error) {
-        console.error("Error fetching Waste items:", error);
-        setError(
-          "Failed to fetch waste items: " +
-            (error.response?.data?.message || error.message)
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchWasteItems();
-  }, [setWasteItemsBase]);
+  }, [fetchWasteItems]);
 
-  const getCurrentDateFormatted = () => {
-    const currentDate = new Date();
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return currentDate.toLocaleDateString("en-US", options);
-  };
-
-  const currentDate = getCurrentDateFormatted();
-
-  const handleInputChange = debounce(async (itemId, field, value) => {
-    if (!itemId) {
-      console.error("Error updating item: Item ID is undefined");
-      setError("An error occurred while updating the waste item.");
-      return;
-    }
-
-    // Optimistic update
-    setWasteItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === itemId ? { ...item, [field]: value } : item
-      )
-    );
-
+  const handleMoveItem = async (itemId, newMoveTo) => {
     try {
       setIsUpdating(true);
-      let updates = { [field]: value };
-
-      const response = await axios.post(`/api/wasteitems/${itemId}`, updates);
+      const response = await api.post(`/wasteItems/${itemId}/move`, {
+        moveTo: newMoveTo,
+      }); // Use custom Axios instance
       if (response.status !== 200) {
-        // Revert the optimistic update if the server request fails
+        setError("Failed to move the waste item.");
+        console.error("Error moving item:", response.data);
+      } else {
         setWasteItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === itemId ? { ...item, [field]: item[field] } : item
+            item._id === itemId ? { ...item, moveTo: newMoveTo } : item
           )
         );
-        setError("Failed to update the waste item.");
-        console.error("Error updating item:", response.data);
       }
     } catch (error) {
-      // Revert the optimistic update if the server request fails
-      setWasteItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === itemId ? { ...item, [field]: item[field] } : item
-        )
-      );
-      setError("An error occurred while updating the waste item.");
-      console.error("Error updating item:", error);
+      setError("An error occurred while moving the waste item.");
+      console.error("Error moving item:", error);
     } finally {
       setIsUpdating(false);
-    }
-  }, 150);
-
-  const handleDeleteItem = async (itemId) => {
-    try {
-      const response = await axios.delete(`/api/wasteitems/${itemId}`);
-      if (response.status === 200) {
-        setWasteItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        setWasteItemsWithExpiration((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        console.log("Item deleted successfully");
-      } else if (response.status === 404) {
-        setError(`The waste item with ID ${itemId} was not found.`);
-        console.error(`Error deleting item: Item with ID ${itemId} not found`);
-      } else {
-        setError("Failed to delete the waste item.");
-        console.error("Error deleting item:", response.data);
-      }
-    } catch (error) {
-      setError("An error occurred while deleting the waste item.");
-      console.error("Error deleting item:", error);
     }
   };
 
@@ -129,19 +68,8 @@ const WasteItemsPage = () => {
     <Layout>
       <div className="container">
         <div className="d-flex justify-content-between my-3">
-          <h1 className="title">Waste Inventory</h1>
-          <h2>{currentDate}</h2>
+          <h1 className="title">Waste Items</h1>
         </div>
-        <div className="d-flex justify-content-end mb-1">
-          <Button
-            variant="success"
-            className="ml-auto"
-            onClick={() => setShowModal(true)}
-          >
-            Add Waste Item
-          </Button>
-        </div>
-
         {error && (
           <Alert variant="danger">
             <strong>Error:</strong> {error}
@@ -151,12 +79,10 @@ const WasteItemsPage = () => {
           <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
           </Spinner>
-        ) : wasteItemsWithExpiration.length > 0 ? (
+        ) : wasteItems.length > 0 ? (
           <WasteItemTable
-            wasteItems={wasteItemsWithExpiration}
-            handleInputChange={handleInputChange}
-            handleEdit={setShowModal}
-            handleDelete={handleDeleteItem}
+            wasteItems={wasteItems}
+            handleMove={handleMoveItem}
             isUpdating={isUpdating}
           />
         ) : (
@@ -167,7 +93,7 @@ const WasteItemsPage = () => {
           <WasteItemModal
             show={showModal}
             handleClose={() => setShowModal(false)}
-            currentItem={currentItem}
+            handleMove={handleMoveItem}
           />
         )}
       </div>

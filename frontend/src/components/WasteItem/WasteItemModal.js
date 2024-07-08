@@ -1,218 +1,72 @@
-import React, { useState, useEffect, useMemo } from "react";
-import InlineEditControl from "../Common/InlineEditControl";
-import { Modal, Form, Button, Row, Col } from "react-bootstrap";
-import { useRecoilValue } from "recoil";
-import {
-  foodItemsWithExpirationState,
-  currentItemState,
-} from "../../recoil/foodItemsAtoms";
+import React, { useState, useEffect } from "react";
+import { Modal, Form, Button, Alert } from "react-bootstrap";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { foodItemsState, currentItemState } from "../../recoil/foodItemsAtoms";
 
-const categories = [
-  "Dairy",
-  "Fresh",
-  "Grains and Bread",
-  "Packaged and Snack Wastes",
-  "Frozen Goods",
-  "Other",
-];
-const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
-const quantityMeasurementsByCategory = {
-  Dairy: ["L", "Oz", "Item"],
-  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
-  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Wastes": ["Item", "Box", "Kg", "Lb", "Gr"],
-  "Frozen Goods": ["Kg", "Lb", "Item"],
-  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
-};
-
-const WasteItemModal = ({
-  show,
-  handleClose,
-  handleSubmit,
-  handleChange,
-  handleFileChange,
-  form,
-  isEdit,
-}) => {
-  const allWasteItemsWithExpiration = useRecoilValue(
-    foodItemsWithExpirationState
-  );
-  const currentItem = useRecoilValue(currentItemState);
-
-  const quantityMeasurements = useMemo(() => {
-    const categoryMeasurements =
-      quantityMeasurementsByCategory[form.category] || [];
-    const storageMeasurements = storages.includes(form.storage)
-      ? quantityMeasurementsByCategory[form.storage]
-      : [];
-    return [...new Set([...categoryMeasurements, ...storageMeasurements])];
-  }, [form.category, form.storage]);
+const WasteItemModal = ({ show, handleClose, handleMove }) => {
+  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
+  const wasteItems = useRecoilValue(foodItemsState);
+  const [error, setError] = useState(null);
+  const [form, setForm] = useState({
+    moveTo: "Consume",
+  });
 
   useEffect(() => {
     if (currentItem) {
-      // Synchronize form state with current item details including expiration date
-      handleChange({
-        target: {
-          name: "expirationDate",
-          value: currentItem.expirationDate
-            ? new Date(currentItem.expirationDate)
-                .toISOString()
-                .substring(0, 10)
-            : "",
-        },
+      setForm({
+        moveTo: currentItem.moveTo || "Consume",
+      });
+    } else {
+      setForm({
+        moveTo: "Consume",
       });
     }
-  }, [currentItem, handleChange]);
+  }, [currentItem]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      await handleMove(currentItem._id, form.moveTo);
+      handleClose();
+    } catch (error) {
+      console.error("Error moving waste item:", error);
+      setError(
+        error.response?.data?.message ||
+          "An error occurred while moving the waste item."
+      );
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
 
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>
-          {isEdit ? "Edit Waste Item" : "Add Waste Item"}
-        </Modal.Title>
+        <Modal.Title>Move Waste Item</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
-          <Row>
-            <Col md={6}>
-              <Form.Group controlId="name">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group controlId="category">
-                <Form.Label>Category</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  required
-                >
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={6}>
-              <Form.Group controlId="quantity">
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="quantity"
-                  value={form.quantity}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group controlId="quantityMeasurement">
-                <Form.Label>Measurement</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="quantityMeasurement"
-                  value={form.quantityMeasurement}
-                  onChange={handleChange}
-                  required
-                >
-                  {quantityMeasurements.map((measurement, index) => (
-                    <option key={index} value={measurement}>
-                      {measurement}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={6}>
-              <Form.Group controlId="storage">
-                <Form.Label>Storage</Form.Label>
-                <Form.Control
-                  as="select"
-                  name="storage"
-                  value={form.storage}
-                  onChange={handleChange}
-                  required
-                >
-                  {storages.map((storage, index) => (
-                    <option key={index} value={storage}>
-                      {storage}
-                    </option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group controlId="cost">
-                <Form.Label>Cost</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="cost"
-                  value={form.cost}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-          <Form.Group controlId="source">
-            <Form.Label>Source</Form.Label>
+          {error && <Alert variant="danger">{error}</Alert>}
+          <Form.Group controlId="moveTo">
+            <Form.Label>Move To</Form.Label>
             <Form.Control
-              type="text"
-              name="source"
-              value={form.source}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group controlId="expirationDate">
-            <Form.Label>Expiration Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="expirationDate"
-              value={
-                form.expirationDate
-                  ? new Date(form.expirationDate).toISOString().substring(0, 10)
-                  : ""
-              }
+              as="select"
+              name="moveTo"
+              value={form.moveTo}
               onChange={handleChange}
               required
-            />
-          </Form.Group>
-          <Form.Group controlId="purchasedDate">
-            <Form.Label>Purchased Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="purchasedDate"
-              value={
-                form.purchasedDate
-                  ? new Date(form.purchasedDate).toISOString().substring(0, 10)
-                  : ""
-              }
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="image">
-            <Form.Label>Image</Form.Label>
-            <Form.Control
-              type="file"
-              name="image"
-              onChange={handleFileChange}
-            />
+            >
+              <option value="Consume">Consume</option>
+              <option value="Archive">Archive</option>
+            </Form.Control>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
@@ -220,7 +74,7 @@ const WasteItemModal = ({
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {isEdit ? "Save Changes" : "Add Waste Item"}
+            Move
           </Button>
         </Modal.Footer>
       </Form>
