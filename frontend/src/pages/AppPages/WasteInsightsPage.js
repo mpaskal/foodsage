@@ -1,12 +1,62 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useRecoilValue } from "recoil";
+import { loggedInUserState } from "../../recoil/userAtoms";
 import Layout from "../../components/Layout/LayoutApp";
+import { Alert, Spinner } from "react-bootstrap";
 
 const WasteInsightsPage = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const user = useRecoilValue(loggedInUserState);
+
+  useEffect(() => {
+    // Simulate content loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "80vh" }}
+        >
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <Alert variant="danger" className="m-3">
+          <Alert.Heading>Error loading content</Alert.Heading>
+          <p>{error}</p>
+        </Alert>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container my-5">
         <h1 className="mb-4">Waste Insights</h1>
 
+        {user && (
+          <Alert variant="info" className="mb-4">
+            Welcome, {user.firstName}! Here are some insights to help you reduce
+            food waste.
+          </Alert>
+        )}
+
+        {/* Rest of your content sections */}
         <section className="mb-5">
           <h2>Introduction</h2>
           <p>
@@ -96,15 +146,30 @@ const WasteInsightsPage = () => {
 
         <section className="mb-5">
           <h2>Resources and Further Reading</h2>
-          <ul>
-            <li>
-              <a href="#">10 Tips to Reduce Food Waste at Home</a>
+          <ul className="list-unstyled">
+            <li className="mb-2">
+              <button
+                className="btn btn-link p-0 text-decoration-none"
+                onClick={() => alert("This resource is not available yet.")}
+              >
+                10 Tips to Reduce Food Waste at Home
+              </button>
             </li>
-            <li>
-              <a href="#">The Environmental Impact of Food Waste</a>
+            <li className="mb-2">
+              <button
+                className="btn btn-link p-0 text-decoration-none"
+                onClick={() => alert("This resource is not available yet.")}
+              >
+                The Environmental Impact of Food Waste
+              </button>
             </li>
-            <li>
-              <a href="#">Composting 101: A Beginner's Guide</a>
+            <li className="mb-2">
+              <button
+                className="btn btn-link p-0 text-decoration-none"
+                onClick={() => alert("This resource is not available yet.")}
+              >
+                Composting 101: A Beginner's Guide
+              </button>
             </li>
           </ul>
         </section>

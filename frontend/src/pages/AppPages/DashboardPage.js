@@ -1,23 +1,58 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Layout from "../../components/Layout/LayoutApp";
-import { useSetRecoilState } from "recoil";
+import { useSetRecoilState, useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import Img1 from "../../assets/images/dashboard-img1.jpg";
 import Img2 from "../../assets/images/dashboard-img2.jpg";
 
 const DashboardPage = () => {
-  const [user, setUser] = useState({});
-  // console.log("loggedInUserState Dashboard", loggedInUserState);
-
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
+  const user = useRecoilValue(loggedInUserState);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser && storedUser !== "undefined") {
-      setUser(JSON.parse(storedUser));
-      setLoggedInUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setLoggedInUser(parsedUser);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setError("There was an error loading your user data.");
+        toast.error("There was an error loading your user data.");
+      }
+    } else {
+      setError("No user data found. Please sign in.");
+      toast.info("No user data found. Please sign in.", {
+        onClose: () => navigate("/signin"),
+        autoClose: 5000,
+      });
     }
-  }, [setLoggedInUser]);
+  }, [setLoggedInUser, navigate]);
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="error-container">
+          <h2>Error</h2>
+          <p>{error}</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Layout>
+        <div className="loading-container">
+          <p>Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

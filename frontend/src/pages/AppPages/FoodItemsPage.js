@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useState } from "react";
-import api from "../../utils/api"; // Import the custom Axios instance
+import api from "../../utils/api";
+import { useNavigate } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import {
   foodItemsState,
@@ -11,6 +12,7 @@ import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { debounce } from "lodash";
+import { toast } from "react-toastify";
 import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
 
 const FoodItemsPage = () => {
@@ -22,26 +24,36 @@ const FoodItemsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const navigate = useNavigate();
+
   const fetchFoodItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/fooditems"); // Use custom Axios instance
+      const response = await api.get("/fooditems");
       if (response.data && Array.isArray(response.data.data)) {
         setFoodItems(response.data.data);
       } else {
         console.error("Unexpected response structure:", response.data);
-        setError("Unexpected response structure");
+        setError("Unexpected data structure received. Please try again later.");
+        toast.error(
+          "Unexpected data structure received. Please try again later."
+        );
       }
     } catch (error) {
       console.error("Error fetching food items:", error);
-      setError(
-        "Failed to fetch food items: " +
-          (error.response?.data?.message || error.message)
-      );
+      if (error.response && error.response.status === 401) {
+        toast.info("Your session has expired. Please sign in again.", {
+          onClose: () => navigate("/signin"),
+        });
+      } else {
+        const errorMessage = error.response?.data?.message || error.message;
+        setError(`Unable to fetch food items. ${errorMessage}`);
+        toast.error(`Unable to fetch food items. ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [setFoodItems]);
+  }, [setFoodItems, navigate]);
 
   useEffect(() => {
     fetchFoodItems();
@@ -51,10 +63,10 @@ const FoodItemsPage = () => {
     if (!itemId) {
       console.error("Error updating item: Item ID is undefined");
       setError("An error occurred while updating the food item.");
+      toast.error("An error occurred while updating the food item.");
       return;
     }
 
-    // Optimistic update
     setFoodItems((prevItems) =>
       prevItems.map((item) =>
         item._id === itemId ? { ...item, [field]: value } : item
@@ -65,25 +77,25 @@ const FoodItemsPage = () => {
       setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await api.post(`/fooditems/${itemId}`, updates); // Use custom Axios instance
+      const response = await api.post(`/fooditems/${itemId}`, updates);
       if (response.status !== 200) {
-        // Revert the optimistic update if the server request fails
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
             item._id === itemId ? { ...item, [field]: item[field] } : item
           )
         );
         setError("Failed to update the food item.");
+        toast.error("Failed to update the food item.");
         console.error("Error updating item:", response.data);
       }
     } catch (error) {
-      // Revert the optimistic update if the server request fails
       setFoodItems((prevItems) =>
         prevItems.map((item) =>
           item._id === itemId ? { ...item, [field]: item[field] } : item
         )
       );
       setError("An error occurred while updating the food item.");
+      toast.error("An error occurred while updating the food item.");
       console.error("Error updating item:", error);
     } finally {
       setIsUpdating(false);
@@ -92,21 +104,24 @@ const FoodItemsPage = () => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      const response = await api.delete(`/fooditems/${itemId}`); // Use custom Axios instance
+      const response = await api.delete(`/fooditems/${itemId}`);
       if (response.status === 200) {
         setFoodItems((prevItems) =>
           prevItems.filter((item) => item._id !== itemId)
         );
-        console.log("Item deleted successfully");
+        toast.success("Item deleted successfully");
       } else if (response.status === 404) {
         setError(`The food item with ID ${itemId} was not found.`);
+        toast.error(`The food item with ID ${itemId} was not found.`);
         console.error(`Error deleting item: Item with ID ${itemId} not found`);
       } else {
         setError("Failed to delete the food item.");
+        toast.error("Failed to delete the food item.");
         console.error("Error deleting item:", response.data);
       }
     } catch (error) {
       setError("An error occurred while deleting the food item.");
+      toast.error("An error occurred while deleting the food item.");
       console.error("Error deleting item:", error);
     }
   };
@@ -129,13 +144,14 @@ const FoodItemsPage = () => {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }); // Use custom Axios instance
+      });
 
       if (response.status === 201) {
         setFoodItems((prevItems) => [...prevItems, response.data]);
         setShowModal(false);
         setCurrentItem(null);
-        fetchFoodItems(); // Refresh the list after adding
+        fetchFoodItems();
+        toast.success("Food item added successfully");
       } else {
         throw new Error("Failed to add the food item.");
       }
@@ -149,12 +165,20 @@ const FoodItemsPage = () => {
           "Failed to add the food item: " +
             (error.response.data.message || error.response.statusText)
         );
+        toast.error(
+          "Failed to add the food item: " +
+            (error.response.data.message || error.response.statusText)
+        );
       } else if (error.request) {
         console.error("No response received:", error.request);
         setError("No response received from the server. Please try again.");
+        toast.error("No response received from the server. Please try again.");
       } else {
         console.error("Error setting up request:", error.message);
         setError(
+          "An error occurred while setting up the request: " + error.message
+        );
+        toast.error(
           "An error occurred while setting up the request: " + error.message
         );
       }
@@ -192,8 +216,9 @@ const FoodItemsPage = () => {
         </div>
 
         {error && (
-          <Alert variant="danger">
-            <strong>Error:</strong> {error}
+          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+            <Alert.Heading>Error</Alert.Heading>
+            <p>{error}</p>
           </Alert>
         )}
         {isLoading ? (

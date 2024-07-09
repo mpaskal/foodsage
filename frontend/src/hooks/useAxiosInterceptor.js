@@ -1,5 +1,3 @@
-// File: frontend/src/hooks/useAxiosInterceptor.js
-
 import { useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -16,24 +14,18 @@ const useAxiosInterceptor = () => {
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          // Token has expired
-          localStorage.removeItem("user"); // Clear the user from local storage
-          setLoggedInUser(null); // Clear the user from Recoil state
+          localStorage.removeItem("user");
+          setLoggedInUser(null);
 
-          // Show a friendly message to the user
-          toast.info(
-            "Your session has expired. Please sign in again to continue.",
-            {
-              onClose: () => navigate("/signin"),
-            }
-          );
+          toast.info("Your session has expired. Please sign in again.", {
+            onClose: () => navigate("/signin"),
+          });
         }
         return Promise.reject(error);
       }
     );
 
     return () => {
-      // Remove the interceptor when the component unmounts
       axios.interceptors.response.eject(interceptor);
     };
   }, [navigate, setLoggedInUser]);
