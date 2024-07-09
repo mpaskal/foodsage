@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../components/Layout/LayoutSite";
+import { useSetRecoilState } from "recoil";
+import { loggedInUserState } from "../../recoil/userAtoms";
+import { toast } from "react-toastify";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -11,9 +14,11 @@ const SignUpPage = () => {
     password: "",
     confirmPassword: "",
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(false);
   const navigate = useNavigate();
+  const setLoggedInUser = useSetRecoilState(loggedInUserState);
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
 
@@ -21,10 +26,34 @@ const SignUpPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validatePassword = (password) => {
+    // At least 8 characters long, contains at least one uppercase letter, one lowercase letter, and one number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setError("All fields are required");
+      setIsLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError(
+        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number"
+      );
+      setIsLoading(false);
       return;
     }
 
@@ -40,23 +69,40 @@ const SignUpPage = () => {
       );
 
       if (response.data && response.data.user && response.data.token) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            ...response.data.user,
-            token: response.data.token,
-          })
-        );
-
-        navigate("/dashboard");
+        const userData = {
+          ...response.data.user,
+          token: response.data.token,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        setLoggedInUser(userData);
+        setIsRegistered(true);
+        toast.success("Successfully registered!");
       } else {
-        setError("User data is not returned correctly");
+        throw new Error("User data is not returned correctly");
       }
     } catch (error) {
       console.error("Error registering user", error);
-      setError(error.response?.data?.msg || "Error registering user");
+      if (error.response?.data?.msg === "Email already exists") {
+        setError(
+          "This email is already registered. Please use a different email."
+        );
+        toast.error(
+          "This email is already registered. Please use a different email."
+        );
+      } else {
+        setError(error.response?.data?.msg || "Error registering user");
+        toast.error(error.response?.data?.msg || "Error registering user");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isRegistered) {
+      navigate("/dashboard");
+    }
+  }, [isRegistered, navigate]);
 
   return (
     <Layout>
@@ -119,7 +165,9 @@ const SignUpPage = () => {
               required
             />
           </div>
-          <button type="submit">Sign Up</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Signing Up..." : "Sign Up"}
+          </button>
         </form>
         <p>
           Already have an account? <Link to="/signin">Login</Link>
