@@ -9,7 +9,7 @@ const DeleteConfirmationModal = ({ show, handleClose, confirmDelete }) => {
       </Modal.Header>
       <Modal.Body>
         <p>
-          Are you sure you want to delete this food item? This action cannot be
+          Are you sure you want to delete this waste item? This action cannot be
           undone.
         </p>
       </Modal.Body>

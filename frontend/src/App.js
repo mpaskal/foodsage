@@ -1,58 +1,21 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { RecoilRoot, useSetRecoilState } from "recoil";
-import HomePage from "./pages/SitePages/HomePage";
-import AboutPage from "./pages/SitePages/AboutPage";
-import ContactPage from "./pages/SitePages/ContactPage";
-import SignInPage from "./pages/SitePages/SignInPage";
-import SignUpPage from "./pages/SitePages/SignUpPage";
-import DashboardPage from "./pages/AppPages/DashboardPage";
-import UserManagementPage from "./pages/AppPages/UserManagementPage";
-import FoodItemsPage from "./pages/AppPages/FoodItemsPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { loggedInUserState } from "./recoil/userAtoms";
+// File: frontend/src/App.js
+
+import React, { Suspense } from "react";
+import InitializeState from "./components/InitializeState";
+import AppContent from "./components/AppContent";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-const InitializeState = ({ children }) => {
-  const setLoggedInUser = useSetRecoilState(loggedInUserState);
-
-  React.useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    console.log("User retrieved from local storage:", user); // Debug log
-    if (user && user.token) {
-      setLoggedInUser(user);
-    }
-  }, [setLoggedInUser]);
-
-  return children;
-};
-
 function App() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role;
-
   return (
-    <RecoilRoot>
+    <Suspense fallback={<div>Loading...</div>}>
       <InitializeState>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route element={<ProtectedRoute role={role} />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/fooditems" element={<FoodItemsPage />} />
-            <Route
-              path="/users"
-              element={<UserManagementPage />}
-              requiredRole="admin"
-            />
-          </Route>
-        </Routes>
+        <AppContent />
+        <ToastContainer position="top-center" autoClose={5000} />
       </InitializeState>
-    </RecoilRoot>
+    </Suspense>
   );
 }
 

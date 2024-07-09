@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const foodItemRoutes = require("./routes/foodItemRoutes");
+const wasteItemRoutes = require("./routes/wasteItemRoutes");
 
 const app = express();
 
@@ -43,6 +44,8 @@ mongoose
 // Use Routes
 app.use("/api/users", userRoutes); // Mount user routes at /api/users
 app.use("/api/fooditems", foodItemRoutes); // Mount foodItemRoutes at /api/fooditems
+app.use("/api/wasteItems", wasteItemRoutes); // Mount wasteItemRoutes at /api/wasteItems
+//app.use("/api/wasteInsights", wasteItemRoutes); // Mount wasteItemRoutes at /api/wasteInsights
 
 const port = process.env.PORT || 5000;
 
