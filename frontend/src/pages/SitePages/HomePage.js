@@ -4,6 +4,7 @@ import HeroImg from "../../assets/images/main_picture.png";
 import ReduceWasteImage from "../../assets/images/reduce_waste.png";
 import { Link, useNavigate } from "react-router-dom";
 
+
 const HomePage = () => {
   return (
     <Layout>
