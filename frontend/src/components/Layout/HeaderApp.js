@@ -66,6 +66,9 @@ const HeaderApp = () => {
 
   return (
     <header className="header-app">
+      <div className="sidebar-logo">
+        <img src="/logo_with_companyName_white.png" alt="FoodSage logo" className="logo-app" />
+      </div>
       <div className="header-left">
         {/* <span className="space-name">Space Name</span> */}
       </div>

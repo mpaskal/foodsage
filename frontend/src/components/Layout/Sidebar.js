@@ -42,9 +42,7 @@ const Sidebar = () => {
 
   return (
     <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
-      <div className="sidebar-logo">
-        <img src="/logo2.jpg" alt="FoodSage logo" className="logo" />
-      </div>
+      
       <div className="sidebar-items">
         {sidebarItems.map((item, index) => (
           <div key={index} className="sidebar-item">

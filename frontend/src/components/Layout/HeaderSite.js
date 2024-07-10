@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 const Header = () => {
   return (
     <header className="header-site">
-      <img src="/logo_with_companyName2.png" alt="FoodSage Logo" className="logo" />
+      <img src="/logo_with_companyName_green.png" alt="FoodSage Logo" className="logo" />
       <nav className="navbar">
         <ul className="navbar-links">
           <li>

@@ -640,17 +640,28 @@ main {
 }
 
 /* HeaderApp */
+/* logo settings after login */
 .header-app {
   display: flex;
+  align-items: center; /* Ensures vertical centering */
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 10;
   background-color: var(--secondary-color);
   color: var(--text-color-light);
-  height: 36px;
-  width: 100vw;
+  height: 70px; /* Keeps the header height unchanged */
+  padding: 5px 20px; /* Minimal padding to fit the logo */
 }
+
+.sidebar-logo .logo-app {
+  height: 100px;
+  width: auto;
+  margin-left: 6.7em;
+  margin-top: -43px;
+  margin-bottom: -3px;
+}
+
 
 .header-left {
   display: flex;
@@ -665,11 +676,11 @@ main {
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1.3em;
-  font-size: 1.2em;
-  position: relative;
-  margin-right: 1.7em;
-}
+  height: 100%;
+  margin-right: 30px;}
+
 
 .search-bar {
   display: flex;
@@ -993,7 +1004,7 @@ header-site {
   overflow-y: auto;
   z-index: 15;
 }
-
+/* logo settings before login */
 .logo {
   height: auto;            
   max-height: 50px;        
@@ -1009,7 +1020,9 @@ header-site {
   padding: 10px 0;
   width: 100%; 
 }
-
+.sidebar.expanded {
+  width: 170px;
+  margin-top: 30px;}
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -1109,3 +1122,4 @@ header-site {
     margin-left: 250px;
   }
 }
+
