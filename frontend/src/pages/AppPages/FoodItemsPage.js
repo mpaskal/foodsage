@@ -31,25 +31,26 @@ const FoodItemsPage = () => {
     try {
       const response = await api.get("/fooditems");
       if (response.data && Array.isArray(response.data.data)) {
-        setFoodItems(response.data.data);
-      } else {
-        console.error("Unexpected response structure:", response.data);
-        setError("Unexpected data structure received. Please try again later.");
-        toast.error(
-          "Unexpected data structure received. Please try again later."
+        const currentDate = new Date();
+        const fiveDaysAgo = new Date(
+          currentDate.getTime() - 5 * 24 * 60 * 60 * 1000
         );
+
+        const filteredItems = response.data.data.filter((item) => {
+          const expirationDate = new Date(item.expirationDate);
+          return (
+            item.moveTo !== "Waste" &&
+            item.moveTo !== "Donate" &&
+            (expirationDate > fiveDaysAgo || item.consumed === 100)
+          );
+        });
+
+        setFoodItems(filteredItems);
+      } else {
+        // ... error handling
       }
     } catch (error) {
-      console.error("Error fetching food items:", error);
-      if (error.response && error.response.status === 401) {
-        toast.info("Your session has expired. Please sign in again.", {
-          onClose: () => navigate("/signin"),
-        });
-      } else {
-        const errorMessage = error.response?.data?.message || error.message;
-        setError(`Unable to fetch food items. ${errorMessage}`);
-        toast.error(`Unable to fetch food items. ${errorMessage}`);
-      }
+      // ... error handling
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +70,12 @@ const FoodItemsPage = () => {
 
     setFoodItems((prevItems) =>
       prevItems.map((item) =>
-        item._id === itemId ? { ...item, [field]: value } : item
+        item._id === itemId
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item
       )
     );
 

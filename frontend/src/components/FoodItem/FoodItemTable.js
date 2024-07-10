@@ -134,6 +134,21 @@ const FoodItemTable = () => {
       );
     }
 
+    if (field === "consumed") {
+      updates[field] = parseInt(value, 10);
+      if (updates[field] === 100) {
+        updates.moveTo = "Consumed";
+      }
+    }
+
+    if (field === "moveTo") {
+      if (value === "Consumed") {
+        updates.consumed = 100;
+      } else if (value === "Waste" || value === "Donate") {
+        updates.donationDate = new Date().toISOString();
+      }
+    }
+
     const updatedItems = foodItems.map((item) =>
       item._id === id ? { ...item, ...updates } : item
     );

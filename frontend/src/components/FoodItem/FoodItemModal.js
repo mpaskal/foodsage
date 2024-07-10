@@ -31,6 +31,7 @@ const quantityMeasurementsByCategory = {
   Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
   Cellar: ["L", "Item", "Box"],
 };
+const moveToOptions = ["Consume", "Waste", "Donate"];
 
 const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
@@ -50,6 +51,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     purchasedDate: getCurrentDate(),
     expirationDate: "",
     image: null,
+    consumed: 0,
+    moveTo: "Consume",
   });
 
   useEffect(() => {
@@ -65,6 +68,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             getCurrentDate(),
           expirationDate:
             formatDateForDisplay(itemWithExpiration.expirationDate) || "",
+          consumed: itemWithExpiration.consumed || 0,
+          moveTo: itemWithExpiration.moveTo || "Consume",
         });
       }
     } else {
@@ -87,37 +92,42 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         purchasedDate: purchasedDate,
         expirationDate: formatDateForDisplay(expirationDate),
         image: null,
+        consumed: 0,
+        moveTo: "Consume",
       });
     }
   }, [currentItem, foodItemsWithExpiration]);
-
-  const calculateAndSetExpirationDate = (category, storage, purchasedDate) => {
-    const expirationDate = calculateExpirationDate(
-      category,
-      storage,
-      purchasedDate
-    );
-    setForm((prevForm) => ({
-      ...prevForm,
-      expirationDate: formatDateForDisplay(expirationDate),
-    }));
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prevForm) => {
       const updatedForm = { ...prevForm, [name]: value };
 
+      if (name === "consumed") {
+        const consumedValue = parseInt(value, 10);
+        updatedForm.consumed = consumedValue;
+        if (consumedValue === 100) {
+          updatedForm.moveTo = "Consumed";
+        }
+      }
+
+      if (name === "moveTo") {
+        if (value === "Consumed") {
+          updatedForm.consumed = 100;
+        }
+      }
+
       if (
         name === "category" ||
         name === "storage" ||
         name === "purchasedDate"
       ) {
-        calculateAndSetExpirationDate(
-          name === "category" ? value : updatedForm.category,
-          name === "storage" ? value : updatedForm.storage,
-          name === "purchasedDate" ? value : updatedForm.purchasedDate
+        const expirationDate = calculateExpirationDate(
+          updatedForm.category,
+          updatedForm.storage,
+          updatedForm.purchasedDate
         );
+        updatedForm.expirationDate = formatDateForDisplay(expirationDate);
       }
 
       if (name === "category") {
@@ -155,6 +165,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       "cost",
       "purchasedDate",
       "quantityMeasurement",
+      "moveTo",
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
@@ -166,7 +177,11 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     }
 
     try {
-      await handleSubmit(form);
+      await handleSubmit({
+        ...form,
+        consumed: parseInt(form.consumed, 10),
+        moveTo: form.consumed === 100 ? "Consumed" : form.moveTo,
+      });
       handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -324,6 +339,33 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               value={form.expirationDate}
               onChange={handleChange}
             />
+          </Form.Group>
+          <Form.Group controlId="consumed">
+            <Form.Label>Consumed (%)</Form.Label>
+            <Form.Control
+              type="number"
+              name="consumed"
+              value={form.consumed}
+              onChange={handleChange}
+              min="0"
+              max="100"
+            />
+          </Form.Group>
+          <Form.Group controlId="moveTo">
+            <Form.Label>Move To</Form.Label>
+            <Form.Control
+              as="select"
+              name="moveTo"
+              value={form.moveTo}
+              onChange={handleChange}
+              required
+            >
+              {moveToOptions.map((option, index) => (
+                <option key={index} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Form.Control>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
