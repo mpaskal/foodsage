@@ -640,17 +640,28 @@ main {
 }
 
 /* HeaderApp */
+/* logo settings after login */
 .header-app {
   display: flex;
+  align-items: center; /* Ensures vertical centering */
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 10;
   background-color: var(--secondary-color);
   color: var(--text-color-light);
-  height: 36px;
-  width: 100vw;
+  height: 70px; /* Keeps the header height unchanged */
+  padding: 5px 20px; /* Minimal padding to fit the logo */
 }
+
+.sidebar-logo .logo-app {
+  height: 100px;
+  width: auto;
+  margin-left: 6.7em;
+  margin-top: -43px;
+  margin-bottom: -3px;
+}
+
 
 .header-left {
   display: flex;
@@ -665,11 +676,11 @@ main {
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1.3em;
-  font-size: 1.2em;
-  position: relative;
-  margin-right: 1.7em;
-}
+  height: 100%;
+  margin-right: 30px;}
+
 
 .search-bar {
   display: flex;
@@ -993,7 +1004,7 @@ header-site {
   overflow-y: auto;
   z-index: 15;
 }
-
+/* logo settings before login */
 .logo {
   height: auto;            
   max-height: 50px;        
@@ -1009,7 +1020,9 @@ header-site {
   padding: 10px 0;
   width: 100%; 
 }
-
+.sidebar.expanded {
+  width: 170px;
+  margin-top: 30px;}
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -1107,5 +1120,155 @@ header-site {
   }
   .layout-app-content.sidebar-visible {
     margin-left: 250px;
+  }
+}
+
+/* Food Inventory page */
+.pagination {
+  justify-content: center;
+}
+.form-control {
+  display: block;
+  width: 20%;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;} 
+  
+/* Waste Insights Page */
+.h2-name{
+  text-align: center;
+  color: #058240; /* Green color for headings */
+}
+.h2-name2{
+  color: #8bc34a;
+  text-align: center;
+}
+.waste-insights-container .full-width-image {
+  width: 100%; /* Makes the image take the full width of the container */
+  max-height: 200px; /* Limits the height of the image to make it narrow */
+  object-fit: cover; /* Ensures the aspect ratio is maintained while filling the area */
+  display: block; /* Makes sure the image is not inline */
+  margin-bottom: 20px; /* Adds some space below the image */
+}
+
+.waste-insights-container {
+  margin-left: 170px; /* Offset for the sidebar */
+  background-color: #f9f9f9; /* Light gray background */
+  padding: 30px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Shadow around the outer container */
+
+}
+
+.mb-4 {
+ text-align: center; 
+ margin-top: 10px;
+}
+.row {
+  padding: 20px;
+  --bs-gutter-x: 2.5rem;
+}
+/* Section styles with a clear white background */
+.waste-insights-container section {
+  background-color: #fff; 
+  padding: 20px;
+  border: 1px solid #ddd; 
+}
+
+/* Styling headers within sections */
+.waste-insights-container h2 {
+ 
+padding: 20px;
+}
+
+/* Content styling */
+.waste-insights-container p, .waste-insights-container ul {
+  color: #333; 
+  line-height: 1.6;
+}
+
+/* Button styles */
+.waste-insights-container .btn-primary {
+  background-color: #4CAF50;
+  border-color: #367C39;
+}
+
+/* Embed and iframe adjustments */
+
+.waste-insights-container .embed-responsive {
+  background-color: #fff;
+  padding: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+.h2-name2 img.full-width-image {
+  width: 100%; 
+  height: auto; 
+  max-height: unset; 
+}
+/* Adjustments for list items for readability */
+.waste-insights-container li {
+  padding: 5px 0;
+}
+.alert-info {
+ background-color:#ddf2cd;
+}
+.h2-name-text{
+justify-content: center;
+}
+.btn btn-primary {
+  justify-content: center;
+}
+/* Style for links within sections */
+.h2-name2 a {
+  color: #4CAF50; /* Green color for links */
+  text-decoration: none; /* No underline by default */
+}
+
+.h2-name2 a:hover {
+  text-decoration: underline; /* Underline on hover for better visibility */
+}
+/* Styles for the Waste Insights section */
+.mb-5 {
+  text-align: center; /* Aligns the text center */
+  display: flex;
+  flex-direction: column; /* Stacks children vertically */
+  align-items: center; /* Centers children horizontally */
+  margin-bottom: 20px; /* Adds space below the section */
+}
+.mb-5 ul {
+  padding: 0; /* Removes default padding */
+  list-style-type: none; /* Removes bullet points */
+  text-align: left; /* Aligns text to the left within the centered block */
+  margin-left: 200px;
+
+}
+mb-5 li {
+  margin-bottom: 10px;
+  margin-left: 100px;
+  display: flex;
+  align-items: start;
+  text-indent: -5px;
+  padding-left: 20px;}
+
+.mb-5 li::before {
+  content: "•"; /* Custom bullet */
+  color: #4CAF50; /* Bullet color */
+  font-size: 20px; /* Bullet size */
+  margin-right: 10px; /* Space between bullet and text */
+  flex-shrink: 0; /* Prevents bullet from shrinking */
+}
+
+
+.file-name {
+  text-decoration: underline; /* Underlines the filename */
+  font-weight: bold; /* Makes the file name bold */
+}
+
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .waste-insights-container {
+      margin-left: 0; /* Remove sidebar offset on smaller screens */
+      padding: 10px; /* Smaller padding for smaller screens */
   }
 }
