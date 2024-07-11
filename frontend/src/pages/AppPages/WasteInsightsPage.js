@@ -62,8 +62,7 @@ const WasteInsightsPage = () => {
             <h2 className="h2-name">A resource for understanding and reducing food waste</h2>
             <p>Food waste is a significant global issue, with major environmental,
                 economic, and social implications. Here, we empower you with valuable information, tools,
-                 and inspiration to make the most of your food, save money, and contribute to a more sustainable world.Every year, millions of tons of food go to waste, 
-impacting our environment and our wallets. 
+                 and inspiration to make the most of your food, save money, and contribute to a more sustainable world.Every year, millions of tons of food go to waste, impacting our environment and our wallets. 
 At FoodSage, we believe that small changes in our daily habits can make a big difference. 
 The Waste Insights page is designed to help you track your food waste, learn about its effects, 
 and discover practical ways to minimize it.
@@ -78,7 +77,11 @@ and discover practical ways to minimize it.
                     spoilage, overproduction, expiration, and plate waste. Understanding
                     the common causes of food waste, such as improper storage, buying
                     too much, and poor meal planning, is the first step towards reducing
-                    it.
+                    it.Moreover, engaging in food waste reduction practices can inspire innovations in food storage,
+                    distribution, and consumption, paving the way for a more efficient and equitable food system. 
+                    By collectively addressing the issue of food waste, we can help ensure that the resources used 
+                    in food production are utilized to their fullest potential, ultimately contributing to a healthier
+                     planet and society.
                 </p>
             </section>
             <section className="col-md-6 mb-5">
@@ -104,8 +107,8 @@ and discover practical ways to minimize it.
 
         <div className="row">
             <section className="col-md-4 mb-5">
-                <h2>Composting and Disposal</h2>
-                <p>
+                <h2 className="h2-name">Composting and Disposal</h2>
+                <p className="h2-name-text">
                     Composting food waste can significantly reduce the amount of waste
                     going to landfills and create nutrient-rich soil for your garden.
                     For non-compostable food waste, proper disposal methods are
@@ -116,18 +119,9 @@ and discover practical ways to minimize it.
                 </a>
             </section>
             <section className="col-md-4 mb-5">
-                <h2>Sustainability and the Environment</h2>
-                <p>
-                    Food waste has a significant impact on the environment, contributing
-                    to greenhouse gas emissions, water usage, and land degradation. By
-                    reducing food waste, you can support more sustainable food systems
-                    and play a role in protecting the planet.
-                </p>
-                <img src="sustainable-food.jpg" alt="Sustainable Food System" className="img-fluid mb-3"/>
-            </section>
-            <section className="col-md-4 mb-5">
-                <h2>Community Engagement</h2>
-                <p>
+                
+                <h2 className="h2-name">Community Engagement</h2>
+                <p className="h2-name-text">
                     Many local organizations and initiatives are working to address food
                     waste in our communities. Explore opportunities to get involved and
                     make a positive impact.
@@ -136,37 +130,44 @@ and discover practical ways to minimize it.
                     Find Local Food Donation Programs
                 </a>
             </section>
+            <section className="col-md-4 mb-5">
+        
+            <h2 className="h2-name">Reducing Food Waste in Ontario</h2>
+
+            <p className="h2-name-text">
+            
+             Programs like Toronto's Green Bin Program and Ottawa's Composting Programs provide residents with the tools and knowledge needed to divert organic waste from landfills and turn it into valuable compost. Additionally, supporting local food banks and donation initiatives can ensure that surplus food reaches those in need rather than going to waste. Together, we can make a substantial impact on reducing food waste and fostering a greener future for Ontario.
+            </p>
+            <a href="https://www.toogoodtogo.com/en-ca/look-smell-taste?gad_source=1&gclid=Cj0KCQjwhb60BhClARIsABGGtw_uvsfzJDYudYQKqeZ_GKdK0sSiS-gSmgrZrLrb2_RjX0EEZlcKGIYaAjfzEALw_wcB" className="btn btn-primary">
+            Learn More About Reducing Food Waste in Ontario
+            </a>
+
+            </section>
         </div>
 
         <section className="mb-5">
-            <h2 className="h2-name2">Resources and Further Reading</h2>
-            <ul className="list-unstyled">
-                <li className="mb-2">
-                    <button
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => alert("This resource is not available yet.")}
-                    >
-                        10 Tips to Reduce Food Waste at Home
-                    </button>
-                </li>
-                <li className="mb-2">
-                    <button
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => alert("This resource is not available yet.")}
-                    >
-                        The Environmental Impact of Food Waste
-                    </button>
-                </li>
-                <li className="mb-2">
-                    <button
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => alert("This resource is not available yet.")}
-                    >
-                        Composting 101: A Beginner's Guide
-                    </button>
-                </li>
-            </ul>
-        </section>
+  <h2 className="h2-name2">Create Dishes from Leftovers</h2>
+  <p >Got leftovers in your freezer? Turn them into delicious meals with these helpful resources:</p>
+  <ul>
+    <li>
+      <a href="https://www.allrecipes.com/recipes/1947/everyday-cooking/more-meal-ideas/leftovers/" target="_blank" rel="noopener noreferrer">
+        <span className="file-name">Allrecipes Leftovers</span>: Discover a variety of recipes using your leftover ingredients.
+      </a>
+    </li>
+    <li>
+      <a href="https://www.supercook.com/#/recipes" target="_blank" rel="noopener noreferrer">
+        <span className="file-name">SuperCook</span>: Enter your ingredients and find recipes that match what you have on hand.
+      </a>
+    </li>
+    <li>
+      <a href="https://www.lovefoodhatewaste.com/recipe" target="_blank" rel="noopener noreferrer">
+        <span className="file-name">Love Food Hate Waste Recipes</span>: Explore recipes designed to reduce food waste and make the most of your leftovers.
+      </a>
+    </li>
+  </ul>
+</section>
+
+
     </div>
 </Layout>
 

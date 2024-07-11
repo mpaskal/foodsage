@@ -1127,7 +1127,13 @@ header-site {
 .pagination {
   justify-content: center;
 }
-
+.form-control {
+  display: block;
+  width: 20%;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;} 
+  
 /* Waste Insights Page */
 .h2-name{
   text-align: center;
@@ -1203,6 +1209,61 @@ padding: 20px;
 .waste-insights-container li {
   padding: 5px 0;
 }
+.alert-info {
+ background-color:#ddf2cd;
+}
+.h2-name-text{
+justify-content: center;
+}
+.btn btn-primary {
+  justify-content: center;
+}
+/* Style for links within sections */
+.h2-name2 a {
+  color: #4CAF50; /* Green color for links */
+  text-decoration: none; /* No underline by default */
+}
+
+.h2-name2 a:hover {
+  text-decoration: underline; /* Underline on hover for better visibility */
+}
+/* Styles for the Waste Insights section */
+.mb-5 {
+  text-align: center; /* Aligns the text center */
+  display: flex;
+  flex-direction: column; /* Stacks children vertically */
+  align-items: center; /* Centers children horizontally */
+  margin-bottom: 20px; /* Adds space below the section */
+}
+.mb-5 ul {
+  padding: 0; /* Removes default padding */
+  list-style-type: none; /* Removes bullet points */
+  text-align: left; /* Aligns text to the left within the centered block */
+  margin-left: 200px;
+
+}
+mb-5 li {
+  margin-bottom: 10px;
+  margin-left: 100px;
+  display: flex;
+  align-items: start;
+  text-indent: -5px;
+  padding-left: 20px;}
+
+.mb-5 li::before {
+  content: "•"; /* Custom bullet */
+  color: #4CAF50; /* Bullet color */
+  font-size: 20px; /* Bullet size */
+  margin-right: 10px; /* Space between bullet and text */
+  flex-shrink: 0; /* Prevents bullet from shrinking */
+}
+
+
+.file-name {
+  text-decoration: underline; /* Underlines the filename */
+  font-weight: bold; /* Makes the file name bold */
+}
+
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
