@@ -4,14 +4,21 @@ const uploadMiddleware = require("../middlewares/uploadMiddleware");
 const userAuth = require("../middlewares/userAuth");
 const foodItemController = require("../controllers/foodItemController");
 
+// Get all food items (Consume)
 router.get("/", userAuth, foodItemController.getFoodItems);
+
+// Create a new food item
 router.post("/", userAuth, uploadMiddleware, foodItemController.createFoodItem);
+
+// Update a food item
 router.post(
   "/update/:id",
   userAuth,
   uploadMiddleware,
   foodItemController.updateFoodItem
-); // Changed to use a POST request with 'update' in the path
-router.post("/delete", userAuth, foodItemController.deleteFoodItem); // Changed to use a POST request
+);
+
+// Delete a food item
+router.post("/delete", userAuth, foodItemController.deleteFoodItem);
 
 module.exports = router;

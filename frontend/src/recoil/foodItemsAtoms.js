@@ -77,7 +77,9 @@ export const wasteItemsState = selector({
       .filter(
         (item) =>
           item.moveTo === "Waste" &&
-          new Date(item.expirationDate) > thirtyDaysAgo
+          (item.wasteDate
+            ? new Date(item.wasteDate) > thirtyDaysAgo
+            : new Date(item.expirationDate) > thirtyDaysAgo)
       );
   },
 });
@@ -108,5 +110,28 @@ export const donationItemsState = selector({
             ? new Date(item.donationDate) > thirtyDaysAgo
             : true)
       );
+  },
+});
+
+export const moveItemState = selector({
+  key: "moveItemState",
+  get: ({ get }) => get(foodItemsState),
+  set: ({ set, get }, { itemId, newMoveTo }) => {
+    set(foodItemsState, (prevItems) =>
+      prevItems.map((item) =>
+        item._id === itemId
+          ? {
+              ...item,
+              moveTo: newMoveTo,
+              ...(newMoveTo === "Waste" && {
+                wasteDate: new Date().toISOString(),
+              }),
+              ...(newMoveTo === "Donate" && {
+                donationDate: new Date().toISOString(),
+              }),
+            }
+          : item
+      )
+    );
   },
 });

@@ -1,143 +1,73 @@
 import React, { useEffect, useCallback, useState } from "react";
 import api from "../../utils/api";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import {
-  foodItemsState,
-  currentItemState,
-  wasteItemsState,
-} from "../../recoil/foodItemsAtoms";
+import { moveItem } from "../../utils/itemMovementUtils";
+import { useRecoilState } from "recoil";
+import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import WasteItemTable from "../../components/WasteItem/WasteItemTable";
-import WasteItemModal from "../../components/WasteItem/WasteItemModal";
-import { Button, Alert, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
-import {
-  calculateExpirationDate,
-  formatDateForDisplay,
-} from "../../utils/dateUtils";
 
 const WasteItemsPage = () => {
-  const wasteItems = useRecoilValue(wasteItemsState);
-  const setFoodItems = useSetRecoilState(foodItemsState);
-  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [showModal, setShowModal] = useState(false);
+  const [wasteItems, setWasteItems] = useRecoilState(foodItemsState);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const navigate = useNavigate();
-
   const fetchWasteItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/wasteItems");
+      const response = await api.get("/foodItems/waste");
       if (response.data && Array.isArray(response.data.data)) {
-        setFoodItems((prevItems) => {
-          const updatedItems = prevItems.map((item) => {
-            if (item.moveTo === "Waste") {
-              return {
-                ...item,
-                ...response.data.data.find(
-                  (wasteItem) => wasteItem._id === item._id
-                ),
-              };
-            }
-            return item;
-          });
-          return updatedItems;
-        });
-      } else {
-        console.error("Unexpected response structure:", response.data);
-        setError("Unexpected response structure");
+        setWasteItems(response.data.data);
       }
     } catch (error) {
-      console.error("Error fetching waste items:", error);
-      setError(
-        "Failed to fetch waste items: " +
-          (error.response?.data?.message || error.message)
-      );
+      setError("Failed to fetch waste items. Please try again.");
+      toast.error("Failed to fetch waste items");
     } finally {
       setIsLoading(false);
     }
-  }, [setFoodItems]);
+  }, [setWasteItems]);
 
   useEffect(() => {
     fetchWasteItems();
   }, [fetchWasteItems]);
 
-  const handleInputChange = async (itemId, field, value) => {
+  const handleMoveToConsume = async (itemId) => {
     setIsUpdating(true);
     try {
-      if (field === "moveTo" && value === "Consume") {
-        const item = wasteItems.find((item) => item._id === itemId);
-        if (!item) throw new Error("Item not found");
-
-        const newExpirationDate = calculateExpirationDate(
-          item.category,
-          item.storage,
-          new Date().toISOString()
+      const response = await api.post(`/foodItems/moveToConsume/${itemId}`);
+      if (response.status === 200) {
+        setWasteItems((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
         );
-
-        const response = await api.post(`/wasteItems/${itemId}/move`, {
-          moveTo: "Consume",
-          expirationDate: newExpirationDate,
-        });
-
-        if (response.status === 200) {
-          setFoodItems((prevItems) =>
-            prevItems.map((item) =>
-              item._id === itemId
-                ? {
-                    ...item,
-                    moveTo: "Consume",
-                    expirationDate: formatDateForDisplay(newExpirationDate),
-                  }
-                : item
-            )
-          );
-          toast.success("Item moved back to Food Items");
-        } else {
-          throw new Error("Failed to move the item");
-        }
-      } else {
-        const response = await api.post(`/wasteItems/${itemId}`, {
-          [field]: value,
-        });
-        if (response.status === 200) {
-          setFoodItems((prevItems) =>
-            prevItems.map((item) =>
-              item._id === itemId ? { ...item, [field]: value } : item
-            )
-          );
-        } else {
-          throw new Error("Failed to update the item");
-        }
+        toast.success("Item moved to Consume successfully");
       }
     } catch (error) {
-      console.error("Error updating item:", error);
-      setError("An error occurred while updating the item: " + error.message);
-      toast.error("Failed to update the item");
+      console.error("Error moving item to Consume:", error);
+      setError("An error occurred while moving the item to Consume.");
+      toast.error("Failed to move item to Consume");
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleDeleteItem = async (itemId) => {
+    setIsUpdating(true);
     try {
-      const response = await api.delete(`/wasteItems/${itemId}`);
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
+      const response = await api.post(`/foodItems/delete`, { _id: itemId });
+      if (response.status === 204) {
+        setWasteItems((prevItems) =>
           prevItems.filter((item) => item._id !== itemId)
         );
         toast.success("Item deleted successfully");
-      } else {
-        throw new Error("Failed to delete the item");
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      setError("An error occurred while deleting the item: " + error.message);
+      setError("An error occurred while deleting the item.");
       toast.error("Failed to delete the item");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -160,20 +90,12 @@ const WasteItemsPage = () => {
         ) : wasteItems.length > 0 ? (
           <WasteItemTable
             wasteItems={wasteItems}
-            handleInputChange={handleInputChange}
+            handleMoveToConsume={handleMoveToConsume}
             handleDelete={handleDeleteItem}
             isUpdating={isUpdating}
           />
         ) : (
           <p>No waste items found.</p>
-        )}
-
-        {showModal && (
-          <WasteItemModal
-            show={showModal}
-            handleClose={() => setShowModal(false)}
-            handleSubmit={handleInputChange}
-          />
         )}
       </div>
     </Layout>

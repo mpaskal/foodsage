@@ -53,6 +53,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     image: null,
     consumed: 0,
     moveTo: "Consume",
+    donationDate: null,
+    wasteDate: null,
   });
 
   useEffect(() => {
@@ -103,18 +105,23 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     setForm((prevForm) => {
       const updatedForm = { ...prevForm, [name]: value };
 
-      if (name === "consumed") {
-        const consumedValue = parseInt(value, 10);
-        updatedForm.consumed = consumedValue;
-        if (consumedValue === 100) {
-          updatedForm.moveTo = "Consumed";
+      if (name === "moveTo" && value === "Consume") {
+        const fourDaysFromNow = new Date();
+        fourDaysFromNow.setDate(fourDaysFromNow.getDate() + 4);
+        const calculatedExpirationDate = calculateExpirationDate(
+          updatedForm.category,
+          updatedForm.storage,
+          updatedForm.purchasedDate
+        );
+        if (new Date(calculatedExpirationDate) < fourDaysFromNow) {
+          setError(
+            "When moving an item back to Consume, the expiration date must be at least 4 days from now. Please adjust the category, storage, or purchased date."
+          );
+        } else {
+          setError(null);
         }
-      }
-
-      if (name === "moveTo") {
-        if (value === "Consumed") {
-          updatedForm.consumed = 100;
-        }
+      } else {
+        setError(null);
       }
 
       if (
@@ -122,19 +129,11 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         name === "storage" ||
         name === "purchasedDate"
       ) {
-        const expirationDate = calculateExpirationDate(
+        updatedForm.expirationDate = calculateExpirationDate(
           updatedForm.category,
           updatedForm.storage,
           updatedForm.purchasedDate
         );
-        updatedForm.expirationDate = formatDateForDisplay(expirationDate);
-      }
-
-      if (name === "category") {
-        const newMeasurements = quantityMeasurementsByCategory[value] || [];
-        if (!newMeasurements.includes(updatedForm.quantityMeasurement)) {
-          updatedForm.quantityMeasurement = newMeasurements[0] || "";
-        }
       }
 
       return updatedForm;

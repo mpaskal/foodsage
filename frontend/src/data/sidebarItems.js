@@ -12,48 +12,45 @@ import { MdOutlineInventory, MdOutlineInsights } from "react-icons/md";
 import { FcExpired } from "react-icons/fc";
 
 export const sidebarItems = [
-  { name: "Dashboard", path: "/dashboard", icon: AiOutlineDashboard },
+  {
+    name: "Dashboard",
+    path: "/dashboard",
+    icon: AiOutlineDashboard,
+    items: [
+      { name: "Overview", path: "/dashboard" },
+      { name: "Key Metrics", path: "/dashboard/metrics" },
+    ],
+  },
   {
     name: "Inventory",
     icon: MdOutlineInventory,
     items: [
-      { name: "Food Tracker", path: "/fooditems" },
-      { name: "High-Risk Items", path: "/fooditems/high-risk-items" },
-      { name: "Pantry Manager", path: "/fooditems/pantry-manager" },
-      { name: "Stock Overview", path: "/fooditems/stock-overview" },
+      { name: "Inventory Tracker", path: "/foodItems" },
+      { name: "Inventory Insights", path: "/foodinsights" },
     ],
   },
   {
-    name: "Waste",
+    name: "Waste Management",
     icon: FcExpired,
     items: [
       { name: "Waste Tracker", path: "/wasteitems" },
-      {
-        name: "Waste Insights",
-        path: "/wasteinsights",
-      },
+      { name: "Waste Insights", path: "/wasteinsights" },
     ],
   },
   {
-    name: "Donation",
+    name: "Donations",
     icon: GiFoodTruck,
     items: [
       { name: "Donation Tracker", path: "/donationitems" },
-      {
-        name: "Donation Insights",
-        path: "/donationinsights",
-      },
+      { name: "Donation Insights", path: "/donationinsights" },
     ],
   },
   {
-    name: "Money Saving",
+    name: "Financial Insights",
     icon: GiReceiveMoney,
     items: [
-      { name: "Money Saving Tracker", path: "/money" },
-      {
-        name: "Money Saving Insights",
-        path: "/moneyinsights",
-      },
+      { name: "Savings Tracker", path: "/money" },
+      { name: "Financial Analysis", path: "/moneyinsights" },
     ],
   },
 ];

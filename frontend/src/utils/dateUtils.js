@@ -5,6 +5,18 @@
  * @param {Date|string|null} purchasedDate - The date the item was purchased.
  * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
  */
+
+/**
+ * Calculates the number of days since the expiration date.
+ * @param {Date|string} expirationDate - The expiration date of the item.
+ * @returns {number} - The number of days since the expiration date (negative if not yet expired).
+ */
+export const getDaysSinceExpiration = (expirationDate) => {
+  const today = new Date();
+  const expDate = new Date(expirationDate);
+  const timeDiff = today - expDate;
+  return Math.floor(timeDiff / (1000 * 3600 * 24));
+};
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
   if (!purchasedDate) return null;
 

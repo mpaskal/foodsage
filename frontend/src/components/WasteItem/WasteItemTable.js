@@ -21,7 +21,7 @@ const categories = [
   "Other",
 ];
 
-const moveToOptions = ["Consume", "Consumed", "Donate", "Waste"];
+const moveToOptions = ["Consume", "Consumed", "Waste", "Donate"];
 
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 

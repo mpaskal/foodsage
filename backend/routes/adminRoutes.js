@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import TenantManagementPage from "../pages/TenantManagementPage";
 import UserManagementPage from "../pages/UserManagementPage";
+
 // Import other admin pages similarly
 
 const AdminRoutes = () => (

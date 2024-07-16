@@ -7,7 +7,10 @@ require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const foodItemRoutes = require("./routes/foodItemRoutes");
+const foodInsightRoutes = require("./routes/foodInsightRoutes");
 const wasteItemRoutes = require("./routes/wasteItemRoutes");
+const wasteInsightRoutes = require("./routes/wasteInsightRoutes");
+const donationItemRoutes = require("./routes/donationItemRoutes");
 
 const app = express();
 
@@ -30,22 +33,25 @@ mongoose
 
     // Ensure indexes are created
     const FoodItem = require("./models/FoodItem");
+    const WasteRecord = require("./models/WasteRecord");
 
-    FoodItem.init()
+    Promise.all([FoodItem.init(), WasteRecord.init()])
       .then(() => {
-        console.log("Indexes ensured for FoodItem");
+        console.log("Indexes ensured for FoodItem and WasteRecord");
       })
       .catch((err) => {
-        console.error("Error ensuring indexes for FoodItem", err);
+        console.error("Error ensuring indexes", err);
       });
   })
   .catch((err) => console.log("MongoDB connection error:", err));
 
 // Use Routes
-app.use("/api/users", userRoutes); // Mount user routes at /api/users
-app.use("/api/fooditems", foodItemRoutes); // Mount foodItemRoutes at /api/fooditems
-app.use("/api/wasteItems", wasteItemRoutes); // Mount wasteItemRoutes at /api/wasteItems
-//app.use("/api/wasteInsights", wasteItemRoutes); // Mount wasteItemRoutes at /api/wasteInsights
+app.use("/api/users", userRoutes);
+app.use("/api/food/items", foodItemRoutes);
+app.use("/api/food/insights", foodInsightRoutes);
+app.use("/api/waste/items", wasteItemRoutes);
+app.use("/api/waste/insights", wasteInsightRoutes);
+app.use("/api/donation/items", donationItemRoutes);
 
 const port = process.env.PORT || 5000;
 

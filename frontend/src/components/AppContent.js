@@ -10,6 +10,8 @@ import SignUpPage from "../pages/SitePages/SignUpPage";
 import DashboardPage from "../pages/AppPages/DashboardPage";
 import UserManagementPage from "../pages/AppPages/UserManagementPage";
 import FoodItemsPage from "../pages/AppPages/FoodItemsPage";
+import FoodInsightsPage from "../pages/AppPages/FoodInsightsPage";
+import DonationItemsPage from "../pages/AppPages/DonationItemsPage";
 import WasteItemsPage from "../pages/AppPages/WasteItemsPage";
 import WasteInsightsPage from "../pages/AppPages/WasteInsightsPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -31,17 +33,15 @@ const AppContent = () => {
       <Route element={<ProtectedRoute role={role} />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/fooditems" element={<FoodItemsPage />} />
+        <Route path="/foodinsights" element={<FoodInsightsPage />} />
         <Route path="/wasteitems" element={<WasteItemsPage />} />
+        <Route path="/donationitems" element={<DonationItemsPage />} />
         <Route
           path="/users"
           element={<UserManagementPage />}
           requiredRole="admin"
         />
-        <Route
-          path="/wasteinsights"
-          element={<WasteInsightsPage />}
-          requiredRole="admin"
-        />
+        <Route path="/wasteinsights" element={<WasteInsightsPage />} />
       </Route>
     </Routes>
   );

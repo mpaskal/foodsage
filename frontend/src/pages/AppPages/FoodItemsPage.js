@@ -1,12 +1,17 @@
-import React, { useEffect, useCallback, useState } from "react";
-import api from "../../utils/api";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRecoilState, useRecoilValue } from "recoil";
+import {
+  useRecoilState,
+  useRecoilValue,
+  useSetRecoilState,
+  useRecoilCallback,
+} from "recoil";
 import {
   foodItemsState,
   foodItemsWithExpirationState,
   currentItemState,
 } from "../../recoil/foodItemsAtoms";
+import api from "../../utils/api";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import FoodItemModal from "../../components/FoodItem/FoodItemModal";
@@ -16,7 +21,7 @@ import { toast } from "react-toastify";
 import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
 
 const FoodItemsPage = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+  const setFoodItems = useSetRecoilState(foodItemsState);
   const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const [showModal, setShowModal] = useState(false);
@@ -25,181 +30,202 @@ const FoodItemsPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const navigate = useNavigate();
+  console.log(
+    "FoodItemsWithExpiration at the beginning:",
+    foodItemsWithExpiration
+  );
 
-  const fetchFoodItems = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get("/fooditems");
-      if (response.data && Array.isArray(response.data.data)) {
-        const currentDate = new Date();
-        const fiveDaysAgo = new Date(
-          currentDate.getTime() - 5 * 24 * 60 * 60 * 1000
-        );
-
-        const filteredItems = response.data.data.filter((item) => {
-          const expirationDate = new Date(item.expirationDate);
-          return (
-            item.moveTo !== "Waste" &&
-            item.moveTo !== "Donate" &&
-            (expirationDate > fiveDaysAgo || item.consumed === 100)
-          );
-        });
-
-        setFoodItems(filteredItems);
-      } else {
-        // ... error handling
-      }
-    } catch (error) {
-      // ... error handling
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setFoodItems, navigate]);
+  const fetchFoodItems = useRecoilCallback(
+    ({ set }) =>
+      async () => {
+        setIsLoading(true);
+        try {
+          const response = await api.get("/food/items");
+          console.log("Response data in FootItemsPage:", response.data);
+          if (response.data && Array.isArray(response.data.data)) {
+            set(foodItemsState, response.data.data);
+          } else {
+            setError("Invalid data received from server");
+          }
+        } catch (error) {
+          setError("Failed to fetch food items");
+          console.error("Error fetching food items:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    [setFoodItems, navigate]
+  );
 
   useEffect(() => {
+    console.log("FoodItemsWithExpiration:", foodItemsWithExpiration);
     fetchFoodItems();
   }, [fetchFoodItems]);
 
-  const handleInputChange = debounce(async (itemId, field, value) => {
-    if (!itemId) {
-      console.error("Error updating item: Item ID is undefined");
-      setError("An error occurred while updating the food item.");
-      toast.error("An error occurred while updating the food item.");
-      return;
-    }
+  const handleInputChange = useCallback(
+    debounce(async (itemId, field, value) => {
+      if (!itemId) {
+        console.error("Error updating item: Item ID is undefined");
+        setError("An error occurred while updating the food item.");
+        toast.error("An error occurred while updating the food item.");
+        return;
+      }
 
-    setFoodItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === itemId
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item
-      )
-    );
-
-    try {
-      setIsUpdating(true);
       let updates = { [field]: value };
 
-      const response = await api.post(`/fooditems/${itemId}`, updates);
-      if (response.status !== 200) {
+      // Handle consumed field
+      if (field === "consumed") {
+        value = Math.min(Math.max(parseInt(value, 10) || 0, 0), 100);
+        updates.consumed = value;
+        if (value === 100) {
+          updates.moveTo = "Consumed";
+        }
+      }
+
+      // Handle moveTo field
+      if (field === "moveTo") {
+        if (value === "Consumed") {
+          updates.consumed = 100;
+        } else if (value === "Consume" && updates.consumed === 100) {
+          updates.consumed = 0;
+        }
+      }
+
+      // Optimistically update the state
+      setFoodItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === itemId ? { ...item, ...updates } : item
+        )
+      );
+
+      try {
+        setIsUpdating(true);
+        const response = await api.post(`/food/items/${itemId}`, updates);
+        if (response.status !== 200) {
+          throw new Error("Failed to update the food item.");
+        }
+      } catch (error) {
+        // Revert the state change if the API call fails
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
             item._id === itemId ? { ...item, [field]: item[field] } : item
           )
         );
-        setError("Failed to update the food item.");
-        toast.error("Failed to update the food item.");
-        console.error("Error updating item:", response.data);
+        setError("An error occurred while updating the food item.");
+        toast.error("An error occurred while updating the food item.");
+        console.error("Error updating item:", error);
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      setFoodItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === itemId ? { ...item, [field]: item[field] } : item
-        )
-      );
-      setError("An error occurred while updating the food item.");
-      toast.error("An error occurred while updating the food item.");
-      console.error("Error updating item:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  }, 150);
+    }, 150),
+    [setFoodItems]
+  );
 
-  const handleDeleteItem = async (itemId) => {
-    try {
-      const response = await api.delete(`/fooditems/${itemId}`);
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        toast.success("Item deleted successfully");
-      } else if (response.status === 404) {
-        setError(`The food item with ID ${itemId} was not found.`);
-        toast.error(`The food item with ID ${itemId} was not found.`);
-        console.error(`Error deleting item: Item with ID ${itemId} not found`);
-      } else {
-        setError("Failed to delete the food item.");
-        toast.error("Failed to delete the food item.");
-        console.error("Error deleting item:", response.data);
-      }
-    } catch (error) {
-      setError("An error occurred while deleting the food item.");
-      toast.error("An error occurred while deleting the food item.");
-      console.error("Error deleting item:", error);
-    }
-  };
-
-  const handleSubmit = async (newItem) => {
-    try {
-      setIsUpdating(true);
-      const formData = new FormData();
-      for (const key in newItem) {
-        if (key === "image" && newItem[key] instanceof File) {
-          formData.append(key, newItem[key], newItem[key].name);
+  const handleDeleteItem = useCallback(
+    async (itemId) => {
+      try {
+        const response = await api.delete(`/food/items/${itemId}`);
+        if (response.status === 200) {
+          setFoodItems((prevItems) =>
+            prevItems.filter((item) => item._id !== itemId)
+          );
+          toast.success("Item deleted successfully");
+        } else if (response.status === 404) {
+          setError(`The food item with ID ${itemId} was not found.`);
+          toast.error(`The food item with ID ${itemId} was not found.`);
+          console.error(
+            `Error deleting item: Item with ID ${itemId} not found`
+          );
         } else {
-          formData.append(key, newItem[key]);
+          setError("Failed to delete the food item.");
+          toast.error("Failed to delete the food item.");
+          console.error("Error deleting item:", response.data);
         }
+      } catch (error) {
+        setError("An error occurred while deleting the food item.");
+        toast.error("An error occurred while deleting the food item.");
+        console.error("Error deleting item:", error);
       }
+    },
+    [setFoodItems]
+  );
 
-      console.log("Sending data to server:", Object.fromEntries(formData));
+  const handleSubmit = useCallback(
+    async (newItem) => {
+      try {
+        setIsUpdating(true);
+        const formData = new FormData();
+        for (const key in newItem) {
+          if (key === "image" && newItem[key] instanceof File) {
+            formData.append(key, newItem[key], newItem[key].name);
+          } else {
+            formData.append(key, newItem[key]);
+          }
+        }
 
-      const response = await api.post("/fooditems", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+        console.log("Sending data to server:", Object.fromEntries(formData));
 
-      if (response.status === 201) {
-        setFoodItems((prevItems) => [...prevItems, response.data]);
-        setShowModal(false);
-        setCurrentItem(null);
-        fetchFoodItems();
-        toast.success("Food item added successfully");
-      } else {
-        throw new Error("Failed to add the food item.");
+        const response = await api.post("/food/items", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (response.status === 201) {
+          setFoodItems((prevItems) => [...prevItems, response.data]);
+          setShowModal(false);
+          setCurrentItem(null);
+          fetchFoodItems();
+          toast.success("Food item added successfully");
+        } else {
+          throw new Error("Failed to add the food item.");
+        }
+      } catch (error) {
+        console.error("Error adding item:", error);
+        if (error.response) {
+          console.error("Response data:", error.response.data);
+          console.error("Response status:", error.response.status);
+          console.error("Response headers:", error.response.headers);
+          setError(
+            "Failed to add the food item: " +
+              (error.response.data.message || error.response.statusText)
+          );
+          toast.error(
+            "Failed to add the food item: " +
+              (error.response.data.message || error.response.statusText)
+          );
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+          setError("No response received from the server. Please try again.");
+          toast.error(
+            "No response received from the server. Please try again."
+          );
+        } else {
+          console.error("Error setting up request:", error.message);
+          setError(
+            "An error occurred while setting up the request: " + error.message
+          );
+          toast.error(
+            "An error occurred while setting up the request: " + error.message
+          );
+        }
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      console.error("Error adding item:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
-        setError(
-          "Failed to add the food item: " +
-            (error.response.data.message || error.response.statusText)
-        );
-        toast.error(
-          "Failed to add the food item: " +
-            (error.response.data.message || error.response.statusText)
-        );
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        setError("No response received from the server. Please try again.");
-        toast.error("No response received from the server. Please try again.");
-      } else {
-        console.error("Error setting up request:", error.message);
-        setError(
-          "An error occurred while setting up the request: " + error.message
-        );
-        toast.error(
-          "An error occurred while setting up the request: " + error.message
-        );
-      }
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    },
+    [setFoodItems, setCurrentItem, fetchFoodItems]
+  );
 
-  const getCurrentDateFormatted = () => {
+  const getCurrentDateFormatted = useCallback(() => {
     const currentDate = new Date();
     const options = { year: "numeric", month: "long", day: "numeric" };
     return currentDate.toLocaleDateString("en-US", options);
-  };
+  }, []);
 
-  const currentDate = getCurrentDateFormatted();
+  const currentDate = useMemo(
+    () => getCurrentDateFormatted(),
+    [getCurrentDateFormatted]
+  );
 
   return (
     <Layout>

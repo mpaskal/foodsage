@@ -1,17 +1,23 @@
-const DonationItem = require("../models/DonationItem");
-const uploadMiddleware = require("../middlewares/uploadMiddleware");
-
-const handleError = (res, error, message) => {
-  console.error(message, error);
-  res.status(400).json({ message, error: error.message });
-};
+const DonationItem = require("../models/FoodItem");
+const handleError = require("../utils/handleError");
 
 // Get all donation items with pagination
 exports.getDonationItems = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
+  const tenantId = req.user.tenantId;
+
   try {
-    const totalItems = await DonationItem.countDocuments(); // Count total items in the collection
-    const donationItems = await DonationItem.find()
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const totalItems = await DonationItem.countDocuments({
+      tenantId,
+      moveTo: "Donate",
+      donationDate: { $gt: thirtyDaysAgo },
+    });
+    const donationItems = await DonationItem.find({
+      tenantId,
+      moveTo: "Donate",
+      donationDate: { $gt: thirtyDaysAgo },
+    })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -20,7 +26,7 @@ exports.getDonationItems = async (req, res) => {
       data: donationItems,
       totalPages: Math.ceil(totalItems / limit),
       currentPage: Number(page),
-      totalItems: totalItems, // Include the total count in the response
+      totalItems: totalItems,
       limit: Number(limit),
     });
   } catch (error) {
@@ -29,70 +35,45 @@ exports.getDonationItems = async (req, res) => {
   }
 };
 
-exports.createDonationItem = async (req, res) => {
-  uploadMiddleware(req, res, async (err) => {
-    if (err) {
-      return handleError(res, err, "Error processing request");
-    }
-
-    try {
-      const newDonationItem = new DonationItem({
-        ...req.body,
-        image: req.file ? req.file.path : null,
-      });
-
-      await newDonationItem.save();
-      res.status(201).json({
-        message: "Donation item created successfully",
-        data: newDonationItem,
-      });
-    } catch (error) {
-      handleError(res, error, "Failed to create new donation item");
-    }
-  });
-};
-
 exports.updateDonationItem = async (req, res) => {
-  uploadMiddleware(req, res, async (err) => {
-    if (err) {
-      return handleError(res, err, "Error processing request");
-    }
+  try {
+    const tenantId = req.user.tenantId;
+    const updates = {
+      ...req.body,
+      image: req.body.image || req.body.existingImage,
+    };
 
-    try {
-      const updates = {
-        ...req.body,
-        image: req.file
-          ? req.file.path
-          : req.body.image || req.body.existingImage,
-      };
-
-      const donationItem = await DonationItem.findByIdAndUpdate(
-        req.params.id,
-        updates,
-        { new: true, runValidators: true }
-      );
-
-      if (!donationItem) {
-        return res.status(404).json({ message: "Donation item not found" });
+    const donationItem = await DonationItem.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
       }
+    );
 
-      res.status(200).json({
-        message: "Donation item updated successfully",
-        data: donationItem,
-      });
-    } catch (error) {
-      handleError(res, error, "Error updating donation item");
+    if (!donationItem) {
+      return res.status(404).json({ message: "Donation item not found" });
     }
-  });
+
+    res.status(200).json({
+      message: "Donation item updated successfully",
+      data: donationItem,
+    });
+  } catch (error) {
+    handleError(res, error, "Error updating donation item");
+  }
 };
 
 exports.deleteDonationItem = async (req, res) => {
   try {
-    const donationItem = await DonationItem.findByIdAndDelete(req.params.id);
+    const { _id } = req.body;
+    const tenantId = req.user.tenantId;
+    const donationItem = await DonationItem.findOneAndDelete({ _id, tenantId });
     if (!donationItem) {
       return res.status(404).json({ message: "Donation item not found" });
     }
-    res.status(204).send(); // No content to send back
+    res.status(204).send();
   } catch (error) {
     handleError(res, error, "Error deleting donation item");
   }

@@ -13,8 +13,22 @@ const foodItemSchema = new Schema(
     expirationDate: { type: Date, required: true, index: true },
     purchasedDate: { type: Date, required: true, index: true },
     image: { type: String, required: false },
-    consumed: { type: Number, required: true, default: 0, index: true },
-    moveTo: { type: String, required: true, default: "consume", index: true },
+    consumed: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: 100,
+      index: true,
+    },
+    status: {
+      type: String,
+      required: true,
+      default: "Active",
+      enum: ["Active", "Inactive", "Consumed", "Waste", "Donation", "Donated"],
+      index: true,
+    },
+    statusChangeDate: { type: Date, index: true },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",
@@ -31,6 +45,8 @@ const foodItemSchema = new Schema(
 foodItemSchema.index({ name: 1 });
 foodItemSchema.index({ category: 1 });
 foodItemSchema.index({ tenantId: 1, category: 1 });
+foodItemSchema.index({ status: 1, expirationDate: 1 });
+foodItemSchema.index({ tenantId: 1, status: 1 });
 
 const FoodItem = mongoose.model("FoodItem", foodItemSchema);
 

@@ -1,16 +1,22 @@
-// controllers/foodItemController.js
-
 const FoodItem = require("../models/FoodItem");
+const WasteRecord = require("../models/WasteRecord"); // Make sure to create this model
 const handleError = require("../utils/handleError");
+const {
+  calculateInsights,
+  generateRecommendations,
+} = require("../utils/foodItemCalcUtils");
 
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
-  const tenantId = req.user.tenantId; // Extract tenantId from the authenticated user
+  const tenantId = req.user.tenantId;
 
   try {
-    const totalItems = await FoodItem.countDocuments({ tenantId }); // Count total items for this tenant
-    const foodItems = await FoodItem.find({ tenantId })
+    const totalItems = await FoodItem.countDocuments({
+      tenantId,
+      moveTo: "Consume",
+    });
+    const foodItems = await FoodItem.find({ tenantId, moveTo: "Consume" })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -38,7 +44,7 @@ exports.createFoodItem = async (req, res) => {
       ...req.body,
       image: req.body.image || null,
       tenantId,
-      moveTo: req.body.moveTo || "consume",
+      moveTo: req.body.moveTo || "Consume",
       consumed: req.body.consumed || 0,
     });
 

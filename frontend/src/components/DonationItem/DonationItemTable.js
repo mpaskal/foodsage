@@ -1,20 +1,27 @@
-import React from "react";
-import { Table, Button } from "react-bootstrap";
-import { useRecoilState } from "recoil";
-import { donationItemsState } from "../../recoil/donationItemsAtoms";
+import React, { useState } from "react";
+import { Table, Button, FormControl, Pagination } from "react-bootstrap";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { foodItemsState } from "../../recoil/foodItemsAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
-import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
+import { processImage } from "../../utils/imageUtils";
+import {
+  formatDateForDisplay,
+  processDateInput,
+  calculateExpirationDate,
+} from "../../utils/dateUtils";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { loggedInUserState } from "../../recoil/userAtoms";
 
 const categories = [
   "Dairy",
   "Fresh",
   "Grains and Bread",
-  "Packaged and Snack Wastes",
+  "Packaged and Snack Foods",
   "Frozen Goods",
   "Other",
 ];
 
-const moveToOptions = ["Consume", "Consumed", "Donate", "Waste"];
+const moveToOptions = ["Consume", "Consumed", "Waste", "Donate"];
 
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 
@@ -22,34 +29,116 @@ const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
   Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
   "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Wastes": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
   "Frozen Goods": ["Kg", "Lb", "Item"],
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-const WasteItemTable = () => {
-  const [donationItems, setWasteItems] = useRecoilState(donationItemsState);
+const DonationItemTable = () => {
+  const [donationItems, setFoodItems] = useRecoilState(foodItemsState);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const loggedInUser = useRecoilValue(loggedInUserState);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "expirationDate",
+    direction: "ascending",
+  });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Filtering items based on the search query
+  const filteredFoodItems = React.useMemo(() => {
+    return donationItems.filter((item) =>
+      Object.values(item).some(
+        (value) =>
+          typeof value === "string" &&
+          value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }, [donationItems, searchQuery]);
+
+  // Sorting the filtered items
+  const sortedFoodItems = React.useMemo(() => {
+    let sortableItems = [...filteredFoodItems];
+    sortableItems.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
+    return sortableItems;
+  }, [filteredFoodItems, sortConfig]);
+
+  // Paginating the sorted and filtered items
+  const paginatedFoodItems = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedFoodItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedFoodItems, currentPage]);
+
+  const totalPages = Math.ceil(filteredFoodItems.length / itemsPerPage);
+
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === "ascending" ? "▲" : "▼";
+    }
+    return null;
+  };
 
   const handleInputChange = (id, field, value) => {
     let updates = { [field]: value };
 
-    // Process date input before setting state if the field is a date
     if (field === "purchasedDate" || field === "expirationDate") {
       updates[field] = processDateInput(value);
     }
 
-    // If the category changes, update the measurement to the first available option for the new category
+    const itemToUpdate = donationItems.find((item) => item._id === id);
+    if (!itemToUpdate) return;
+
     if (field === "category") {
       const defaultMeasurement = quantityMeasurementsByCategory[value][0];
       updates["quantityMeasurement"] = defaultMeasurement;
+      updates["expirationDate"] = calculateExpirationDate(
+        value,
+        updates.storage || itemToUpdate.storage,
+        itemToUpdate.purchasedDate
+      );
+    }
+
+    if (field === "storage") {
+      updates["expirationDate"] = calculateExpirationDate(
+        itemToUpdate.category,
+        value,
+        itemToUpdate.purchasedDate
+      );
+    }
+
+    if (field === "purchasedDate") {
+      updates["expirationDate"] = calculateExpirationDate(
+        itemToUpdate.category,
+        itemToUpdate.storage,
+        value
+      );
     }
 
     const updatedItems = donationItems.map((item) =>
       item._id === id ? { ...item, ...updates } : item
     );
-    setWasteItems(updatedItems);
+    setFoodItems(updatedItems);
 
-    // Update all changed fields in the backend
     Object.keys(updates).forEach((updateField) => {
       saveChanges(id, updateField, updates[updateField]);
     });
@@ -57,17 +146,17 @@ const WasteItemTable = () => {
 
   const saveChanges = async (id, field, value) => {
     try {
-      const response = await fetch("/api/donationitems/" + id, {
-        method: "POST", // Assuming a REST API, adjust according to your API setup
+      const response = await fetch("/api/donationitems/update/" + id, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${loggedInUser.token}`,
         },
         body: JSON.stringify({ [field]: value }),
       });
       if (!response.ok) {
         throw new Error("Failed to save changes");
       }
-      // Optionally handle response data
       const data = await response.json();
       console.log("Save successful:", data);
     } catch (error) {
@@ -76,15 +165,46 @@ const WasteItemTable = () => {
   };
 
   const handleDelete = (itemToDelete) => {
-    setWasteItems((prevItems) =>
-      prevItems.filter((item) => item._id !== itemToDelete._id)
-    );
+    setItemToDelete(itemToDelete);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch("/api/donationitems/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${loggedInUser.token}`,
+        },
+        body: JSON.stringify({ _id: itemToDelete._id }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete item");
+      }
+      setFoodItems((prevItems) =>
+        prevItems.filter((item) => item._id !== itemToDelete._id)
+      );
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
   };
 
   const getImageSrc = (image) => {
-    return image
-      ? `data:image/jpeg;base64,${image}`
-      : "path_to_placeholder_image";
+    if (image && typeof image === "string" && image.length > 0) {
+      if (image.startsWith("data:image")) {
+        return image;
+      }
+      if (image.startsWith("/9j/")) {
+        return `data:image/jpeg;base64,${image}`;
+      } else if (image.startsWith("iVBORw0KGgo")) {
+        return `data:image/png;base64,${image}`;
+      } else {
+        return `data:image/jpeg;base64,${image}`;
+      }
+    }
+    return `Bad image`;
   };
 
   const getExpirationDateStyle = (expirationDate) => {
@@ -99,143 +219,227 @@ const WasteItemTable = () => {
       : { backgroundColor: "green", color: "white" };
   };
 
-  return (
-    <Table striped bordered hover>
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Name</th>
-          <th>Category</th>
-          <th>Qty</th>
-          <th>Meas</th>
-          <th>Storage</th>
-          <th>Cost</th>
-          <th>Source</th>
-          <th>Expiration Date</th>
-          <th>Purchased Date</th>
-          <th>Consumed (%)</th>
-          <th>Move</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {donationItems.map((item) => (
-          <tr key={item._id}>
-            <td>
-              <img
-                src={getImageSrc(item.image)}
-                alt={item.name}
-                style={{ width: "50px", height: "50px" }}
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                value={item.name}
-                onChange={(value) => handleInputChange(item._id, "name", value)}
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="select"
-                options={categories}
-                value={item.category}
-                onChange={(value) =>
-                  handleInputChange(item._id, "category", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="number"
-                value={item.quantity.toString()}
-                onChange={(value) =>
-                  handleInputChange(item._id, "quantity", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="select"
-                options={quantityMeasurementsByCategory[item.category] || []}
-                value={item.quantityMeasurement}
-                onChange={(value) =>
-                  handleInputChange(item._id, "quantityMeasurement", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="select"
-                options={storages}
-                value={item.storage}
-                onChange={(value) =>
-                  handleInputChange(item._id, "storage", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="number"
-                value={item.cost.toString()}
-                onChange={(value) => handleInputChange(item._id, "cost", value)}
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                value={item.source}
-                onChange={(value) =>
-                  handleInputChange(item._id, "source", value)
-                }
-              />
-            </td>
-            <td style={getExpirationDateStyle(item.expirationDate)}>
-              <InlineEditControl
-                type="date"
-                value={formatDateForDisplay(item.expirationDate)}
-                onChange={(value) =>
-                  handleInputChange(item._id, "expirationDate", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="date"
-                value={formatDateForDisplay(item.purchasedDate)}
-                onChange={(value) =>
-                  handleInputChange(item._id, "purchasedDate", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="number"
-                value={item.consumed ? item.consumed.toString() : "0"} // Default to '0' if undefined
-                onChange={(value) =>
-                  handleInputChange(item._id, "consumed", value)
-                }
-              />
-            </td>
-            <td>
-              <InlineEditControl
-                type="select"
-                options={moveToOptions}
-                value={item.moveTo || "Consume"}
-                onChange={(value) =>
-                  handleInputChange(item._id, "moveTo", value)
-                }
-              />
-            </td>
+  const handleFileChange = async (id, file) => {
+    try {
+      const base64Data = await processImage(file);
+      const updatedItems = donationItems.map((item) =>
+        item._id === id ? { ...item, image: base64Data } : item
+      );
+      setFoodItems(updatedItems);
+      saveChanges(id, "image", base64Data);
+    } catch (error) {
+      console.error("Error processing image:", error);
+    }
+  };
 
-            <td>
-              <Button variant="danger" onClick={() => handleDelete(item)}>
-                Delete
-              </Button>
-            </td>
+  return (
+    <>
+      <FormControl
+        type="text"
+        placeholder="Search"
+        className="mb-3"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th onClick={() => requestSort("image")}>
+              Image {getSortIndicator("image")}
+            </th>
+            <th onClick={() => requestSort("name")}>
+              Name {getSortIndicator("name")}
+            </th>
+            <th onClick={() => requestSort("category")}>
+              Category {getSortIndicator("category")}
+            </th>
+            <th onClick={() => requestSort("quantity")}>
+              Qty {getSortIndicator("quantity")}
+            </th>
+            <th onClick={() => requestSort("quantityMeasurement")}>
+              Meas {getSortIndicator("quantityMeasurement")}
+            </th>
+            <th onClick={() => requestSort("storage")}>
+              Storage {getSortIndicator("storage")}
+            </th>
+            <th onClick={() => requestSort("cost")}>
+              Cost {getSortIndicator("cost")}
+            </th>
+            <th onClick={() => requestSort("source")}>
+              Source {getSortIndicator("source")}
+            </th>
+            <th onClick={() => requestSort("expirationDate")}>
+              Expiration Date {getSortIndicator("expirationDate")}
+            </th>
+            <th onClick={() => requestSort("purchasedDate")}>
+              Purchased Date {getSortIndicator("purchasedDate")}
+            </th>
+            <th onClick={() => requestSort("consumed")}>
+              Consumed (%) {getSortIndicator("consumed")}
+            </th>
+            <th onClick={() => requestSort("moveTo")}>
+              Move {getSortIndicator("moveTo")}
+            </th>
+            <th>Actions</th>
           </tr>
+        </thead>
+        <tbody>
+          {paginatedFoodItems.map((item) => (
+            <tr key={item._id}>
+              <td>
+                <InlineEditControl
+                  type="file"
+                  value={item.image || ""}
+                  onChange={(file) => handleFileChange(item._id, file)}
+                  getImageSrc={getImageSrc}
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  value={item.name || ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "name", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={categories}
+                  value={item.category || ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "category", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={item.quantity ? item.quantity.toString() : ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "quantity", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={quantityMeasurementsByCategory[item.category] || []}
+                  value={item.quantityMeasurement || ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "quantityMeasurement", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={storages}
+                  value={item.storage || ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "storage", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={item.cost ? item.cost.toString() : ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "cost", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  value={item.source || ""}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "source", value)
+                  }
+                />
+              </td>
+              <td style={getExpirationDateStyle(item.expirationDate)}>
+                <InlineEditControl
+                  type="date"
+                  value={
+                    item.expirationDate
+                      ? formatDateForDisplay(item.expirationDate)
+                      : ""
+                  }
+                  onChange={(value) =>
+                    handleInputChange(item._id, "expirationDate", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="date"
+                  value={
+                    item.purchasedDate
+                      ? formatDateForDisplay(item.purchasedDate)
+                      : ""
+                  }
+                  onChange={(value) =>
+                    handleInputChange(item._id, "purchasedDate", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={item.consumed ? item.consumed.toString() : "0"}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "consumed", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={moveToOptions}
+                  value={item.moveTo || "Consume"}
+                  onChange={(value) =>
+                    handleInputChange(item._id, "moveTo", value)
+                  }
+                />
+              </td>
+              <td>
+                <Button variant="danger" onClick={() => handleDelete(item)}>
+                  Delete
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <Pagination>
+        <Pagination.Prev
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        />
+        {Array.from({ length: totalPages }, (_, index) => (
+          <Pagination.Item
+            key={index + 1}
+            active={index + 1 === currentPage}
+            onClick={() => setCurrentPage(index + 1)}
+          >
+            {index + 1}
+          </Pagination.Item>
         ))}
-      </tbody>
-    </Table>
+        <Pagination.Next
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        />
+      </Pagination>
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        handleClose={() => setShowDeleteModal(false)}
+        confirmDelete={confirmDelete}
+      />
+    </>
   );
 };
 
-export default WasteItemTable;
+export default DonationItemTable;
