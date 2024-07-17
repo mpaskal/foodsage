@@ -1,56 +1,27 @@
-import React, { useState } from "react";
+// src/components/WasteItem/WasteItemTable.jsx
+
+import React, { useState, useMemo } from "react";
 import { Table, Button, FormControl, Pagination } from "react-bootstrap";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { foodItemsState } from "../../recoil/foodItemsAtoms";
-import InlineEditControl from "../Common/InlineEditControl";
-import { processImage } from "../../utils/imageUtils";
-import {
-  formatDateForDisplay,
-  processDateInput,
-  calculateExpirationDate,
-} from "../../utils/dateUtils";
-import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
+import InlineEditControl from "../Common/InlineEditControl";
+import { formatDateForDisplay } from "../../utils/dateUtils";
 
-const categories = [
-  "Dairy",
-  "Fresh",
-  "Grains and Bread",
-  "Packaged and Snack Foods",
-  "Frozen Goods",
-  "Other",
-];
-
-const statusOptions = ["Consume", "Consumed", "Waste", "Donate"];
-
-const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
-
-const quantityMeasurementsByCategory = {
-  Dairy: ["L", "Oz", "Item"],
-  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
-  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
-  "Frozen Goods": ["Kg", "Lb", "Item"],
-  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
-};
-
-const WasteItemTable = () => {
-  const [wasteItems, setFoodItems] = useRecoilState(foodItemsState);
-  const [itemToDelete, setItemToDelete] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const loggedInUser = useRecoilValue(loggedInUserState);
-
+const WasteItemTable = ({
+  wasteItems,
+  handleInputChange,
+  handleDelete,
+  isUpdating,
+}) => {
   const [sortConfig, setSortConfig] = useState({
-    key: "expirationDate",
-    direction: "ascending",
+    key: "dateRecorded",
+    direction: "descending",
   });
-
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Filtering items based on the search query
-  const filteredFoodItems = React.useMemo(() => {
+  const filteredWasteItems = useMemo(() => {
     return wasteItems.filter((item) =>
       Object.values(item).some(
         (value) =>
@@ -60,9 +31,8 @@ const WasteItemTable = () => {
     );
   }, [wasteItems, searchQuery]);
 
-  // Sorting the filtered items
-  const sortedFoodItems = React.useMemo(() => {
-    let sortableItems = [...filteredFoodItems];
+  const sortedWasteItems = useMemo(() => {
+    let sortableItems = [...filteredWasteItems];
     sortableItems.sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === "ascending" ? -1 : 1;
@@ -73,15 +43,14 @@ const WasteItemTable = () => {
       return 0;
     });
     return sortableItems;
-  }, [filteredFoodItems, sortConfig]);
+  }, [filteredWasteItems, sortConfig]);
 
-  // Paginating the sorted and filtered items
-  const paginatedFoodItems = React.useMemo(() => {
+  const paginatedWasteItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedFoodItems.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedFoodItems, currentPage]);
+    return sortedWasteItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedWasteItems, currentPage]);
 
-  const totalPages = Math.ceil(filteredFoodItems.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredWasteItems.length / itemsPerPage);
 
   const requestSort = (key) => {
     let direction = "ascending";
@@ -98,140 +67,6 @@ const WasteItemTable = () => {
     return null;
   };
 
-  const handleInputChange = (id, field, value) => {
-    let updates = { [field]: value };
-
-    if (field === "purchasedDate" || field === "expirationDate") {
-      updates[field] = processDateInput(value);
-    }
-
-    const itemToUpdate = wasteItems.find((item) => item._id === id);
-    if (!itemToUpdate) return;
-
-    if (field === "category") {
-      const defaultMeasurement = quantityMeasurementsByCategory[value][0];
-      updates["quantityMeasurement"] = defaultMeasurement;
-      updates["expirationDate"] = calculateExpirationDate(
-        value,
-        updates.storage || itemToUpdate.storage,
-        itemToUpdate.purchasedDate
-      );
-    }
-
-    if (field === "storage") {
-      updates["expirationDate"] = calculateExpirationDate(
-        itemToUpdate.category,
-        value,
-        itemToUpdate.purchasedDate
-      );
-    }
-
-    if (field === "purchasedDate") {
-      updates["expirationDate"] = calculateExpirationDate(
-        itemToUpdate.category,
-        itemToUpdate.storage,
-        value
-      );
-    }
-
-    const updatedItems = wasteItems.map((item) =>
-      item._id === id ? { ...item, ...updates } : item
-    );
-    setFoodItems(updatedItems);
-
-    Object.keys(updates).forEach((updateField) => {
-      saveChanges(id, updateField, updates[updateField]);
-    });
-  };
-
-  const saveChanges = async (id, field, value) => {
-    try {
-      const response = await fetch("/api/wasteitems/update/" + id, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`,
-        },
-        body: JSON.stringify({ [field]: value }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save changes");
-      }
-      const data = await response.json();
-      console.log("Save successful:", data);
-    } catch (error) {
-      console.error("Error saving changes:", error);
-    }
-  };
-
-  const handleDelete = (itemToDelete) => {
-    setItemToDelete(itemToDelete);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      const response = await fetch("/api/wasteitems/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`,
-        },
-        body: JSON.stringify({ _id: itemToDelete._id }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete item");
-      }
-      setFoodItems((prevItems) =>
-        prevItems.filter((item) => item._id !== itemToDelete._id)
-      );
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error("Error deleting item:", error);
-    }
-  };
-
-  const getImageSrc = (image) => {
-    if (image && typeof image === "string" && image.length > 0) {
-      if (image.startsWith("data:image")) {
-        return image;
-      }
-      if (image.startsWith("/9j/")) {
-        return `data:image/jpeg;base64,${image}`;
-      } else if (image.startsWith("iVBORw0KGgo")) {
-        return `data:image/png;base64,${image}`;
-      } else {
-        return `data:image/jpeg;base64,${image}`;
-      }
-    }
-    return `Bad image`;
-  };
-
-  const getExpirationDateStyle = (expirationDate) => {
-    const today = new Date();
-    const expDate = new Date(expirationDate);
-    const timeDiff = expDate - today;
-    const daysToExpire = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    return expDate < today
-      ? { backgroundColor: "red", color: "white" }
-      : daysToExpire <= 1
-      ? { backgroundColor: "yellow", color: "black" }
-      : { backgroundColor: "green", color: "white" };
-  };
-
-  const handleFileChange = async (id, file) => {
-    try {
-      const base64Data = await processImage(file);
-      const updatedItems = wasteItems.map((item) =>
-        item._id === id ? { ...item, image: base64Data } : item
-      );
-      setFoodItems(updatedItems);
-      saveChanges(id, "image", base64Data);
-    } catch (error) {
-      console.error("Error processing image:", error);
-    }
-  };
-
   return (
     <>
       <FormControl
@@ -244,167 +79,46 @@ const WasteItemTable = () => {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th onClick={() => requestSort("image")}>
-              Image {getSortIndicator("image")}
-            </th>
-            <th onClick={() => requestSort("name")}>
-              Name {getSortIndicator("name")}
-            </th>
             <th onClick={() => requestSort("category")}>
               Category {getSortIndicator("category")}
             </th>
-            <th onClick={() => requestSort("quantity")}>
-              Qty {getSortIndicator("quantity")}
+            <th onClick={() => requestSort("reason")}>
+              Reason {getSortIndicator("reason")}
             </th>
-            <th onClick={() => requestSort("quantityMeasurement")}>
-              Meas {getSortIndicator("quantityMeasurement")}
-            </th>
-            <th onClick={() => requestSort("storage")}>
-              Storage {getSortIndicator("storage")}
-            </th>
-            <th onClick={() => requestSort("cost")}>
-              Cost {getSortIndicator("cost")}
-            </th>
-            <th onClick={() => requestSort("source")}>
-              Source {getSortIndicator("source")}
+            <th onClick={() => requestSort("dateRecorded")}>
+              Date Recorded {getSortIndicator("dateRecorded")}
             </th>
             <th onClick={() => requestSort("expirationDate")}>
               Expiration Date {getSortIndicator("expirationDate")}
             </th>
-            <th onClick={() => requestSort("purchasedDate")}>
-              Purchased Date {getSortIndicator("purchasedDate")}
+            <th onClick={() => requestSort("wasteCost")}>
+              Waste Cost {getSortIndicator("wasteCost")}
             </th>
-            <th onClick={() => requestSort("consumed")}>
-              Consumed (%) {getSortIndicator("consumed")}
+            <th onClick={() => requestSort("quantity")}>
+              Quantity {getSortIndicator("quantity")}
             </th>
-            <th onClick={() => requestSort("status")}>
-              Move {getSortIndicator("status")}
+            <th onClick={() => requestSort("percentWasted")}>
+              % Wasted {getSortIndicator("percentWasted")}
             </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {paginatedFoodItems.map((item) => (
+          {paginatedWasteItems.map((item) => (
             <tr key={item._id}>
+              <td>{item.category}</td>
+              <td>{item.reason}</td>
+              <td>{formatDateForDisplay(item.dateRecorded)}</td>
+              <td>{formatDateForDisplay(item.expirationDate)}</td>
+              <td>${item.wasteCost.toFixed(2)}</td>
+              <td>{`${item.quantity} ${item.quantityUnit}`}</td>
+              <td>{`${item.percentWasted}%`}</td>
               <td>
-                <InlineEditControl
-                  type="file"
-                  value={item.image || ""}
-                  onChange={(file) => handleFileChange(item._id, file)}
-                  getImageSrc={getImageSrc}
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  value={item.name || ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "name", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="select"
-                  options={categories}
-                  value={item.category || ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "category", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="number"
-                  value={item.quantity ? item.quantity.toString() : ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "quantity", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="select"
-                  options={quantityMeasurementsByCategory[item.category] || []}
-                  value={item.quantityMeasurement || ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "quantityMeasurement", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="select"
-                  options={storages}
-                  value={item.storage || ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "storage", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="number"
-                  value={item.cost ? item.cost.toString() : ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "cost", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  value={item.source || ""}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "source", value)
-                  }
-                />
-              </td>
-              <td style={getExpirationDateStyle(item.expirationDate)}>
-                <InlineEditControl
-                  type="date"
-                  value={
-                    item.expirationDate
-                      ? formatDateForDisplay(item.expirationDate)
-                      : ""
-                  }
-                  onChange={(value) =>
-                    handleInputChange(item._id, "expirationDate", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="date"
-                  value={
-                    item.purchasedDate
-                      ? formatDateForDisplay(item.purchasedDate)
-                      : ""
-                  }
-                  onChange={(value) =>
-                    handleInputChange(item._id, "purchasedDate", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="number"
-                  value={item.consumed ? item.consumed.toString() : "0"}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "consumed", value)
-                  }
-                />
-              </td>
-              <td>
-                <InlineEditControl
-                  type="select"
-                  options={statusOptions}
-                  value={item.status || "Consume"}
-                  onChange={(value) =>
-                    handleInputChange(item._id, "status", value)
-                  }
-                />
-              </td>
-              <td>
-                <Button variant="danger" onClick={() => handleDelete(item)}>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDelete(item._id)}
+                  disabled={isUpdating}
+                >
                   Delete
                 </Button>
               </td>
@@ -433,11 +147,6 @@ const WasteItemTable = () => {
           disabled={currentPage === totalPages}
         />
       </Pagination>
-      <DeleteConfirmationModal
-        show={showDeleteModal}
-        handleClose={() => setShowDeleteModal(false)}
-        confirmDelete={confirmDelete}
-      />
     </>
   );
 };

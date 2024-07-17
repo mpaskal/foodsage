@@ -1,3 +1,5 @@
+// src/recoil/foodItemsAtoms.js
+
 import { atom, selector } from "recoil";
 import {
   calculateExpirationDate,
@@ -36,10 +38,8 @@ export const foodItemsWithExpirationState = selector({
         const isWasteOrDonation =
           item.status === "Waste" || item.status === "Donate";
 
-        // Create a new object instead of modifying the existing one
         let updatedItem = { ...item };
 
-        // If expired for more than 5 days and not consumed/moved, mark as waste
         if (expirationDate < fiveDaysAgo && !isConsumed && !isWasteOrDonation) {
           updatedItem.status = "Waste";
         }
@@ -133,5 +133,55 @@ export const moveItemState = selector({
           : item
       )
     );
+  },
+});
+
+export const wasteAnalyticsState = selector({
+  key: "wasteAnalyticsState",
+  get: ({ get }) => {
+    const wasteItems = get(wasteItemsState);
+
+    const totalWasteCost = wasteItems.reduce(
+      (sum, item) => sum + (item.cost || 0),
+      0
+    );
+    const wasteByCategory = wasteItems.reduce((acc, item) => {
+      acc[item.category] = (acc[item.category] || 0) + 1;
+      return acc;
+    }, {});
+    const wasteByReason = wasteItems.reduce((acc, item) => {
+      const reason = item.consumed === 0 ? "Unused" : "Partially Used";
+      acc[reason] = (acc[reason] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      totalWasteItems: wasteItems.length,
+      totalWasteCost,
+      wasteByCategory,
+      wasteByReason,
+    };
+  },
+});
+
+export const donationAnalyticsState = selector({
+  key: "donationAnalyticsState",
+  get: ({ get }) => {
+    const donationItems = get(donationItemsState);
+
+    const totalDonationValue = donationItems.reduce(
+      (sum, item) => sum + (item.cost || 0),
+      0
+    );
+    const donationsByCategory = donationItems.reduce((acc, item) => {
+      acc[item.category] = (acc[item.category] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      totalDonationItems: donationItems.length,
+      totalDonationValue,
+      donationsByCategory,
+    };
   },
 });

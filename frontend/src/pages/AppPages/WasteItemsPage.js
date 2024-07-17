@@ -1,82 +1,131 @@
-import React, { useEffect, useCallback, useState } from "react";
-import api from "../../utils/api";
-import { moveItem } from "../../utils/itemMovementUtils";
-import { useRecoilState } from "recoil";
-import { foodItemsState } from "../../recoil/foodItemsAtoms";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
+import {
+  wasteItemsState,
+  foodItemsWithExpirationState,
+  currentItemState,
+} from "../../recoil/foodItemsAtoms";
+import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
 import WasteItemTable from "../../components/WasteItem/WasteItemTable";
-import { Alert, Spinner } from "react-bootstrap";
+import WasteItemModal from "../../components/WasteItem/WasteItemModal";
+import { Button, Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
+import api from "../../utils/api";
+import { format } from "date-fns";
 
 const WasteItemsPage = () => {
-  const [wasteItems, setWasteItems] = useRecoilState(foodItemsState);
-  const [error, setError] = useState(null);
+  const setWasteItems = useSetRecoilState(wasteItemsState);
+  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
+  const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  const fetchWasteItems = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get("/foodItems/waste");
-      if (response.data && Array.isArray(response.data.data)) {
-        setWasteItems(response.data.data);
-      }
-    } catch (error) {
-      setError("Failed to fetch waste items. Please try again.");
-      toast.error("Failed to fetch waste items");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setWasteItems]);
+  const { error, setError, fetchItems, handleInputChange, handleDeleteItem } =
+    useFoodItemManagement("waste");
 
   useEffect(() => {
-    fetchWasteItems();
-  }, [fetchWasteItems]);
+    console.log("Fetching waste items...");
+    setIsLoading(true);
+    fetchItems().finally(() => setIsLoading(false));
+  }, [fetchItems]);
 
-  const handlestatusConsume = async (itemId) => {
-    setIsUpdating(true);
-    try {
-      const response = await api.post(`/foodItems/statusConsume/${itemId}`);
-      if (response.status === 200) {
-        setWasteItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        toast.success("Item moved to Consume successfully");
-      }
-    } catch (error) {
-      console.error("Error moving item to Consume:", error);
-      setError("An error occurred while moving the item to Consume.");
-      toast.error("Failed to move item to Consume");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const handleSubmit = useCallback(
+    async (newItem) => {
+      try {
+        setIsUpdating(true);
+        const formData = new FormData();
+        for (const key in newItem) {
+          if (key === "image" && newItem[key] instanceof File) {
+            formData.append(key, newItem[key], newItem[key].name);
+          } else if (
+            key === "dateRecorded" ||
+            key === "expirationDate" ||
+            key === "purchaseDate"
+          ) {
+            const formattedDate = format(new Date(newItem[key]), "yyyy-MM-dd");
+            formData.append(key, formattedDate);
+          } else {
+            formData.append(key, newItem[key]);
+          }
+        }
 
-  const handleDeleteItem = async (itemId) => {
-    setIsUpdating(true);
-    try {
-      const response = await api.post(`/foodItems/delete`, { _id: itemId });
-      if (response.status === 204) {
-        setWasteItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        toast.success("Item deleted successfully");
+        const response = await api.post("/waste/items", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (response.status === 201) {
+          setWasteItems((prevItems) => [...prevItems, response.data]);
+          setShowModal(false);
+          setCurrentItem(null);
+          fetchItems();
+          toast.success("Waste item added successfully");
+        } else {
+          throw new Error("Failed to add the waste item.");
+        }
+      } catch (error) {
+        console.error("Error adding waste item:", error);
+        const errorMessage = error.response?.data?.message || error.message;
+        setError("Failed to add the waste item: " + errorMessage);
+        toast.error("Failed to add the waste item: " + errorMessage);
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      setError("An error occurred while deleting the item.");
-      toast.error("Failed to delete the item");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    },
+    [setWasteItems, setCurrentItem, fetchItems, setError]
+  );
+
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        setIsUpdating(true);
+        const result = await handleDeleteItem(id);
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error("Error deleting waste item:", error);
+        toast.error("Failed to delete the waste item");
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [handleDeleteItem]
+  );
+
+  const getCurrentDateFormatted = useCallback(() => {
+    const currentDate = new Date();
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return currentDate.toLocaleDateString("en-US", options);
+  }, []);
+
+  const currentDate = useMemo(
+    () => getCurrentDateFormatted(),
+    [getCurrentDateFormatted]
+  );
 
   return (
     <Layout>
       <div className="container">
         <div className="d-flex justify-content-between my-3">
           <h1 className="title">Waste Items</h1>
+          <h2>{currentDate}</h2>
         </div>
+        <div className="d-flex justify-content-end mb-1">
+          <Button
+            variant="danger"
+            className="ml-auto"
+            onClick={() => {
+              setCurrentItem(null);
+              setShowModal(true);
+            }}
+          >
+            Add Waste Item
+          </Button>
+        </div>
+
         {error && (
           <Alert variant="danger" onClose={() => setError(null)} dismissible>
             <Alert.Heading>Error</Alert.Heading>
@@ -87,15 +136,27 @@ const WasteItemsPage = () => {
           <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
           </Spinner>
-        ) : wasteItems.length > 0 ? (
+        ) : foodItemsWithExpiration.length > 0 ? (
           <WasteItemTable
-            wasteItems={wasteItems}
-            handlestatusConsume={handlestatusConsume}
-            handleDelete={handleDeleteItem}
+            wasteItems={foodItemsWithExpiration}
+            handleInputChange={handleInputChange}
+            handleDelete={handleDelete}
             isUpdating={isUpdating}
           />
         ) : (
           <p>No waste items found.</p>
+        )}
+
+        {showModal && (
+          <WasteItemModal
+            show={showModal}
+            handleClose={() => {
+              setShowModal(false);
+              setCurrentItem(null);
+            }}
+            handleSubmit={handleSubmit}
+            setError={setError}
+          />
         )}
       </div>
     </Layout>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRecoilCallback, useRecoilValue } from "recoil";
 import { foodItemsState } from "../recoil/foodItemsAtoms";
-import axios from "axios";
 import {
   calculateAverageTimeToConsumption,
   calculateFoodTurnoverRate,
@@ -20,6 +19,13 @@ export const useFoodInsights = () => {
         `Fetching insights from: ${api.defaults.baseURL}/food/insights`
       );
       console.log("With params:", { startDate, endDate });
+
+      // Ensure the token is set in the request headers
+      const token = localStorage.getItem("token");
+      if (token) {
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await api.get("/food/insights", {
         params: { startDate, endDate },
       });
@@ -28,6 +34,11 @@ export const useFoodInsights = () => {
       return response.data;
     } catch (error) {
       console.error("Error fetching insights:", error.response || error);
+      if (error.response && error.response.status === 401) {
+        // Handle unauthorized error (e.g., redirect to login)
+        console.log("Unauthorized access. Redirecting to login...");
+        // Implement your redirect logic here
+      }
       setError(error);
       throw error;
     } finally {

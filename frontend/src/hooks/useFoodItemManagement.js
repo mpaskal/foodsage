@@ -131,7 +131,7 @@ export const useFoodItemManagement = (pageType) => {
         const response = await api.get("/food/items");
         console.log("Raw API response for food items state:", response.data);
         setRecoilFoodItems(
-          response.data.map((item) => ({
+          response.data.data.map((item) => ({
             ...item,
             expirationDate: new Date(
               calculateExpirationDate(
