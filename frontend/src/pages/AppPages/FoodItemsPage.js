@@ -16,19 +16,18 @@ import { debounce } from "lodash";
 import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
 import { format } from "date-fns"; // Add this line
 
-// ... rest of your code
-
 const FoodItemsPage = () => {
   const setFoodItems = useSetRecoilState(foodItemsState);
   const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-
   const { error, setError, fetchItems, handleInputChange, handleDeleteItem } =
     useFoodItemManagement("food");
 
   useEffect(() => {
+    console.log("Fetching items...");
     fetchItems();
   }, [fetchItems]);
 

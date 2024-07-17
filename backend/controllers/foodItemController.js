@@ -20,6 +20,7 @@ const formatDate = (dateString) => {
 exports.getFoodItems = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const tenantId = req.user.tenantId;
+  console.log("res", res);
 
   try {
     const totalItems = await FoodItem.countDocuments({

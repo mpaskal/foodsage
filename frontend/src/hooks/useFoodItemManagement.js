@@ -1,11 +1,8 @@
-// src/hooks/useFoodItemManagement.js
-
 import { useState, useCallback } from "react";
 import { useRecoilState } from "recoil";
 import { foodItemsState } from "../recoil/foodItemsAtoms";
 import {
   calculateExpirationDate,
-  isExpired,
   getDaysSinceExpiration,
 } from "../utils/dateUtils";
 import api from "../utils/api";
@@ -17,8 +14,8 @@ export const useFoodItemManagement = (pageType) => {
   const fetchItems = useCallback(async () => {
     try {
       const response = await api.get("/food/items");
+      console.log("API Response:", response);
 
-      // Check if response.data is an array or if it's nested within a 'data' property
       const itemsArray = Array.isArray(response.data)
         ? response.data
         : response.data.data;
@@ -35,6 +32,8 @@ export const useFoodItemManagement = (pageType) => {
           item.purchasedDate
         ),
       }));
+
+      console.log("Processed Items:", items);
 
       const filteredItems = items.filter((item) => {
         const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
@@ -60,6 +59,7 @@ export const useFoodItemManagement = (pageType) => {
         }
       });
 
+      console.log("Filtered Items:", filteredItems);
       setFoodItems(filteredItems);
     } catch (error) {
       setError("Failed to fetch items");
@@ -68,42 +68,8 @@ export const useFoodItemManagement = (pageType) => {
   }, [pageType, setFoodItems]);
 
   const handleInputChange = useCallback(
-    async (id, field, value) => {
+    async (id, updates) => {
       try {
-        let updates = { [field]: value };
-
-        if (
-          field === "category" ||
-          field === "storage" ||
-          field === "purchasedDate"
-        ) {
-          updates.expirationDate = calculateExpirationDate(
-            field === "category"
-              ? value
-              : foodItems.find((item) => item._id === id).category,
-            field === "storage"
-              ? value
-              : foodItems.find((item) => item._id === id).storage,
-            field === "purchasedDate"
-              ? value
-              : foodItems.find((item) => item._id === id).purchasedDate
-          );
-        }
-
-        if (field === "consumed") {
-          updates[field] = parseInt(value, 10);
-          if (updates[field] === 100) {
-            updates.status = "Consumed";
-          }
-        }
-
-        if (field === "status") {
-          updates.lastStateChangeDate = new Date().toISOString();
-          if (value === "Consumed") {
-            updates.consumed = 100;
-          }
-        }
-
         await api.put(`/food/items/${id}`, updates);
 
         setFoodItems((prevItems) =>
