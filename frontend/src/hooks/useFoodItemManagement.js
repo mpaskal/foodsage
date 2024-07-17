@@ -4,6 +4,7 @@ import { foodItemsState } from "../recoil/foodItemsAtoms";
 import {
   calculateExpirationDate,
   getDaysSinceExpiration,
+  formatDateForDisplay,
 } from "../utils/dateUtils";
 import api from "../utils/api";
 
@@ -70,12 +71,35 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        const response = await api.post(`/food/items/update/${id}`, updates);
+        // Ensure the date fields are formatted correctly and not null
+        if (updates.purchasedDate) {
+          updates.purchasedDate = formatDateForDisplay(
+            new Date(updates.purchasedDate)
+          );
+        }
+        if (updates.expirationDate) {
+          updates.expirationDate = formatDateForDisplay(
+            new Date(updates.expirationDate)
+          );
+        }
+
+        // If dates are not provided, don't include them in the update
+        const updatesToSend = Object.keys(updates).reduce((acc, key) => {
+          if (updates[key] !== null && updates[key] !== undefined) {
+            acc[key] = updates[key];
+          }
+          return acc;
+        }, {});
+
+        const response = await api.post(
+          `/food/items/update/${id}`,
+          updatesToSend
+        );
         console.log("Update Response:", response);
 
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === id ? { ...item, ...updates } : item
+            item._id === id ? { ...item, ...response.data.data } : item
           )
         );
       } catch (error) {

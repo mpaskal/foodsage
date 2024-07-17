@@ -79,9 +79,15 @@ exports.updateFoodItem = async (req, res) => {
     const updates = {
       ...req.body,
       image: req.body.image || req.body.existingImage,
-      purchasedDate: formatDate(req.body.purchasedDate),
-      expirationDate: formatDate(req.body.expirationDate),
     };
+
+    // Only update dates if they are provided
+    if (req.body.purchasedDate) {
+      updates.purchasedDate = new Date(req.body.purchasedDate);
+    }
+    if (req.body.expirationDate) {
+      updates.expirationDate = new Date(req.body.expirationDate);
+    }
 
     // Handle status changes
     if (updates.status === "Consumed") {
@@ -90,8 +96,6 @@ exports.updateFoodItem = async (req, res) => {
       updates.statusChangeDate = new Date();
     }
 
-    // Log request body and updates
-    console.log("Request body:", req.body);
     console.log("Updates:", updates);
 
     const foodItem = await FoodItem.findOneAndUpdate(
@@ -100,10 +104,9 @@ exports.updateFoodItem = async (req, res) => {
       {
         new: true,
         runValidators: true,
+        context: "query",
       }
     );
-
-    console.log("Updated foodItem:", foodItem);
 
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });

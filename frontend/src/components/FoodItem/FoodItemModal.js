@@ -82,10 +82,10 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
         setForm({
           ...itemWithExpiration,
           purchasedDate:
-            formatDateForDisplay(itemWithExpiration.purchasedDate) ||
+            formatDateForInput(itemWithExpiration.purchasedDate) ||
             getCurrentDate(),
           expirationDate:
-            formatDateForDisplay(itemWithExpiration.expirationDate) || "",
+            formatDateForInput(itemWithExpiration.expirationDate) || "",
           consumed: itemWithExpiration.consumed || 0,
           status: itemWithExpiration.status || "Active",
         });
@@ -213,6 +213,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
         ...form,
         consumed: parseInt(form.consumed, 10),
         status: form.consumed === 100 ? "Consumed" : form.status,
+        purchasedDate: new Date(form.purchasedDate),
+        expirationDate: new Date(form.expirationDate),
       });
       handleClose();
     } catch (error) {
@@ -361,14 +363,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
               required
             />
           </Form.Group>
-          <Form.Group controlId="image">
-            <Form.Label>Image</Form.Label>
-            <Form.Control
-              type="file"
-              name="image"
-              onChange={handleFileChange}
-            />
-          </Form.Group>
           <Form.Group controlId="expirationDate">
             <Form.Label>Expiration Date</Form.Label>
             <Form.Control
@@ -376,6 +370,15 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
               name="expirationDate"
               value={formatDateForInput(form.expirationDate)}
               onChange={handleChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="image">
+            <Form.Label>Image</Form.Label>
+            <Form.Control
+              type="file"
+              name="image"
+              onChange={handleFileChange}
             />
           </Form.Group>
           <Form.Group controlId="consumed">
