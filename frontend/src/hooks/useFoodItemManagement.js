@@ -70,7 +70,8 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        await api.put(`/food/items/${id}`, updates);
+        const response = await api.post(`/food/items/update/${id}`, updates);
+        console.log("Update Response:", response);
 
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
@@ -82,13 +83,13 @@ export const useFoodItemManagement = (pageType) => {
         console.error("Error updating item:", error);
       }
     },
-    [foodItems, setFoodItems]
+    [setFoodItems]
   );
 
   const handleDeleteItem = useCallback(
     async (id) => {
       try {
-        await api.delete(`/food/items/${id}`);
+        await api.post(`/food/items/delete`, { id });
         setFoodItems((prevItems) =>
           prevItems.filter((item) => item._id !== id)
         );

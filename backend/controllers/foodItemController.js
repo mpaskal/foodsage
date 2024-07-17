@@ -20,7 +20,6 @@ const formatDate = (dateString) => {
 exports.getFoodItems = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const tenantId = req.user.tenantId;
-  console.log("res", res);
 
   try {
     const totalItems = await FoodItem.countDocuments({
@@ -91,6 +90,10 @@ exports.updateFoodItem = async (req, res) => {
       updates.statusChangeDate = new Date();
     }
 
+    // Log request body and updates
+    console.log("Request body:", req.body);
+    console.log("Updates:", updates);
+
     const foodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
       updates,
@@ -99,6 +102,8 @@ exports.updateFoodItem = async (req, res) => {
         runValidators: true,
       }
     );
+
+    console.log("Updated foodItem:", foodItem);
 
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
@@ -109,6 +114,7 @@ exports.updateFoodItem = async (req, res) => {
       data: foodItem,
     });
   } catch (error) {
+    console.error("Error updating food item:", error);
     handleError(res, error, "Error updating food item");
   }
 };
