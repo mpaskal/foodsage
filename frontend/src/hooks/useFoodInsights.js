@@ -17,10 +17,10 @@ export const useFoodInsights = () => {
     try {
       setLoading(true);
       console.log(
-        `Fetching insights from: ${api.defaults.baseURL}/api/food/insights`
+        `Fetching insights from: ${api.defaults.baseURL}/food/insights`
       );
       console.log("With params:", { startDate, endDate });
-      const response = await api.get("/api/food/insights", {
+      const response = await api.get("/food/insights", {
         params: { startDate, endDate },
       });
       console.log("Insights response:", response.data);
