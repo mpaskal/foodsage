@@ -10,7 +10,7 @@ export const useFetchFoodItems = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get("/api/food/items");
+        const response = await axios.get("/api/fooditems");
         setFoodItems(
           response.data.map((item) => ({
             ...item,

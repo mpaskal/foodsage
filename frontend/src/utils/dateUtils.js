@@ -1,12 +1,4 @@
 /**
- * Calculates the expiration date based on the category, storage, and purchased date.
- * @param {string} category - The category of the item.
- * @param {string} storage - The storage condition of the item.
- * @param {Date|string|null} purchasedDate - The date the item was purchased.
- * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
- */
-
-/**
  * Calculates the number of days since the expiration date.
  * @param {Date|string} expirationDate - The expiration date of the item.
  * @returns {number} - The number of days since the expiration date (negative if not yet expired).
@@ -17,6 +9,14 @@ export const getDaysSinceExpiration = (expirationDate) => {
   const timeDiff = today - expDate;
   return Math.floor(timeDiff / (1000 * 3600 * 24));
 };
+
+/**
+ * Calculates the expiration date based on the category, storage, and purchased date.
+ * @param {string} category - The category of the item.
+ * @param {string} storage - The storage condition of the item.
+ * @param {Date|string|null} purchasedDate - The date the item was purchased.
+ * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
+ */
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
   if (!purchasedDate) return null;
 
@@ -96,7 +96,7 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
       expirationDate = null;
   }
 
-  return expirationDate ? expirationDate.toISOString() : null;
+  return expirationDate ? expirationDate.toISOString().split("T")[0] : null;
 };
 
 /**
@@ -110,11 +110,12 @@ export const formatDateForDisplay = (date) => {
   const localDate = new Date(date);
   if (isNaN(localDate.getTime())) return ""; // Check for invalid date
 
+  // Adjust for timezone offset
   localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
 
   const year = localDate.getFullYear();
   const month = String(localDate.getMonth() + 1).padStart(2, "0");
-  const day = String(localDate.getDate() + 1).padStart(2, "0");
+  const day = String(localDate.getDate()).padStart(2, "0"); // Removed + 1 as it's not necessary after timezone adjustment
 
   return `${year}-${month}-${day}`;
 };
@@ -133,5 +134,11 @@ export const processDateInput = (date) => {
 
   if (isNaN(inputDate.getTime())) return ""; // Check for invalid date
 
-  return inputDate.toISOString();
+  return inputDate.toISOString().split("T")[0];
 };
+
+/**
+ * Gets the current date in "yyyy-mm-dd" format.
+ * @returns {string} - The current date in "yyyy-mm-dd" format.
+ */
+export const getCurrentDate = () => new Date().toISOString().split("T")[0];

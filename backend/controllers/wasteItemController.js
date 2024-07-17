@@ -10,12 +10,12 @@ exports.getWasteItems = async (req, res) => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const totalItems = await FoodItem.countDocuments({
       tenantId,
-      moveTo: "Waste",
+      status: "Waste",
       wasteDate: { $gt: thirtyDaysAgo },
     });
     const wasteItems = await FoodItem.find({
       tenantId,
-      moveTo: "Waste",
+      status: "Waste",
       wasteDate: { $gt: thirtyDaysAgo },
     })
       .skip((page - 1) * limit)
@@ -44,7 +44,7 @@ exports.updateWasteItem = async (req, res) => {
     };
 
     const wasteItem = await FoodItem.findOneAndUpdate(
-      { _id: req.params.id, tenantId, moveTo: "Waste" },
+      { _id: req.params.id, tenantId, status: "Waste" },
       updates,
       { new: true, runValidators: true }
     );
@@ -69,7 +69,7 @@ exports.deleteWasteItem = async (req, res) => {
     const wasteItem = await FoodItem.findOneAndDelete({
       _id,
       tenantId,
-      moveTo: "Waste",
+      status: "Waste",
     });
     if (!wasteItem) {
       return res.status(404).json({ message: "Waste item not found" });
@@ -80,12 +80,12 @@ exports.deleteWasteItem = async (req, res) => {
   }
 };
 
-exports.moveToConsume = async (req, res) => {
+exports.statusConsume = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     const wasteItem = await FoodItem.findOneAndUpdate(
-      { _id: req.params.id, tenantId, moveTo: "Waste" },
-      { moveTo: "Consume", wasteDate: null },
+      { _id: req.params.id, tenantId, status: "Waste" },
+      { status: "Consume", wasteDate: null },
       { new: true, runValidators: true }
     );
 

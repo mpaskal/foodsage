@@ -12,6 +12,6 @@ router.post(
   wasteItemController.updateWasteItem
 );
 router.post("/delete", userAuth, wasteItemController.deleteWasteItem);
-router.post("/moveToConsume/:id", userAuth, wasteItemController.moveToConsume);
+router.post("/statusConsume/:id", userAuth, wasteItemController.statusConsume);
 
 module.exports = router;

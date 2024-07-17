@@ -1,10 +1,20 @@
 const FoodItem = require("../models/FoodItem");
-const WasteRecord = require("../models/WasteRecord"); // Make sure to create this model
+const WasteRecord = require("../models/WasteRecord");
 const handleError = require("../utils/handleError");
 const {
   calculateInsights,
   generateRecommendations,
 } = require("../utils/foodItemCalcUtils");
+const { parseISO, format } = require("date-fns");
+
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  try {
+    return format(parseISO(dateString), "yyyy-MM-dd");
+  } catch {
+    return null;
+  }
+};
 
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
@@ -14,9 +24,12 @@ exports.getFoodItems = async (req, res) => {
   try {
     const totalItems = await FoodItem.countDocuments({
       tenantId,
-      moveTo: "Consume",
+      status: { $in: ["Active", "Inactive"] },
     });
-    const foodItems = await FoodItem.find({ tenantId, moveTo: "Consume" })
+    const foodItems = await FoodItem.find({
+      tenantId,
+      status: { $in: ["Active", "Inactive"] },
+    })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -44,8 +57,10 @@ exports.createFoodItem = async (req, res) => {
       ...req.body,
       image: req.body.image || null,
       tenantId,
-      moveTo: req.body.moveTo || "Consume",
+      status: req.body.status || "Active",
       consumed: req.body.consumed || 0,
+      purchasedDate: formatDate(req.body.purchasedDate),
+      expirationDate: formatDate(req.body.expirationDate),
     });
 
     await newFoodItem.save();
@@ -64,7 +79,16 @@ exports.updateFoodItem = async (req, res) => {
     const updates = {
       ...req.body,
       image: req.body.image || req.body.existingImage,
+      purchasedDate: formatDate(req.body.purchasedDate),
+      expirationDate: formatDate(req.body.expirationDate),
     };
+
+    // Handle status changes
+    if (updates.status === "Consumed") {
+      updates.consumed = 100;
+    } else if (updates.status === "Waste" || updates.status === "Donation") {
+      updates.statusChangeDate = new Date();
+    }
 
     const foodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
@@ -99,5 +123,74 @@ exports.deleteFoodItem = async (req, res) => {
     res.status(204).send();
   } catch (error) {
     handleError(res, error, "Error deleting food item");
+  }
+};
+
+// Add these new functions for insights
+exports.getFoodInsights = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const { startDate, endDate } = req.query;
+
+    const foodItems = await FoodItem.find({
+      tenantId,
+      updatedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    });
+
+    const wasteRecords = await WasteRecord.find({
+      tenantId,
+      dateRecorded: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    });
+
+    const insights = calculateInsights(
+      foodItems,
+      wasteRecords,
+      new Date(startDate),
+      new Date(endDate)
+    );
+    const recommendations = generateRecommendations(insights);
+
+    res.status(200).json({ insights, recommendations });
+  } catch (error) {
+    handleError(res, error, "Error generating food insights");
+  }
+};
+
+exports.getWasteCost = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const { startDate, endDate } = req.query;
+
+    const wasteRecords = await WasteRecord.find({
+      tenantId,
+      dateRecorded: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    });
+
+    const totalWasteCost = wasteRecords.reduce(
+      (sum, record) => sum + record.wasteCost,
+      0
+    );
+
+    res.status(200).json({ totalWasteCost });
+  } catch (error) {
+    handleError(res, error, "Error calculating waste cost");
+  }
+};
+
+exports.predictFutureWaste = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const { days } = req.query;
+
+    const wasteRecords = await WasteRecord.find({ tenantId });
+
+    const averageDailyWaste =
+      wasteRecords.reduce((sum, record) => sum + record.wasteCost, 0) /
+      wasteRecords.length;
+    const predictedWaste = averageDailyWaste * days;
+
+    res.status(200).json({ predictedWaste });
+  } catch (error) {
+    handleError(res, error, "Error predicting future waste");
   }
 };

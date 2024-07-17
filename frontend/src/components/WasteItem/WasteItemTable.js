@@ -21,7 +21,7 @@ const categories = [
   "Other",
 ];
 
-const moveToOptions = ["Consume", "Consumed", "Waste", "Donate"];
+const statusOptions = ["Consume", "Consumed", "Waste", "Donate"];
 
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 
@@ -277,8 +277,8 @@ const WasteItemTable = () => {
             <th onClick={() => requestSort("consumed")}>
               Consumed (%) {getSortIndicator("consumed")}
             </th>
-            <th onClick={() => requestSort("moveTo")}>
-              Move {getSortIndicator("moveTo")}
+            <th onClick={() => requestSort("status")}>
+              Move {getSortIndicator("status")}
             </th>
             <th>Actions</th>
           </tr>
@@ -396,10 +396,10 @@ const WasteItemTable = () => {
               <td>
                 <InlineEditControl
                   type="select"
-                  options={moveToOptions}
-                  value={item.moveTo || "Consume"}
+                  options={statusOptions}
+                  value={item.status || "Consume"}
                   onChange={(value) =>
-                    handleInputChange(item._id, "moveTo", value)
+                    handleInputChange(item._id, "status", value)
                   }
                 />
               </td>

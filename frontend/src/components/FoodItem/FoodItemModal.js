@@ -31,14 +31,30 @@ const quantityMeasurementsByCategory = {
   Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
   Cellar: ["L", "Item", "Box"],
 };
-const moveToOptions = ["Consume", "Waste", "Donate"];
+const statusOptions = [
+  "Active",
+  "Inactive",
+  "Consumed",
+  "Waste",
+  "Donation",
+  "Donated",
+];
 
-const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
+const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
-  const [error, setError] = useState(null);
+  const [localError, setLocalError] = useState(null);
 
   const getCurrentDate = () => new Date().toISOString().slice(0, 10);
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return getCurrentDate();
+    try {
+      return dateString.slice(0, 10); // This will work for both ISO strings and 'yyyy-MM-dd' formats
+    } catch {
+      return getCurrentDate();
+    }
+  };
 
   const [form, setForm] = useState({
     name: "",
@@ -52,7 +68,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     expirationDate: "",
     image: null,
     consumed: 0,
-    moveTo: "Consume",
+    status: "Active",
     donationDate: null,
     wasteDate: null,
   });
@@ -71,7 +87,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
           expirationDate:
             formatDateForDisplay(itemWithExpiration.expirationDate) || "",
           consumed: itemWithExpiration.consumed || 0,
-          moveTo: itemWithExpiration.moveTo || "Consume",
+          status: itemWithExpiration.status || "Active",
         });
       }
     } else {
@@ -95,7 +111,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         expirationDate: formatDateForDisplay(expirationDate),
         image: null,
         consumed: 0,
-        moveTo: "Consume",
+        status: "Active",
       });
     }
   }, [currentItem, foodItemsWithExpiration]);
@@ -103,25 +119,41 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prevForm) => {
-      const updatedForm = { ...prevForm, [name]: value };
+      let updatedValue = value;
 
-      if (name === "moveTo" && value === "Consume") {
-        const fourDaysFromNow = new Date();
-        fourDaysFromNow.setDate(fourDaysFromNow.getDate() + 4);
-        const calculatedExpirationDate = calculateExpirationDate(
-          updatedForm.category,
-          updatedForm.storage,
-          updatedForm.purchasedDate
-        );
-        if (new Date(calculatedExpirationDate) < fourDaysFromNow) {
-          setError(
-            "When moving an item back to Consume, the expiration date must be at least 4 days from now. Please adjust the category, storage, or purchased date."
+      if (name === "purchasedDate" || name === "expirationDate") {
+        updatedValue = value; // Keep the value as is for date inputs
+      }
+
+      const updatedForm = { ...prevForm, [name]: updatedValue };
+
+      if (name === "status") {
+        if (value === "Active") {
+          const fourDaysFromNow = new Date();
+          fourDaysFromNow.setDate(fourDaysFromNow.getDate() + 4);
+          const calculatedExpirationDate = calculateExpirationDate(
+            updatedForm.category,
+            updatedForm.storage,
+            updatedForm.purchasedDate
           );
+          if (new Date(calculatedExpirationDate) < fourDaysFromNow) {
+            setLocalError(
+              "When moving an item back to Active, the expiration date must be at least 4 days from now. Please adjust the category, storage, or purchased date."
+            );
+          } else {
+            setLocalError(null);
+          }
         } else {
-          setError(null);
+          setLocalError(null);
         }
-      } else {
-        setError(null);
+
+        if (value === "Consumed") {
+          updatedForm.consumed = 100;
+        } else if (value === "Donation" || value === "Donated") {
+          updatedForm.donationDate = new Date().toISOString();
+        } else if (value === "Waste") {
+          updatedForm.wasteDate = new Date().toISOString();
+        }
       }
 
       if (
@@ -156,7 +188,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setLocalError(null);
+    if (setError) setError(null); // Only call setError if it's provided
 
     const requiredFields = [
       "name",
@@ -164,12 +197,12 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       "cost",
       "purchasedDate",
       "quantityMeasurement",
-      "moveTo",
+      "status",
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
     if (missingFields.length > 0) {
-      setError(
+      setLocalError(
         `Please fill in all required fields: ${missingFields.join(", ")}`
       );
       return;
@@ -179,15 +212,19 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       await handleSubmit({
         ...form,
         consumed: parseInt(form.consumed, 10),
-        moveTo: form.consumed === 100 ? "Consumed" : form.moveTo,
+        status: form.consumed === 100 ? "Consumed" : form.status,
       });
       handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
-      setError(
+      const errorMessage =
         error.response?.data?.message ||
-          "An error occurred while submitting the form."
-      );
+        "An error occurred while submitting the form.";
+      if (setError) {
+        setError(errorMessage); // Set parent error if setError is provided
+      } else {
+        setLocalError(errorMessage); // Otherwise, set local error
+      }
     }
   };
 
@@ -206,7 +243,8 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       </Modal.Header>
       <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
+          {localError && <Alert variant="danger">{localError}</Alert>}
+          {/* Form fields */}
           <Row>
             <Col md={6}>
               <Form.Group controlId="name">
@@ -239,6 +277,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               </Form.Group>
             </Col>
           </Row>
+          {/* Add other form fields here */}
           <Row>
             <Col md={6}>
               <Form.Group controlId="quantity">
@@ -317,7 +356,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             <Form.Control
               type="date"
               name="purchasedDate"
-              value={form.purchasedDate}
+              value={formatDateForInput(form.purchasedDate)}
               onChange={handleChange}
               required
             />
@@ -335,7 +374,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             <Form.Control
               type="date"
               name="expirationDate"
-              value={form.expirationDate}
+              value={formatDateForInput(form.expirationDate)}
               onChange={handleChange}
             />
           </Form.Group>
@@ -350,16 +389,16 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               max="100"
             />
           </Form.Group>
-          <Form.Group controlId="moveTo">
-            <Form.Label>Move To</Form.Label>
+          <Form.Group controlId="status">
+            <Form.Label>Status</Form.Label>
             <Form.Control
               as="select"
-              name="moveTo"
-              value={form.moveTo}
+              name="status"
+              value={form.status}
               onChange={handleChange}
               required
             >
-              {moveToOptions.map((option, index) => (
+              {statusOptions.map((option, index) => (
                 <option key={index} value={option}>
                   {option}
                 </option>

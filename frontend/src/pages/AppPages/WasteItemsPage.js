@@ -33,10 +33,10 @@ const WasteItemsPage = () => {
     fetchWasteItems();
   }, [fetchWasteItems]);
 
-  const handleMoveToConsume = async (itemId) => {
+  const handlestatusConsume = async (itemId) => {
     setIsUpdating(true);
     try {
-      const response = await api.post(`/foodItems/moveToConsume/${itemId}`);
+      const response = await api.post(`/foodItems/statusConsume/${itemId}`);
       if (response.status === 200) {
         setWasteItems((prevItems) =>
           prevItems.filter((item) => item._id !== itemId)
@@ -90,7 +90,7 @@ const WasteItemsPage = () => {
         ) : wasteItems.length > 0 ? (
           <WasteItemTable
             wasteItems={wasteItems}
-            handleMoveToConsume={handleMoveToConsume}
+            handlestatusConsume={handlestatusConsume}
             handleDelete={handleDeleteItem}
             isUpdating={isUpdating}
           />

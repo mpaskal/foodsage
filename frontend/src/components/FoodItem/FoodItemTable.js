@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Table, Button, FormControl, Pagination } from "react-bootstrap";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { foodItemsState } from "../../recoil/foodItemsAtoms";
+import { useRecoilValue } from "recoil";
+import { loggedInUserState } from "../../recoil/userAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
 import { processImage } from "../../utils/imageUtils";
 import {
@@ -10,7 +10,7 @@ import {
   calculateExpirationDate,
 } from "../../utils/dateUtils";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { loggedInUserState } from "../../recoil/userAtoms";
+import { format, parseISO } from "date-fns";
 
 const categories = [
   "Dairy",
@@ -20,11 +20,15 @@ const categories = [
   "Frozen Goods",
   "Other",
 ];
-
-const moveToOptions = ["Consume", "Consumed", "Donate", "Waste"];
-
+const statusOptions = [
+  "Active",
+  "Inactive",
+  "Consumed",
+  "Waste",
+  "Donation",
+  "Donated",
+];
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
-
 const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
   Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
@@ -34,8 +38,12 @@ const quantityMeasurementsByCategory = {
   Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
 };
 
-const FoodItemTable = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+const FoodItemTable = ({
+  foodItems,
+  handleInputChange,
+  handleDeleteItem,
+  isUpdating,
+}) => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const loggedInUser = useRecoilValue(loggedInUserState);
@@ -44,13 +52,11 @@ const FoodItemTable = () => {
     key: "expirationDate",
     direction: "ascending",
   });
-
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Filtering items based on the search query
-  const filteredFoodItems = React.useMemo(() => {
+  const filteredFoodItems = useMemo(() => {
     return foodItems.filter((item) =>
       Object.values(item).some(
         (value) =>
@@ -60,8 +66,7 @@ const FoodItemTable = () => {
     );
   }, [foodItems, searchQuery]);
 
-  // Sorting the filtered items
-  const sortedFoodItems = React.useMemo(() => {
+  const sortedFoodItems = useMemo(() => {
     let sortableItems = [...filteredFoodItems];
     sortableItems.sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -75,8 +80,7 @@ const FoodItemTable = () => {
     return sortableItems;
   }, [filteredFoodItems, sortConfig]);
 
-  // Paginating the sorted and filtered items
-  const paginatedFoodItems = React.useMemo(() => {
+  const paginatedFoodItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedFoodItems.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedFoodItems, currentPage]);
@@ -98,7 +102,7 @@ const FoodItemTable = () => {
     return null;
   };
 
-  const handleInputChange = (id, field, value) => {
+  const handleLocalInputChange = (id, field, value) => {
     let updates = { [field]: value };
 
     if (field === "purchasedDate" || field === "expirationDate") {
@@ -118,30 +122,22 @@ const FoodItemTable = () => {
       );
     }
 
-    if (field === "storage") {
+    if (field === "storage" || field === "purchasedDate") {
       updates["expirationDate"] = calculateExpirationDate(
-        itemToUpdate.category,
-        value,
-        itemToUpdate.purchasedDate
-      );
-    }
-
-    if (field === "purchasedDate") {
-      updates["expirationDate"] = calculateExpirationDate(
-        itemToUpdate.category,
-        itemToUpdate.storage,
-        value
+        field === "category" ? value : itemToUpdate.category,
+        field === "storage" ? value : itemToUpdate.storage,
+        field === "purchasedDate" ? value : itemToUpdate.purchasedDate
       );
     }
 
     if (field === "consumed") {
       updates[field] = parseInt(value, 10);
       if (updates[field] === 100) {
-        updates.moveTo = "Consumed";
+        updates.status = "Consumed";
       }
     }
 
-    if (field === "moveTo") {
+    if (field === "status") {
       if (value === "Consumed") {
         updates.consumed = 100;
       } else if (value === "Waste" || value === "Donate") {
@@ -149,34 +145,7 @@ const FoodItemTable = () => {
       }
     }
 
-    const updatedItems = foodItems.map((item) =>
-      item._id === id ? { ...item, ...updates } : item
-    );
-    setFoodItems(updatedItems);
-
-    Object.keys(updates).forEach((updateField) => {
-      saveChanges(id, updateField, updates[updateField]);
-    });
-  };
-
-  const saveChanges = async (id, field, value) => {
-    try {
-      const response = await fetch("/api/fooditems/update/" + id, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`,
-        },
-        body: JSON.stringify({ [field]: value }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save changes");
-      }
-      const data = await response.json();
-      console.log("Save successful:", data);
-    } catch (error) {
-      console.error("Error saving changes:", error);
-    }
+    handleInputChange(id, updates);
   };
 
   const handleDelete = (itemToDelete) => {
@@ -185,25 +154,8 @@ const FoodItemTable = () => {
   };
 
   const confirmDelete = async () => {
-    try {
-      const response = await fetch("/api/fooditems/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${loggedInUser.token}`,
-        },
-        body: JSON.stringify({ _id: itemToDelete._id }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete item");
-      }
-      setFoodItems((prevItems) =>
-        prevItems.filter((item) => item._id !== itemToDelete._id)
-      );
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error("Error deleting item:", error);
-    }
+    await handleDeleteItem(itemToDelete._id);
+    setShowDeleteModal(false);
   };
 
   const getImageSrc = (image) => {
@@ -237,11 +189,7 @@ const FoodItemTable = () => {
   const handleFileChange = async (id, file) => {
     try {
       const base64Data = await processImage(file);
-      const updatedItems = foodItems.map((item) =>
-        item._id === id ? { ...item, image: base64Data } : item
-      );
-      setFoodItems(updatedItems);
-      saveChanges(id, "image", base64Data);
+      handleInputChange(id, { image: base64Data });
     } catch (error) {
       console.error("Error processing image:", error);
     }
@@ -292,8 +240,8 @@ const FoodItemTable = () => {
             <th onClick={() => requestSort("consumed")}>
               Consumed (%) {getSortIndicator("consumed")}
             </th>
-            <th onClick={() => requestSort("moveTo")}>
-              Move {getSortIndicator("moveTo")}
+            <th onClick={() => requestSort("status")}>
+              Move {getSortIndicator("status")}
             </th>
             <th>Actions</th>
           </tr>
@@ -313,7 +261,7 @@ const FoodItemTable = () => {
                 <InlineEditControl
                   value={item.name || ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "name", value)
+                    handleLocalInputChange(item._id, "name", value)
                   }
                 />
               </td>
@@ -323,7 +271,7 @@ const FoodItemTable = () => {
                   options={categories}
                   value={item.category || ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "category", value)
+                    handleLocalInputChange(item._id, "category", value)
                   }
                 />
               </td>
@@ -332,7 +280,7 @@ const FoodItemTable = () => {
                   type="number"
                   value={item.quantity ? item.quantity.toString() : ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "quantity", value)
+                    handleLocalInputChange(item._id, "quantity", value)
                   }
                 />
               </td>
@@ -342,7 +290,11 @@ const FoodItemTable = () => {
                   options={quantityMeasurementsByCategory[item.category] || []}
                   value={item.quantityMeasurement || ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "quantityMeasurement", value)
+                    handleLocalInputChange(
+                      item._id,
+                      "quantityMeasurement",
+                      value
+                    )
                   }
                 />
               </td>
@@ -352,7 +304,7 @@ const FoodItemTable = () => {
                   options={storages}
                   value={item.storage || ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "storage", value)
+                    handleLocalInputChange(item._id, "storage", value)
                   }
                 />
               </td>
@@ -361,7 +313,7 @@ const FoodItemTable = () => {
                   type="number"
                   value={item.cost ? item.cost.toString() : ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "cost", value)
+                    handleLocalInputChange(item._id, "cost", value)
                   }
                 />
               </td>
@@ -369,7 +321,7 @@ const FoodItemTable = () => {
                 <InlineEditControl
                   value={item.source || ""}
                   onChange={(value) =>
-                    handleInputChange(item._id, "source", value)
+                    handleLocalInputChange(item._id, "source", value)
                   }
                 />
               </td>
@@ -382,7 +334,7 @@ const FoodItemTable = () => {
                       : ""
                   }
                   onChange={(value) =>
-                    handleInputChange(item._id, "expirationDate", value)
+                    handleLocalInputChange(item._id, "expirationDate", value)
                   }
                 />
               </td>
@@ -395,7 +347,7 @@ const FoodItemTable = () => {
                       : ""
                   }
                   onChange={(value) =>
-                    handleInputChange(item._id, "purchasedDate", value)
+                    handleLocalInputChange(item._id, "purchasedDate", value)
                   }
                 />
               </td>
@@ -404,22 +356,26 @@ const FoodItemTable = () => {
                   type="number"
                   value={item.consumed ? item.consumed.toString() : "0"}
                   onChange={(value) =>
-                    handleInputChange(item._id, "consumed", value)
+                    handleLocalInputChange(item._id, "consumed", value)
                   }
                 />
               </td>
               <td>
                 <InlineEditControl
                   type="select"
-                  options={moveToOptions}
-                  value={item.moveTo || "Consume"}
+                  options={statusOptions}
+                  value={item.status || "Consume"}
                   onChange={(value) =>
-                    handleInputChange(item._id, "moveTo", value)
+                    handleLocalInputChange(item._id, "status", value)
                   }
                 />
               </td>
               <td>
-                <Button variant="danger" onClick={() => handleDelete(item)}>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDelete(item)}
+                  disabled={isUpdating}
+                >
                   Delete
                 </Button>
               </td>

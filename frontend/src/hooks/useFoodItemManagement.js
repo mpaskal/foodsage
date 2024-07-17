@@ -17,7 +17,17 @@ export const useFoodItemManagement = (pageType) => {
   const fetchItems = useCallback(async () => {
     try {
       const response = await api.get("/food/items");
-      const items = response.data.map((item) => ({
+
+      // Check if response.data is an array or if it's nested within a 'data' property
+      const itemsArray = Array.isArray(response.data)
+        ? response.data
+        : response.data.data;
+
+      if (!Array.isArray(itemsArray)) {
+        throw new Error("Invalid data structure received from the server");
+      }
+
+      const items = itemsArray.map((item) => ({
         ...item,
         expirationDate: calculateExpirationDate(
           item.category,
@@ -32,15 +42,15 @@ export const useFoodItemManagement = (pageType) => {
         switch (pageType) {
           case "food":
             return (
-              item.moveTo !== "Waste" &&
-              item.moveTo !== "Donate" &&
+              item.status !== "Waste" &&
+              item.status !== "Donate" &&
               (daysSinceExpiration <= 5 || item.consumed < 100)
             );
           case "waste":
-            return item.moveTo === "Waste" && daysSinceExpiration <= 30;
+            return item.status === "Waste" && daysSinceExpiration <= 30;
           case "donation":
             return (
-              item.moveTo === "Donate" &&
+              item.status === "Donate" &&
               (new Date() - new Date(item.lastStateChangeDate)) /
                 (1000 * 60 * 60 * 24) <=
                 30
@@ -83,11 +93,11 @@ export const useFoodItemManagement = (pageType) => {
         if (field === "consumed") {
           updates[field] = parseInt(value, 10);
           if (updates[field] === 100) {
-            updates.moveTo = "Consumed";
+            updates.status = "Consumed";
           }
         }
 
-        if (field === "moveTo") {
+        if (field === "status") {
           updates.lastStateChangeDate = new Date().toISOString();
           if (value === "Consumed") {
             updates.consumed = 100;

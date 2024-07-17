@@ -95,19 +95,19 @@ const DonationItemsPage = () => {
     }
   };
 
-  const handleMoveItem = async (itemId, newMoveTo) => {
+  const handleMoveItem = async (itemId, newstatus) => {
     try {
       setIsUpdating(true);
       const response = await api.post(`/donationItems/${itemId}/move`, {
-        moveTo: newMoveTo,
+        status: newstatus,
       });
       if (response.status === 200) {
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === itemId ? { ...item, moveTo: newMoveTo } : item
+            item._id === itemId ? { ...item, status: newstatus } : item
           )
         );
-        toast.success(`Item moved to ${newMoveTo} successfully`);
+        toast.success(`Item moved to ${newstatus} successfully`);
       } else {
         throw new Error("Failed to move the item");
       }
@@ -120,10 +120,10 @@ const DonationItemsPage = () => {
     }
   };
 
-  const handleMoveToConsume = async (itemId) => {
+  const handlestatusConsume = async (itemId) => {
     try {
       const response = await api.post(`/foodItems/${itemId}`, {
-        moveTo: "Consume",
+        status: "Consume",
         donationDate: null,
       });
       if (response.status === 200) {
@@ -137,10 +137,10 @@ const DonationItemsPage = () => {
     }
   };
 
-  const handleMoveToWaste = async (itemId) => {
+  const handlestatusWaste = async (itemId) => {
     try {
       const response = await api.post(`/foodItems/${itemId}`, {
-        moveTo: "Waste",
+        status: "Waste",
         donationDate: null,
         wasteDate: new Date().toISOString(),
       });

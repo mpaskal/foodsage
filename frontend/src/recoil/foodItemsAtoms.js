@@ -34,14 +34,14 @@ export const foodItemsWithExpirationState = selector({
         const isExpired = expirationDate < currentDate;
         const isConsumed = item.consumed === 100;
         const isWasteOrDonation =
-          item.moveTo === "Waste" || item.moveTo === "Donate";
+          item.status === "Waste" || item.status === "Donate";
 
         // Create a new object instead of modifying the existing one
         let updatedItem = { ...item };
 
         // If expired for more than 5 days and not consumed/moved, mark as waste
         if (expirationDate < fiveDaysAgo && !isConsumed && !isWasteOrDonation) {
-          updatedItem.moveTo = "Waste";
+          updatedItem.status = "Waste";
         }
 
         return {
@@ -76,7 +76,7 @@ export const wasteItemsState = selector({
       }))
       .filter(
         (item) =>
-          item.moveTo === "Waste" &&
+          item.status === "Waste" &&
           (item.wasteDate
             ? new Date(item.wasteDate) > thirtyDaysAgo
             : new Date(item.expirationDate) > thirtyDaysAgo)
@@ -105,7 +105,7 @@ export const donationItemsState = selector({
       }))
       .filter(
         (item) =>
-          item.moveTo === "Donate" &&
+          item.status === "Donate" &&
           (item.donationDate
             ? new Date(item.donationDate) > thirtyDaysAgo
             : true)
@@ -116,17 +116,17 @@ export const donationItemsState = selector({
 export const moveItemState = selector({
   key: "moveItemState",
   get: ({ get }) => get(foodItemsState),
-  set: ({ set, get }, { itemId, newMoveTo }) => {
+  set: ({ set, get }, { itemId, newstatus }) => {
     set(foodItemsState, (prevItems) =>
       prevItems.map((item) =>
         item._id === itemId
           ? {
               ...item,
-              moveTo: newMoveTo,
-              ...(newMoveTo === "Waste" && {
+              status: newstatus,
+              ...(newstatus === "Waste" && {
                 wasteDate: new Date().toISOString(),
               }),
-              ...(newMoveTo === "Donate" && {
+              ...(newstatus === "Donate" && {
                 donationDate: new Date().toISOString(),
               }),
             }

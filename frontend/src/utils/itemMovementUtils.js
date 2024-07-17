@@ -27,15 +27,15 @@ export const useFoodItemManagement = () => {
         if (field === "consumed") {
           const numericValue = parseInt(value, 10);
           updates.consumed = numericValue;
-          updates.moveTo = numericValue === 100 ? "Consumed" : "Consume";
+          updates.status = numericValue === 100 ? "Consumed" : "Consume";
         }
 
-        if (field === "moveTo" || updates.moveTo) {
-          const newMoveTo = updates.moveTo || value;
-          updates.moveTo = newMoveTo;
-          if (newMoveTo === "Waste") {
+        if (field === "status" || updates.status) {
+          const newstatus = updates.status || value;
+          updates.status = newstatus;
+          if (newstatus === "Waste") {
             updates.wasteDate = new Date().toISOString();
-          } else if (newMoveTo === "Donate") {
+          } else if (newstatus === "Donate") {
             updates.donationDate = new Date().toISOString();
           }
         }
@@ -49,8 +49,8 @@ export const useFoodItemManagement = () => {
             )
           );
 
-          if (updates.moveTo) {
-            toast.success(`Item moved to ${updates.moveTo}`);
+          if (updates.status) {
+            toast.success(`Item moved to ${updates.status}`);
           } else {
             toast.success("Item updated successfully");
           }
