@@ -3,7 +3,7 @@ import {
   useGenerateInsights,
   useCalculateWasteCost,
   usePredictFutureWaste,
-} from "../../actions/foodItemActions";
+} from "../../hooks/foodItemActions";
 
 const FoodInsightsPage = () => {
   const generateInsights = useGenerateInsights();

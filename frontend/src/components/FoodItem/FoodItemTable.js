@@ -41,7 +41,7 @@ const quantityMeasurementsByCategory = {
 const FoodItemTable = ({
   foodItems,
   handleInputChange,
-  handleDeleteItem,
+  handleDelete,
   isUpdating,
 }) => {
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -148,14 +148,17 @@ const FoodItemTable = ({
     handleInputChange(id, updates);
   };
 
-  const handleDelete = (itemToDelete) => {
-    setItemToDelete(itemToDelete);
-    setShowDeleteModal(true);
+  const confirmDelete = async () => {
+    if (itemToDelete) {
+      await handleDelete(itemToDelete._id);
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
   };
 
-  const confirmDelete = async () => {
-    await handleDeleteItem(itemToDelete._id);
-    setShowDeleteModal(false);
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
   };
 
   const getImageSrc = (image) => {
@@ -373,7 +376,7 @@ const FoodItemTable = ({
               <td>
                 <Button
                   variant="danger"
-                  onClick={() => handleDelete(item)}
+                  onClick={() => handleDeleteClick(item)}
                   disabled={isUpdating}
                 >
                   Delete
@@ -406,7 +409,10 @@ const FoodItemTable = ({
       </Pagination>
       <DeleteConfirmationModal
         show={showDeleteModal}
-        handleClose={() => setShowDeleteModal(false)}
+        handleClose={() => {
+          setShowDeleteModal(false);
+          setItemToDelete(null);
+        }}
         confirmDelete={confirmDelete}
       />
     </>

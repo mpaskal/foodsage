@@ -10,7 +10,7 @@ import {
 
 const mockUpdateUser = jest.fn();
 const mockAddUser = jest.fn();
-jest.mock("../../actions/userActions", () => ({
+jest.mock("../../hooks/useUserManagement.js", () => ({
   useUpdateUser: () => mockUpdateUser,
   useAddUser: () => mockAddUser,
 }));

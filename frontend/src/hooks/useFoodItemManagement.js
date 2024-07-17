@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useRecoilState } from "recoil";
+import { useState, useCallback, useEffect } from "react";
+import { useRecoilState, useSetRecoilState } from "recoil";
 import { foodItemsState } from "../recoil/foodItemsAtoms";
 import {
   calculateExpirationDate,
@@ -11,6 +11,7 @@ import api from "../utils/api";
 export const useFoodItemManagement = (pageType) => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
   const [error, setError] = useState(null);
+  const setRecoilFoodItems = useSetRecoilState(foodItemsState);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -71,35 +72,20 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        // Ensure the date fields are formatted correctly and not null
+        // Ensure the date fields are formatted correctly
         if (updates.purchasedDate) {
-          updates.purchasedDate = formatDateForDisplay(
-            new Date(updates.purchasedDate)
-          );
+          updates.purchasedDate = new Date(updates.purchasedDate);
         }
         if (updates.expirationDate) {
-          updates.expirationDate = formatDateForDisplay(
-            new Date(updates.expirationDate)
-          );
+          updates.expirationDate = new Date(updates.expirationDate);
         }
 
-        // If dates are not provided, don't include them in the update
-        const updatesToSend = Object.keys(updates).reduce((acc, key) => {
-          if (updates[key] !== null && updates[key] !== undefined) {
-            acc[key] = updates[key];
-          }
-          return acc;
-        }, {});
-
-        const response = await api.post(
-          `/food/items/update/${id}`,
-          updatesToSend
-        );
+        const response = await api.post(`/food/items/update/${id}`, updates);
         console.log("Update Response:", response);
 
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === id ? { ...item, ...response.data.data } : item
+            item._id === id ? { ...item, ...updates } : item
           )
         );
       } catch (error) {
@@ -113,17 +99,56 @@ export const useFoodItemManagement = (pageType) => {
   const handleDeleteItem = useCallback(
     async (id) => {
       try {
-        await api.post(`/food/items/delete`, { id });
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== id)
-        );
+        console.log("Attempting to delete item with ID:", id);
+        const response = await api.post("/food/items/delete", { _id: id });
+        console.log("Delete response:", response);
+
+        if (response.status === 200) {
+          setFoodItems((prevItems) =>
+            prevItems.filter((item) => item._id !== id)
+          );
+          console.log("Item deleted successfully, updating state");
+          await fetchItems();
+          return { success: true, message: "Food item deleted successfully" };
+        } else {
+          console.log("Unexpected response status:", response.status);
+          throw new Error(
+            response.data.message || "Failed to delete the food item"
+          );
+        }
       } catch (error) {
-        setError("Failed to delete item");
         console.error("Error deleting item:", error);
+        setError("Failed to delete the food item: " + error.message);
+        return { success: false, error: error.message };
       }
     },
-    [setFoodItems]
+    [setFoodItems, setError, fetchItems]
   );
+
+  useEffect(() => {
+    const fetchInitialItems = async () => {
+      try {
+        const response = await api.get("/food/items");
+        console.log("Raw API response for food items state:", response.data);
+        setRecoilFoodItems(
+          response.data.map((item) => ({
+            ...item,
+            expirationDate: new Date(
+              calculateExpirationDate(
+                item.category,
+                item.storage,
+                item.purchasedDate
+              )
+            ),
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch items:", error);
+      }
+    };
+
+    fetchInitialItems();
+  }, [setRecoilFoodItems]);
 
   return {
     foodItems,

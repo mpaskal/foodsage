@@ -12,9 +12,7 @@ import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import api from "../../utils/api";
-import { debounce } from "lodash";
-import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
-import { format } from "date-fns"; // Add this line
+import { format } from "date-fns";
 
 const FoodItemsPage = () => {
   const setFoodItems = useSetRecoilState(foodItemsState);
@@ -28,7 +26,8 @@ const FoodItemsPage = () => {
 
   useEffect(() => {
     console.log("Fetching items...");
-    fetchItems();
+    setIsLoading(true);
+    fetchItems().finally(() => setIsLoading(false));
   }, [fetchItems]);
 
   const handleSubmit = useCallback(
@@ -40,7 +39,6 @@ const FoodItemsPage = () => {
           if (key === "image" && newItem[key] instanceof File) {
             formData.append(key, newItem[key], newItem[key].name);
           } else if (key === "purchasedDate" || key === "expirationDate") {
-            // Format dates to 'yyyy-MM-dd'
             const formattedDate = format(new Date(newItem[key]), "yyyy-MM-dd");
             formData.append(key, formattedDate);
           } else {
@@ -71,6 +69,26 @@ const FoodItemsPage = () => {
       }
     },
     [setFoodItems, setCurrentItem, fetchItems, setError]
+  );
+
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        setIsUpdating(true);
+        const result = await handleDeleteItem(id);
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast.error("Failed to delete the food item");
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [handleDeleteItem]
   );
 
   const getCurrentDateFormatted = useCallback(() => {
@@ -110,7 +128,7 @@ const FoodItemsPage = () => {
             <p>{error}</p>
           </Alert>
         )}
-        {!foodItemsWithExpiration ? (
+        {isLoading ? (
           <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
           </Spinner>
@@ -118,11 +136,7 @@ const FoodItemsPage = () => {
           <FoodItemTable
             foodItems={foodItemsWithExpiration}
             handleInputChange={handleInputChange}
-            handleEdit={(item) => {
-              setCurrentItem(item);
-              setShowModal(true);
-            }}
-            handleDelete={handleDeleteItem}
+            handleDelete={handleDelete} // Make sure this matches the function name in FoodItemsPage
             isUpdating={isUpdating}
           />
         ) : (
@@ -137,7 +151,7 @@ const FoodItemsPage = () => {
               setCurrentItem(null);
             }}
             handleSubmit={handleSubmit}
-            setError={setError} // Add this line
+            setError={setError}
           />
         )}
       </div>

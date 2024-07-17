@@ -122,17 +122,29 @@ exports.updateFoodItem = async (req, res) => {
   }
 };
 
+// In foodItemController.js
+
 exports.deleteFoodItem = async (req, res) => {
+  const { _id } = req.body;
+  const tenantId = req.user.tenantId;
+  console.log("Attempting to delete item:", { _id, tenantId });
+
   try {
-    const { _id } = req.body;
-    const tenantId = req.user.tenantId;
-    const foodItem = await FoodItem.findOneAndDelete({ _id, tenantId });
-    if (!foodItem) {
-      return res.status(404).json({ message: "Food item not found" });
+    const result = await FoodItem.findOneAndDelete({ _id, tenantId });
+    console.log("Delete operation result:", result);
+
+    if (result) {
+      res
+        .status(200)
+        .json({ message: "Food item deleted successfully", data: result });
+    } else {
+      res.status(404).json({ message: "Food item not found" });
     }
-    res.status(204).send();
   } catch (error) {
-    handleError(res, error, "Error deleting food item");
+    console.error("Error deleting food item:", error);
+    res
+      .status(500)
+      .json({ message: "Error deleting food item", error: error.message });
   }
 };
 

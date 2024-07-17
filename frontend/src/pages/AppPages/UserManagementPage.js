@@ -22,7 +22,7 @@ import {
   currentPageState,
   usersState,
 } from "../../recoil/userAtoms";
-import { useFetchUsers, useDeleteUser } from "../../actions/userActions";
+import { useFetchUsers, useDeleteUser } from "../../hooks/useUserManagement";
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =

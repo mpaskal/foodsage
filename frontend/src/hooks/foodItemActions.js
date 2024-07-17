@@ -68,11 +68,22 @@ export const useUpdateFoodItem = () => {
 export const useDeleteFoodItem = () => {
   return useRecoilCallback(({ set }) => async (id) => {
     try {
-      await axios.delete(`/api/food/items/${id}`);
-      set(foodItemsState, (oldItems) =>
-        oldItems.filter((item) => item._id !== id)
-      );
-      return { success: true };
+      console.log("Attempting to delete item with ID:", id);
+      const response = await axios.post(`/api/food/items/delete`, { _id: id });
+      console.log("Delete response:", response);
+
+      if (response.status === 200) {
+        set(foodItemsState, (oldItems) =>
+          oldItems.filter((item) => item._id !== id)
+        );
+        console.log("Item deleted successfully, updating state");
+        return { success: true, message: "Food item deleted successfully" };
+      } else {
+        console.log("Unexpected response status:", response.status);
+        throw new Error(
+          response.data.message || "Failed to delete the food item"
+        );
+      }
     } catch (error) {
       console.error("Error deleting food item", error);
       return { success: false, error: error.message };
