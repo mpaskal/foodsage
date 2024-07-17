@@ -1,49 +1,45 @@
-import React, { useEffect, useState } from "react";
-import {
-  useGenerateInsights,
-  useCalculateWasteCost,
-  usePredictFutureWaste,
-} from "../../hooks/foodItemActions";
+import React from "react";
+import useFoodInsights from "../../hooks/useFoodInsights";
+import { Spinner, Alert } from "react-bootstrap";
 
 const FoodInsightsPage = () => {
-  const generateInsights = useGenerateInsights();
-  const calculateWasteCost = useCalculateWasteCost();
-  const predictFutureWaste = usePredictFutureWaste();
-  const [insights, setInsights] = useState(null);
-  const [wasteCost, setWasteCost] = useState(0);
-  const [predictedWaste, setPredictedWaste] = useState(0);
+  const { insights, loading, error, calculateWasteCost, predictFutureWaste } =
+    useFoodInsights();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
-      const endDate = new Date();
-      const insightData = await generateInsights(startDate, endDate);
-      setInsights(insightData);
+  if (loading) return <Spinner animation="border" />;
+  if (error) return <Alert variant="danger">Error: {error.message}</Alert>;
+  if (!insights) return <Alert variant="info">No insights available.</Alert>;
 
-      const totalWasteCost = await calculateWasteCost(startDate, endDate);
-      setWasteCost(totalWasteCost);
-
-      const predictedWaste = await predictFutureWaste(30); // Predict for next 30 days
-      setPredictedWaste(predictedWaste);
-    };
-
-    fetchData();
-  }, []);
-
-  if (!insights) return <div>Loading...</div>;
+  // Safely access nested properties
+  const consumptionRate = insights?.insights?.consumptionRate;
+  const wasteRate = insights?.insights?.wasteRate;
+  const wasteCost = insights?.wasteCost;
+  const predictedWaste = insights?.predictedWaste;
 
   return (
     <div>
       <h2>Food Management Insights</h2>
-      <p>Consumption Rate: {insights.insights.consumptionRate.toFixed(2)}%</p>
-      <p>Waste Rate: {insights.insights.wasteRate.toFixed(2)}%</p>
-      <p>Total Waste Cost (Last 30 days): ${wasteCost.toFixed(2)}</p>
-      <p>Predicted Waste (Next 30 days): ${predictedWaste.toFixed(2)}</p>
+      <p>
+        Consumption Rate:{" "}
+        {consumptionRate !== undefined ? consumptionRate.toFixed(2) : "N/A"}%
+      </p>
+      <p>
+        Waste Rate: {wasteRate !== undefined ? wasteRate.toFixed(2) : "N/A"}%
+      </p>
+      <p>
+        Total Waste Cost (Last 30 days): $
+        {wasteCost !== undefined ? wasteCost.toFixed(2) : "N/A"}
+      </p>
+      <p>
+        Predicted Waste (Next 30 days): $
+        {predictedWaste !== undefined ? predictedWaste.toFixed(2) : "N/A"}
+      </p>
       <h3>Recommendations:</h3>
       <ul>
-        {insights.recommendations.map((rec, index) => (
-          <li key={index}>{rec}</li>
-        ))}
+        {insights.recommendations &&
+          insights.recommendations.map((rec, index) => (
+            <li key={index}>{rec}</li>
+          ))}
       </ul>
     </div>
   );
