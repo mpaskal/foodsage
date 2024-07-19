@@ -18,6 +18,7 @@ const formatDate = (dateString) => {
 
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
+  console.log("food items in controller req.query", req.query);
   const { page = 1, limit = 10 } = req.query;
   const tenantId = req.user.tenantId;
 
@@ -26,6 +27,7 @@ exports.getFoodItems = async (req, res) => {
       tenantId,
       status: { $in: ["Active", "Inactive"] },
     });
+    console.log("totalItems in controller foodItems", totalItems);
     const foodItems = await FoodItem.find({
       tenantId,
       status: { $in: ["Active", "Inactive"] },
@@ -33,7 +35,7 @@ exports.getFoodItems = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
-
+    //  console.log("food items in controller foodItems", foodItems);
     res.status(200).json({
       data: foodItems,
       totalPages: Math.ceil(totalItems / limit),
@@ -41,6 +43,7 @@ exports.getFoodItems = async (req, res) => {
       totalItems: totalItems,
       limit: Number(limit),
     });
+    console.log("how many pages", Math.ceil(totalItems / limit));
   } catch (error) {
     console.error("Error fetching food items:", error);
     res.status(500).json({ message: "Error fetching food items", error });
@@ -96,8 +99,6 @@ exports.updateFoodItem = async (req, res) => {
       updates.statusChangeDate = new Date();
     }
 
-    console.log("Updates:", updates);
-
     const foodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
       updates,
@@ -127,11 +128,11 @@ exports.updateFoodItem = async (req, res) => {
 exports.deleteFoodItem = async (req, res) => {
   const { _id } = req.body;
   const tenantId = req.user.tenantId;
-  console.log("Attempting to delete item:", { _id, tenantId });
+  // console.log("Attempting to delete item:", { _id, tenantId });
 
   try {
     const result = await FoodItem.findOneAndDelete({ _id, tenantId });
-    console.log("Delete operation result:", result);
+    //  console.log("Delete operation result:", result);
 
     if (result) {
       res

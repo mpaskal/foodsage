@@ -20,14 +20,7 @@ const categories = [
   "Frozen Goods",
   "Other",
 ];
-const statusOptions = [
-  "Active",
-  "Inactive",
-  "Consumed",
-  "Waste",
-  "Donation",
-  "Donated",
-];
+const statusOptions = ["Active", "Inactive", "Consumed", "Waste", "Donation"];
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 const quantityMeasurementsByCategory = {
   Dairy: ["L", "Oz", "Item"],
@@ -140,7 +133,7 @@ const FoodItemTable = ({
     if (field === "status") {
       if (value === "Consumed") {
         updates.consumed = 100;
-      } else if (value === "Waste" || value === "Donate") {
+      } else if (value === "Waste" || value === "Donation") {
         updates.donationDate = new Date().toISOString();
       }
     }
@@ -367,7 +360,7 @@ const FoodItemTable = ({
                 <InlineEditControl
                   type="select"
                   options={statusOptions}
-                  value={item.status || "Consume"}
+                  value={item.status || "Active"}
                   onChange={(value) =>
                     handleLocalInputChange(item._id, "status", value)
                   }

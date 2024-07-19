@@ -10,12 +10,12 @@ exports.getDonationItems = async (req, res) => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const totalItems = await DonationItem.countDocuments({
       tenantId,
-      status: "Donate",
+      status: "Donation",
       donationDate: { $gt: thirtyDaysAgo },
     });
     const donationItems = await DonationItem.find({
       tenantId,
-      status: "Donate",
+      status: "Donation",
       donationDate: { $gt: thirtyDaysAgo },
     })
       .skip((page - 1) * limit)

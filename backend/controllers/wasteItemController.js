@@ -8,19 +8,26 @@ exports.getWasteItems = async (req, res) => {
 
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const query = {
+      tenantId,
+      status: "Waste",
+      statusChangeDate: { $gt: thirtyDaysAgo },
+    };
+
     const totalItems = await FoodItem.countDocuments({
       tenantId,
       status: "Waste",
-      wasteDate: { $gt: thirtyDaysAgo },
     });
+
     const wasteItems = await FoodItem.find({
       tenantId,
       status: "Waste",
-      wasteDate: { $gt: thirtyDaysAgo },
     })
       .skip((page - 1) * limit)
-      .limit(limit)
+      .limit(Number(limit))
       .exec();
+
+    console.log("Fetched waste items:", wasteItems);
 
     res.status(200).json({
       data: wasteItems,
@@ -31,7 +38,9 @@ exports.getWasteItems = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching waste items:", error);
-    res.status(500).json({ message: "Error fetching waste items", error });
+    res
+      .status(500)
+      .json({ message: "Error fetching waste items", error: error.message });
   }
 };
 
@@ -43,6 +52,11 @@ exports.updateWasteItem = async (req, res) => {
       image: req.body.image || req.body.existingImage,
     };
 
+    // If status is changed from Waste, handle it accordingly
+    if (updates.status && updates.status !== "Waste") {
+      return exports.changeWasteItemStatus(req, res);
+    }
+
     const wasteItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId, status: "Waste" },
       updates,
@@ -53,11 +67,14 @@ exports.updateWasteItem = async (req, res) => {
       return res.status(404).json({ message: "Waste item not found" });
     }
 
+    console.log("Updated waste item:", wasteItem);
+
     res.status(200).json({
       message: "Waste item updated successfully",
       data: wasteItem,
     });
   } catch (error) {
+    console.error("Error updating waste item:", error);
     handleError(res, error, "Error updating waste item");
   }
 };
@@ -74,18 +91,34 @@ exports.deleteWasteItem = async (req, res) => {
     if (!wasteItem) {
       return res.status(404).json({ message: "Waste item not found" });
     }
-    res.status(204).send();
+    console.log("Deleted waste item:", wasteItem);
+    res
+      .status(200)
+      .json({ message: "Waste item deleted successfully", data: wasteItem });
   } catch (error) {
+    console.error("Error deleting waste item:", error);
     handleError(res, error, "Error deleting waste item");
   }
 };
 
-exports.statusConsume = async (req, res) => {
+exports.changeWasteItemStatus = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
+    const { status } = req.body;
+    const updates = {
+      status,
+      statusChangeDate: new Date(),
+    };
+
+    if (status === "Consumed") {
+      updates.consumed = 100;
+    } else if (status === "Donation") {
+      updates.donationDate = new Date();
+    }
+
     const wasteItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId, status: "Waste" },
-      { status: "Consume", wasteDate: null },
+      updates,
       { new: true, runValidators: true }
     );
 
@@ -93,11 +126,46 @@ exports.statusConsume = async (req, res) => {
       return res.status(404).json({ message: "Waste item not found" });
     }
 
+    console.log("Changed waste item status:", wasteItem);
+
     res.status(200).json({
-      message: "Waste item moved to Consume successfully",
+      message: `Waste item moved to ${status} successfully`,
       data: wasteItem,
     });
   } catch (error) {
-    handleError(res, error, "Error moving waste item to Consume");
+    console.error("Error changing waste item status:", error);
+    handleError(res, error, "Error changing waste item status");
+  }
+};
+
+// Function to mark an item as waste
+exports.markAsWaste = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const { _id } = req.body;
+    const updates = {
+      status: "Waste",
+      statusChangeDate: new Date(),
+    };
+
+    const wasteItem = await FoodItem.findOneAndUpdate(
+      { _id, tenantId },
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!wasteItem) {
+      return res.status(404).json({ message: "Food item not found" });
+    }
+
+    console.log("Marked item as waste:", wasteItem);
+
+    res.status(200).json({
+      message: "Item marked as waste successfully",
+      data: wasteItem,
+    });
+  } catch (error) {
+    console.error("Error marking item as waste:", error);
+    handleError(res, error, "Error marking item as waste");
   }
 };

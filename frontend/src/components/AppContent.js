@@ -36,11 +36,6 @@ const AppContent = () => {
         <Route path="/foodinsights" element={<FoodInsightsPage />} />
         <Route path="/wasteitems" element={<WasteItemsPage />} />
         <Route path="/donationitems" element={<DonationItemsPage />} />
-        <Route
-          path="/users"
-          element={<UserManagementPage />}
-          requiredRole="admin"
-        />
         <Route path="/wasteinsights" element={<WasteInsightsPage />} />
       </Route>
     </Routes>

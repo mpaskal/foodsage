@@ -3,7 +3,7 @@ import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
   currentItemState,
-  foodItemsWithExpirationState,
+  wasteItemsSelector,
 } from "../../recoil/foodItemsAtoms";
 import {
   formatDateForDisplay,
@@ -32,9 +32,17 @@ const quantityMeasurementsByCategory = {
   Cellar: ["L", "Item", "Box"],
 };
 
+const reasons = [
+  "Expired",
+  "Spoiled",
+  "Overproduction",
+  "Quality Issues",
+  "Other",
+];
+
 const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const wasteItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const wasteItems = useRecoilValue(wasteItemsSelector);
   const [error, setError] = useState(null);
 
   const getCurrentDate = () => new Date().toISOString().slice(0, 10);
@@ -49,58 +57,56 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
     source: "",
     purchasedDate: getCurrentDate(),
     expirationDate: "",
+    dateRecorded: getCurrentDate(),
+    reason: "Expired",
+    wasteCost: "",
+    percentWasted: "",
     image: null,
   });
 
   useEffect(() => {
     if (currentItem) {
-      const itemWithExpiration = wasteItemsWithExpiration.find(
-        (item) => item._id === currentItem._id
-      );
-      if (itemWithExpiration) {
+      const wasteItem = wasteItems.find((item) => item._id === currentItem._id);
+      if (wasteItem) {
         setForm({
-          ...itemWithExpiration,
+          ...wasteItem,
           purchasedDate:
-            formatDateForDisplay(itemWithExpiration.purchasedDate) ||
-            getCurrentDate(),
-          expirationDate:
-            formatDateForDisplay(itemWithExpiration.expirationDate) || "",
+            formatDateForDisplay(wasteItem.purchasedDate) || getCurrentDate(),
+          expirationDate: formatDateForDisplay(wasteItem.expirationDate) || "",
+          dateRecorded:
+            formatDateForDisplay(wasteItem.dateRecorded) || getCurrentDate(),
         });
       }
     } else {
-      const category = "Dairy";
-      const storage = "Fridge";
-      const purchasedDate = getCurrentDate();
-      const expirationDate = calculateExpirationDate(
-        category,
-        storage,
-        purchasedDate
-      );
-      setForm({
-        name: "",
-        category: category,
-        quantity: "",
-        quantityMeasurement: "L",
-        storage: storage,
-        cost: "",
-        source: "",
-        purchasedDate: purchasedDate,
-        expirationDate: formatDateForDisplay(expirationDate),
-        image: null,
-      });
+      resetForm();
     }
-  }, [currentItem, wasteItemsWithExpiration]);
+  }, [currentItem, wasteItems]);
 
-  const calculateAndSetExpirationDate = (category, storage, purchasedDate) => {
+  const resetForm = () => {
+    const category = "Dairy";
+    const storage = "Fridge";
+    const purchasedDate = getCurrentDate();
     const expirationDate = calculateExpirationDate(
       category,
       storage,
       purchasedDate
     );
-    setForm((prevForm) => ({
-      ...prevForm,
+    setForm({
+      name: "",
+      category: category,
+      quantity: "",
+      quantityMeasurement: "L",
+      storage: storage,
+      cost: "",
+      source: "",
+      purchasedDate: purchasedDate,
       expirationDate: formatDateForDisplay(expirationDate),
-    }));
+      dateRecorded: getCurrentDate(),
+      reason: "Expired",
+      wasteCost: "",
+      percentWasted: "",
+      image: null,
+    });
   };
 
   const handleChange = (e) => {
@@ -113,11 +119,12 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
         name === "storage" ||
         name === "purchasedDate"
       ) {
-        calculateAndSetExpirationDate(
-          name === "category" ? value : updatedForm.category,
-          name === "storage" ? value : updatedForm.storage,
-          name === "purchasedDate" ? value : updatedForm.purchasedDate
+        const expirationDate = calculateExpirationDate(
+          updatedForm.category,
+          updatedForm.storage,
+          updatedForm.purchasedDate
         );
+        updatedForm.expirationDate = formatDateForDisplay(expirationDate);
       }
 
       if (name === "category") {
@@ -155,6 +162,9 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
       "cost",
       "purchasedDate",
       "quantityMeasurement",
+      "reason",
+      "wasteCost",
+      "percentWasted",
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
@@ -166,13 +176,13 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
     }
 
     try {
-      await handleSubmit(form);
+      await handleSubmit(currentItem._id, form);
       handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
       setError(
         error.response?.data?.message ||
-          "An error occurred while submitting the form."
+          "An error occurred while updating the waste item."
       );
     }
   };
@@ -186,9 +196,7 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>
-          {currentItem ? "Edit Waste Item" : "Add Waste Item"}
-        </Modal.Title>
+        <Modal.Title>Edit Waste Item</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
@@ -298,31 +306,96 @@ const WasteItemModal = ({ show, handleClose, handleSubmit }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group controlId="purchasedDate">
-            <Form.Label>Purchased Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="purchasedDate"
-              value={form.purchasedDate}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+          <Row>
+            <Col md={6}>
+              <Form.Group controlId="purchasedDate">
+                <Form.Label>Purchased Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="purchasedDate"
+                  value={form.purchasedDate}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group controlId="expirationDate">
+                <Form.Label>Expiration Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="expirationDate"
+                  value={form.expirationDate}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={6}>
+              <Form.Group controlId="reason">
+                <Form.Label>Reason</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="reason"
+                  value={form.reason}
+                  onChange={handleChange}
+                  required
+                >
+                  {reasons.map((reason, index) => (
+                    <option key={index} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group controlId="dateRecorded">
+                <Form.Label>Date Recorded</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="dateRecorded"
+                  value={form.dateRecorded}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={6}>
+              <Form.Group controlId="wasteCost">
+                <Form.Label>Waste Cost</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="wasteCost"
+                  value={form.wasteCost}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group controlId="percentWasted">
+                <Form.Label>Percent Wasted</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="percentWasted"
+                  value={form.percentWasted}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
           <Form.Group controlId="image">
             <Form.Label>Image</Form.Label>
             <Form.Control
               type="file"
               name="image"
               onChange={handleFileChange}
-            />
-          </Form.Group>
-          <Form.Group controlId="expirationDate">
-            <Form.Label>Expiration Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="expirationDate"
-              value={form.expirationDate}
-              onChange={handleChange}
             />
           </Form.Group>
         </Modal.Body>

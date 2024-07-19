@@ -1,11 +1,30 @@
-// src/components/WasteItem/WasteItemTable.jsx
-
 import React, { useState, useMemo } from "react";
 import { Table, Button, FormControl, Pagination } from "react-bootstrap";
 import { useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
-import { formatDateForDisplay } from "../../utils/dateUtils";
+import { processImage } from "../../utils/imageUtils";
+import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
+
+const categories = [
+  "Dairy",
+  "Fresh",
+  "Grains and Bread",
+  "Packaged and Snack Foods",
+  "Frozen Goods",
+  "Other",
+];
+const statusOptions = ["Active", "Inactive", "Waste", "Consumed", "Donation"];
+const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
+const quantityMeasurementsByCategory = {
+  Dairy: ["L", "Oz", "Item"],
+  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
+  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
+  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
+  "Frozen Goods": ["Kg", "Lb", "Item"],
+  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
+};
 
 const WasteItemTable = ({
   wasteItems,
@@ -13,6 +32,10 @@ const WasteItemTable = ({
   handleDelete,
   isUpdating,
 }) => {
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const loggedInUser = useRecoilValue(loggedInUserState);
+
   const [sortConfig, setSortConfig] = useState({
     key: "dateRecorded",
     direction: "descending",
@@ -67,6 +90,61 @@ const WasteItemTable = ({
     return null;
   };
 
+  const handleLocalInputChange = (id, field, value) => {
+    let updates = { [field]: value };
+
+    if (field === "dateRecorded" || field === "expirationDate") {
+      updates[field] = processDateInput(value);
+    }
+
+    if (field === "status" && value !== "Waste") {
+      // Handle status change from Waste to another status
+      // You might want to remove the item from the waste list or update its status
+      handleDelete(id);
+      return;
+    }
+
+    handleInputChange(id, updates);
+  };
+
+  const confirmDelete = async () => {
+    if (itemToDelete) {
+      await handleDelete(itemToDelete._id);
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const getImageSrc = (image) => {
+    if (image && typeof image === "string" && image.length > 0) {
+      if (image.startsWith("data:image")) {
+        return image;
+      }
+      if (image.startsWith("/9j/")) {
+        return `data:image/jpeg;base64,${image}`;
+      } else if (image.startsWith("iVBORw0KGgo")) {
+        return `data:image/png;base64,${image}`;
+      } else {
+        return `data:image/jpeg;base64,${image}`;
+      }
+    }
+    return `Bad image`;
+  };
+
+  const handleFileChange = async (id, file) => {
+    try {
+      const base64Data = await processImage(file);
+      handleInputChange(id, { image: base64Data });
+    } catch (error) {
+      console.error("Error processing image:", error);
+    }
+  };
+
   return (
     <>
       <FormControl
@@ -79,26 +157,35 @@ const WasteItemTable = ({
       <Table striped bordered hover>
         <thead>
           <tr>
+            <th onClick={() => requestSort("image")}>
+              Image {getSortIndicator("image")}
+            </th>
+            <th onClick={() => requestSort("name")}>
+              Name {getSortIndicator("name")}
+            </th>
             <th onClick={() => requestSort("category")}>
               Category {getSortIndicator("category")}
             </th>
-            <th onClick={() => requestSort("reason")}>
-              Reason {getSortIndicator("reason")}
+            <th onClick={() => requestSort("quantity")}>
+              Qty {getSortIndicator("quantity")}
             </th>
-            <th onClick={() => requestSort("dateRecorded")}>
-              Date Recorded {getSortIndicator("dateRecorded")}
-            </th>
-            <th onClick={() => requestSort("expirationDate")}>
-              Expiration Date {getSortIndicator("expirationDate")}
+            <th onClick={() => requestSort("quantityMeasurement")}>
+              Meas {getSortIndicator("quantityMeasurement")}
             </th>
             <th onClick={() => requestSort("wasteCost")}>
               Waste Cost {getSortIndicator("wasteCost")}
             </th>
-            <th onClick={() => requestSort("quantity")}>
-              Quantity {getSortIndicator("quantity")}
+            <th onClick={() => requestSort("expirationDate")}>
+              Expiration Date {getSortIndicator("expirationDate")}
+            </th>
+            <th onClick={() => requestSort("dateRecorded")}>
+              Date Recorded {getSortIndicator("dateRecorded")}
             </th>
             <th onClick={() => requestSort("percentWasted")}>
               % Wasted {getSortIndicator("percentWasted")}
+            </th>
+            <th onClick={() => requestSort("status")}>
+              Status {getSortIndicator("status")}
             </th>
             <th>Actions</th>
           </tr>
@@ -106,17 +193,115 @@ const WasteItemTable = ({
         <tbody>
           {paginatedWasteItems.map((item) => (
             <tr key={item._id}>
-              <td>{item.category}</td>
-              <td>{item.reason}</td>
-              <td>{formatDateForDisplay(item.dateRecorded)}</td>
-              <td>{formatDateForDisplay(item.expirationDate)}</td>
-              <td>${item.wasteCost.toFixed(2)}</td>
-              <td>{`${item.quantity} ${item.quantityUnit}`}</td>
-              <td>{`${item.percentWasted}%`}</td>
+              <td>
+                <InlineEditControl
+                  type="file"
+                  value={item.image || ""}
+                  onChange={(file) => handleFileChange(item._id, file)}
+                  getImageSrc={getImageSrc}
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  value={item.name || ""}
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "name", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={categories}
+                  value={item.category || ""}
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "category", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={item.quantity ? item.quantity.toString() : ""}
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "quantity", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={quantityMeasurementsByCategory[item.category] || []}
+                  value={item.quantityMeasurement || ""}
+                  onChange={(value) =>
+                    handleLocalInputChange(
+                      item._id,
+                      "quantityMeasurement",
+                      value
+                    )
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={item.wasteCost ? item.wasteCost.toString() : ""}
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "wasteCost", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="date"
+                  value={
+                    item.expirationDate
+                      ? formatDateForDisplay(item.expirationDate)
+                      : ""
+                  }
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "expirationDate", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="date"
+                  value={
+                    item.dateRecorded
+                      ? formatDateForDisplay(item.dateRecorded)
+                      : ""
+                  }
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "dateRecorded", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="number"
+                  value={
+                    item.percentWasted ? item.percentWasted.toString() : "0"
+                  }
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "percentWasted", value)
+                  }
+                />
+              </td>
+              <td>
+                <InlineEditControl
+                  type="select"
+                  options={statusOptions}
+                  value={item.status || "Waste"}
+                  onChange={(value) =>
+                    handleLocalInputChange(item._id, "status", value)
+                  }
+                />
+              </td>
               <td>
                 <Button
                   variant="danger"
-                  onClick={() => handleDelete(item._id)}
+                  onClick={() => handleDeleteClick(item)}
                   disabled={isUpdating}
                 >
                   Delete
@@ -147,6 +332,14 @@ const WasteItemTable = ({
           disabled={currentPage === totalPages}
         />
       </Pagination>
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        handleClose={() => {
+          setShowDeleteModal(false);
+          setItemToDelete(null);
+        }}
+        confirmDelete={confirmDelete}
+      />
     </>
   );
 };

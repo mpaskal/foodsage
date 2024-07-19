@@ -21,7 +21,7 @@ const categories = [
   "Other",
 ];
 
-const statusOptions = ["Consume", "Consumed", "Waste", "Donate"];
+const statusOptions = ["Active", "Inactive", "Consumed", "Waste", "Donation"];
 
 const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
 
@@ -397,7 +397,7 @@ const DonationItemTable = () => {
                 <InlineEditControl
                   type="select"
                   options={statusOptions}
-                  value={item.status || "Consume"}
+                  value={item.status || "Active"}
                   onChange={(value) =>
                     handleInputChange(item._id, "status", value)
                   }

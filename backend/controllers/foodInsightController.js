@@ -8,27 +8,27 @@ const {
 
 exports.getFoodInsights = async (req, res) => {
   try {
-    console.log("getFoodInsights called with query:", req.query);
+    // console.log("getFoodInsights called with query:", req.query);
     const tenantId = req.user.tenantId;
     const { startDate, endDate } = req.query;
 
-    console.log(
-      `Fetching food items for tenant ${tenantId} from ${startDate} to ${endDate}`
-    );
+    // console.log(
+    //   `Fetching food items for tenant ${tenantId} from ${startDate} to ${endDate}.`
+    // );
     const foodItems = await FoodItem.find({
       tenantId,
       updatedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
     });
-    console.log(`Found ${foodItems.length} food items`);
+    //    console.log(`Found ${foodItems.length} food items`);
 
-    console.log(
-      `Fetching waste records for tenant ${tenantId} from ${startDate} to ${endDate}`
-    );
+    // console.log(
+    //   `Fetching waste records for tenant ${tenantId} from ${startDate} to ${endDate}`
+    // );
     const wasteRecords = await WasteRecord.find({
       tenantId,
       dateRecorded: { $gte: new Date(startDate), $lte: new Date(endDate) },
     });
-    console.log(`Found ${wasteRecords.length} waste records`);
+    // console.log(`Found ${wasteRecords.length} waste records`);
 
     const insights = calculateInsights(
       foodItems,
@@ -38,7 +38,7 @@ exports.getFoodInsights = async (req, res) => {
     );
     const recommendations = generateRecommendations(insights);
 
-    console.log("Sending insights and recommendations");
+    // console.log("Sending insights and recommendations");
     res.status(200).json({ insights, recommendations });
   } catch (error) {
     console.error("Error in getFoodInsights:", error);

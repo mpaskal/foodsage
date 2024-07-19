@@ -3,7 +3,7 @@ import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
   currentItemState,
-  foodItemsWithExpirationState,
+  activeFoodItemsSelector,
 } from "../../recoil/foodItemsAtoms";
 import {
   formatDateForDisplay,
@@ -42,7 +42,7 @@ const statusOptions = [
 
 const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const foodItemsWithExpiration = useRecoilValue(activeFoodItemsSelector);
   const [localError, setLocalError] = useState(null);
 
   const getCurrentDate = () => new Date().toISOString().slice(0, 10);

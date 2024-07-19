@@ -27,7 +27,7 @@ export const useFoodItemManagement = () => {
         if (field === "consumed") {
           const numericValue = parseInt(value, 10);
           updates.consumed = numericValue;
-          updates.status = numericValue === 100 ? "Consumed" : "Consume";
+          updates.status = numericValue === 100 ? "Consumed" : "Active";
         }
 
         if (field === "status" || updates.status) {
@@ -35,7 +35,7 @@ export const useFoodItemManagement = () => {
           updates.status = newstatus;
           if (newstatus === "Waste") {
             updates.wasteDate = new Date().toISOString();
-          } else if (newstatus === "Donate") {
+          } else if (newstatus === "Donation") {
             updates.donationDate = new Date().toISOString();
           }
         }

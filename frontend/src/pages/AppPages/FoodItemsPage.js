@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
 import {
   foodItemsState,
-  foodItemsWithExpirationState,
+  activeFoodItemsSelector,
   currentItemState,
 } from "../../recoil/foodItemsAtoms";
 import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
@@ -16,7 +16,7 @@ import { format } from "date-fns";
 
 const FoodItemsPage = () => {
   const setFoodItems = useSetRecoilState(foodItemsState);
-  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,9 +132,9 @@ const FoodItemsPage = () => {
           <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
           </Spinner>
-        ) : foodItemsWithExpiration.length > 0 ? (
+        ) : activeFoodItems.length > 0 ? (
           <FoodItemTable
-            foodItems={foodItemsWithExpiration}
+            foodItems={activeFoodItems}
             handleInputChange={handleInputChange}
             handleDelete={handleDelete} // Make sure this matches the function name in FoodItemsPage
             isUpdating={isUpdating}

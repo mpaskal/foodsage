@@ -5,7 +5,7 @@ import { useRecoilState, useRecoilValue } from "recoil";
 import {
   foodItemsState,
   currentItemState,
-  donationItemsState,
+  donationItemsSelector,
 } from "../../recoil/foodItemsAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import DonationItemTable from "../../components/DonationItem/DonationItemTable";
@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 
 const DonationItemsPage = () => {
   const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
-  const donationItems = useRecoilValue(donationItemsState);
+  const donationItems = useRecoilValue(donationItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +27,7 @@ const DonationItemsPage = () => {
   const fetchDonationItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get("/foodItems/donate");
+      const response = await api.get("/foodItems/donation");
       if (response.data && Array.isArray(response.data.data)) {
         const currentDate = new Date();
         const thirtyDaysAgo = new Date(
@@ -123,7 +123,7 @@ const DonationItemsPage = () => {
   const handlestatusConsume = async (itemId) => {
     try {
       const response = await api.post(`/foodItems/${itemId}`, {
-        status: "Consume",
+        status: "Active",
         donationDate: null,
       });
       if (response.status === 200) {

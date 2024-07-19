@@ -44,14 +44,14 @@ export const useFoodItemManagement = (pageType) => {
           case "food":
             return (
               item.status !== "Waste" &&
-              item.status !== "Donate" &&
+              item.status !== "Donation" &&
               (daysSinceExpiration <= 5 || item.consumed < 100)
             );
           case "waste":
             return item.status === "Waste" && daysSinceExpiration <= 30;
           case "donation":
             return (
-              item.status === "Donate" &&
+              item.status === "Donation" &&
               (new Date() - new Date(item.lastStateChangeDate)) /
                 (1000 * 60 * 60 * 24) <=
                 30
@@ -99,37 +99,26 @@ export const useFoodItemManagement = (pageType) => {
   const handleDeleteItem = useCallback(
     async (id) => {
       try {
-        console.log("Attempting to delete item with ID:", id);
-        const response = await api.post("/food/items/delete", { _id: id });
-        console.log("Delete response:", response);
-
-        if (response.status === 200) {
-          setFoodItems((prevItems) =>
-            prevItems.filter((item) => item._id !== id)
-          );
-          console.log("Item deleted successfully, updating state");
-          await fetchItems();
-          return { success: true, message: "Food item deleted successfully" };
-        } else {
-          console.log("Unexpected response status:", response.status);
-          throw new Error(
-            response.data.message || "Failed to delete the food item"
-          );
-        }
+        await api.post(`/food/items/delete`, { id });
+        setFoodItems((prevItems) =>
+          prevItems.filter((item) => item._id !== id)
+        );
       } catch (error) {
+        setError("Failed to delete item");
         console.error("Error deleting item:", error);
-        setError("Failed to delete the food item: " + error.message);
-        return { success: false, error: error.message };
       }
     },
-    [setFoodItems, setError, fetchItems]
+    [setFoodItems]
   );
 
   useEffect(() => {
     const fetchInitialItems = async () => {
       try {
         const response = await api.get("/food/items");
-        console.log("Raw API response for food items state:", response.data);
+        console.log(
+          "Raw API response for food items state:",
+          response.data.data
+        );
         setRecoilFoodItems(
           response.data.data.map((item) => ({
             ...item,

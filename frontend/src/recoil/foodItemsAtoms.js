@@ -4,6 +4,7 @@ import { atom, selector } from "recoil";
 import {
   calculateExpirationDate,
   formatDateForDisplay,
+  getDaysSinceExpiration,
 } from "../utils/dateUtils";
 
 export const foodItemsState = atom({
@@ -16,172 +17,128 @@ export const currentItemState = atom({
   default: null,
 });
 
-export const foodItemsWithExpirationState = selector({
-  key: "foodItemsWithExpirationState",
+export const activeFoodItemsSelector = selector({
+  key: "activeFoodItemsSelector",
   get: ({ get }) => {
     const foodItems = get(foodItemsState);
-    const currentDate = new Date();
-    const fiveDaysAgo = new Date(
-      currentDate.getTime() - 5 * 24 * 60 * 60 * 1000
-    );
+    console.log("All food items in activeFoodItemsSelector:", foodItems);
 
-    return foodItems
-      .map((item) => {
-        const calculatedExpirationDate = calculateExpirationDate(
-          item.category,
-          item.storage,
-          item.purchasedDate
-        );
-        const expirationDate = new Date(calculatedExpirationDate);
-        const isExpired = expirationDate < currentDate;
-        const isConsumed = item.consumed === 100;
-        const isWasteOrDonation =
-          item.status === "Waste" || item.status === "Donate";
+    const activeItems = foodItems.filter((item) => {
+      const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
+      return (
+        item.status !== "Waste" &&
+        item.status !== "Donation" &&
+        (daysSinceExpiration <= 5 || item.consumed < 100)
+      );
+    });
 
-        let updatedItem = { ...item };
-
-        if (expirationDate < fiveDaysAgo && !isConsumed && !isWasteOrDonation) {
-          updatedItem.status = "Waste";
-        }
-
-        return {
-          ...updatedItem,
-          expirationDate: formatDateForDisplay(calculatedExpirationDate),
-          isVisible:
-            !isWasteOrDonation && !isConsumed && expirationDate > fiveDaysAgo,
-        };
-      })
-      .filter((item) => item.isVisible);
+    console.log("Filtered active food items:", activeItems);
+    return activeItems;
   },
 });
 
-export const wasteItemsState = selector({
-  key: "wasteItemsState",
+export const wasteItemsSelector = selector({
+  key: "wasteItemsSelector",
   get: ({ get }) => {
     const foodItems = get(foodItemsState);
-    const thirtyDaysAgo = new Date(
-      new Date().getTime() - 30 * 24 * 60 * 60 * 1000
-    );
+    console.log("All food items in wasteItemsSelector:", foodItems);
 
-    return foodItems
-      .map((item) => ({
-        ...item,
-        expirationDate: formatDateForDisplay(
-          calculateExpirationDate(
-            item.category,
-            item.storage,
-            item.purchasedDate
-          )
-        ),
-      }))
-      .filter(
-        (item) =>
-          item.status === "Waste" &&
-          (item.wasteDate
-            ? new Date(item.wasteDate) > thirtyDaysAgo
-            : new Date(item.expirationDate) > thirtyDaysAgo)
-      );
+    const wasteItems = foodItems.filter((item) => {
+      const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
+      return item.status === "Waste" && daysSinceExpiration <= 30;
+    });
+
+    console.log("Filtered waste items:", wasteItems);
+    return wasteItems;
   },
 });
 
-export const donationItemsState = selector({
-  key: "donationItemsState",
+export const donationItemsSelector = selector({
+  key: "donationItemsSelector",
   get: ({ get }) => {
     const foodItems = get(foodItemsState);
-    const thirtyDaysAgo = new Date(
-      new Date().getTime() - 30 * 24 * 60 * 60 * 1000
-    );
+    console.log("All food items in donationItemsSelector:", foodItems);
 
-    return foodItems
-      .map((item) => ({
-        ...item,
-        expirationDate: formatDateForDisplay(
-          calculateExpirationDate(
-            item.category,
-            item.storage,
-            item.purchasedDate
-          )
-        ),
-      }))
-      .filter(
-        (item) =>
-          item.status === "Donate" &&
-          (item.donationDate
-            ? new Date(item.donationDate) > thirtyDaysAgo
-            : true)
+    const donationItems = foodItems.filter((item) => {
+      const daysSinceDonation =
+        (new Date() - new Date(item.lastStateChangeDate)) /
+        (1000 * 60 * 60 * 24);
+      return (
+        (item.status === "Donation" || item.status === "Donated") &&
+        daysSinceDonation <= 30
       );
+    });
+
+    console.log("Filtered donation items:", donationItems);
+    return donationItems;
   },
 });
 
 export const moveItemState = selector({
   key: "moveItemState",
   get: ({ get }) => get(foodItemsState),
-  set: ({ set, get }, { itemId, newstatus }) => {
-    set(foodItemsState, (prevItems) =>
-      prevItems.map((item) =>
+  set: ({ set }, { itemId, newStatus }) => {
+    set(foodItemsState, (prevItems) => {
+      const updatedItems = prevItems.map((item) =>
         item._id === itemId
           ? {
               ...item,
-              status: newstatus,
-              ...(newstatus === "Waste" && {
+              status: newStatus,
+              lastStateChangeDate: new Date().toISOString(),
+              ...(newStatus === "Waste" && {
                 wasteDate: new Date().toISOString(),
               }),
-              ...(newstatus === "Donate" && {
+              ...(newStatus === "Donation" && {
                 donationDate: new Date().toISOString(),
               }),
             }
           : item
-      )
-    );
+      );
+      console.log("Updated items after move:", updatedItems);
+      return updatedItems;
+    });
   },
 });
 
-export const wasteAnalyticsState = selector({
-  key: "wasteAnalyticsState",
+export const foodItemsWithCalculatedDates = selector({
+  key: "foodItemsWithCalculatedDates",
   get: ({ get }) => {
-    const wasteItems = get(wasteItemsState);
-
-    const totalWasteCost = wasteItems.reduce(
-      (sum, item) => sum + (item.cost || 0),
-      0
-    );
-    const wasteByCategory = wasteItems.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-      return acc;
-    }, {});
-    const wasteByReason = wasteItems.reduce((acc, item) => {
-      const reason = item.consumed === 0 ? "Unused" : "Partially Used";
-      acc[reason] = (acc[reason] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      totalWasteItems: wasteItems.length,
-      totalWasteCost,
-      wasteByCategory,
-      wasteByReason,
-    };
+    const foodItems = get(foodItemsState);
+    return foodItems.map((item) => ({
+      ...item,
+      expirationDate: calculateExpirationDate(
+        item.category,
+        item.storage,
+        item.purchasedDate
+      ),
+      formattedExpirationDate: formatDateForDisplay(
+        calculateExpirationDate(item.category, item.storage, item.purchasedDate)
+      ),
+      formattedPurchasedDate: formatDateForDisplay(item.purchasedDate),
+    }));
   },
 });
 
-export const donationAnalyticsState = selector({
-  key: "donationAnalyticsState",
+export const foodItemsStats = selector({
+  key: "foodItemsStats",
   get: ({ get }) => {
-    const donationItems = get(donationItemsState);
-
-    const totalDonationValue = donationItems.reduce(
-      (sum, item) => sum + (item.cost || 0),
-      0
-    );
-    const donationsByCategory = donationItems.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-      return acc;
-    }, {});
+    const foodItems = get(foodItemsState);
+    const totalItems = foodItems.length;
+    const activeItems = foodItems.filter(
+      (item) => item.status !== "Waste" && item.status !== "Donation"
+    ).length;
+    const wasteItems = foodItems.filter(
+      (item) => item.status === "Waste"
+    ).length;
+    const donationItems = foodItems.filter(
+      (item) => item.status === "Donation" || item.status === "Donated"
+    ).length;
 
     return {
-      totalDonationItems: donationItems.length,
-      totalDonationValue,
-      donationsByCategory,
+      totalItems,
+      activeItems,
+      wasteItems,
+      donationItems,
     };
   },
 });
