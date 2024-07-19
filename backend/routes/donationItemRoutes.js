@@ -1,23 +1,23 @@
+// src/routes/donationItemRoutes.js
+
 const express = require("express");
 const router = express.Router();
 const uploadMiddleware = require("../middlewares/uploadMiddleware");
 const userAuth = require("../middlewares/userAuth");
 const donationItemController = require("../controllers/donationItemController");
 
-router.get("/items", userAuth, donationItemController.getDonationItems);
+router.get("/", userAuth, donationItemController.getDonationItems);
 router.post(
-  "/items/update/:id",
+  "/update/:id",
   userAuth,
   uploadMiddleware,
   donationItemController.updateDonationItem
 );
+router.post("/delete", userAuth, donationItemController.deleteDonationItem);
 router.post(
-  "/items/delete",
+  "/markAsDonated/:id",
   userAuth,
-  donationItemController.deleteDonationItem
+  donationItemController.markAsDonated
 );
-
-// To add donation insights later
-// router.get("/insights", userAuth, donationItemController.getDonationInsights);
 
 module.exports = router;

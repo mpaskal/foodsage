@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useMemo, useCallback, Suspense } from "react";
 import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
 import {
   foodItemsState,
@@ -8,32 +8,35 @@ import {
 import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
-import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
+import ErrorBoundary from "../../components/Common/ErrorBoundary";
 import api from "../../utils/api";
 import { format } from "date-fns";
+
+const FoodItemModal = React.lazy(() =>
+  import("../../components/FoodItem/FoodItemModal")
+);
+
+const ERROR_MESSAGES = {
+  FAILED_TO_ADD: "Failed to add the food item",
+  FAILED_TO_DELETE: "Failed to delete the food item",
+};
 
 const FoodItemsPage = () => {
   const setFoodItems = useSetRecoilState(foodItemsState);
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { error, setError, fetchItems, handleInputChange, handleDeleteItem } =
-    useFoodItemManagement("food");
+  const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
+    useFoodItemManagement();
 
   useEffect(() => {
-    console.log("Fetching items...");
-    setIsLoading(true);
-    fetchItems().finally(() => setIsLoading(false));
+    fetchItems();
   }, [fetchItems]);
 
   const handleSubmit = useCallback(
     async (newItem) => {
       try {
-        setIsUpdating(true);
         const formData = new FormData();
         for (const key in newItem) {
           if (key === "image" && newItem[key] instanceof File) {
@@ -52,29 +55,24 @@ const FoodItemsPage = () => {
 
         if (response.status === 201) {
           setFoodItems((prevItems) => [...prevItems, response.data]);
-          setShowModal(false);
           setCurrentItem(null);
           fetchItems();
           toast.success("Food item added successfully");
         } else {
-          throw new Error("Failed to add the food item.");
+          throw new Error(ERROR_MESSAGES.FAILED_TO_ADD);
         }
       } catch (error) {
         console.error("Error adding item:", error);
         const errorMessage = error.response?.data?.message || error.message;
-        setError("Failed to add the food item: " + errorMessage);
-        toast.error("Failed to add the food item: " + errorMessage);
-      } finally {
-        setIsUpdating(false);
+        toast.error(`${ERROR_MESSAGES.FAILED_TO_ADD}: ${errorMessage}`);
       }
     },
-    [setFoodItems, setCurrentItem, fetchItems, setError]
+    [setFoodItems, setCurrentItem, fetchItems]
   );
 
   const handleDelete = useCallback(
     async (id) => {
       try {
-        setIsUpdating(true);
         const result = await handleDeleteItem(id);
         if (result.success) {
           toast.success(result.message);
@@ -83,80 +81,69 @@ const FoodItemsPage = () => {
         }
       } catch (error) {
         console.error("Error deleting item:", error);
-        toast.error("Failed to delete the food item");
-      } finally {
-        setIsUpdating(false);
+        toast.error(ERROR_MESSAGES.FAILED_TO_DELETE);
       }
     },
     [handleDeleteItem]
   );
 
-  const getCurrentDateFormatted = useCallback(() => {
-    const currentDate = new Date();
+  const currentDate = useMemo(() => {
     const options = { year: "numeric", month: "long", day: "numeric" };
-    return currentDate.toLocaleDateString("en-US", options);
+    return new Date().toLocaleDateString("en-US", options);
   }, []);
 
-  const currentDate = useMemo(
-    () => getCurrentDateFormatted(),
-    [getCurrentDateFormatted]
-  );
-
   return (
-    <Layout>
-      <div className="container">
-        <div className="d-flex justify-content-between my-3">
-          <h1 className="title">Food Inventory</h1>
-          <h2>{currentDate}</h2>
-        </div>
-        <div className="d-flex justify-content-end mb-1">
-          <Button
-            variant="success"
-            className="ml-auto"
-            onClick={() => {
-              setCurrentItem(null);
-              setShowModal(true);
-            }}
-          >
-            Add Food Item
-          </Button>
-        </div>
+    <ErrorBoundary>
+      <Layout>
+        <div className="container">
+          <div className="d-flex justify-content-between my-3">
+            <h1 className="title">Food Inventory</h1>
+            <h2>{currentDate}</h2>
+          </div>
+          <div className="d-flex justify-content-end mb-1">
+            <Button
+              variant="success"
+              className="ml-auto"
+              onClick={() => setCurrentItem({})}
+            >
+              Add Food Item
+            </Button>
+          </div>
 
-        {error && (
-          <Alert variant="danger" onClose={() => setError(null)} dismissible>
-            <Alert.Heading>Error</Alert.Heading>
-            <p>{error}</p>
-          </Alert>
-        )}
-        {isLoading ? (
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
-        ) : activeFoodItems.length > 0 ? (
-          <FoodItemTable
-            foodItems={activeFoodItems}
-            handleInputChange={handleInputChange}
-            handleDelete={handleDelete} // Make sure this matches the function name in FoodItemsPage
-            isUpdating={isUpdating}
-          />
-        ) : (
-          <p>No food items found.</p>
-        )}
+          {error && (
+            <Alert variant="danger" dismissible>
+              <Alert.Heading>Error</Alert.Heading>
+              <p>{error}</p>
+            </Alert>
+          )}
+          {isLoading ? (
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          ) : activeFoodItems.length > 0 ? (
+            <FoodItemTable
+              foodItems={activeFoodItems}
+              handleInputChange={handleInputChange}
+              handleDelete={handleDelete}
+              isUpdating={isLoading}
+            />
+          ) : (
+            <p>No food items found.</p>
+          )}
 
-        {showModal && (
-          <FoodItemModal
-            show={showModal}
-            handleClose={() => {
-              setShowModal(false);
-              setCurrentItem(null);
-            }}
-            handleSubmit={handleSubmit}
-            setError={setError}
-          />
-        )}
-      </div>
-    </Layout>
+          {currentItem && (
+            <Suspense fallback={<div>Loading...</div>}>
+              <FoodItemModal
+                show={Boolean(currentItem)}
+                handleClose={() => setCurrentItem(null)}
+                handleSubmit={handleSubmit}
+              />
+            </Suspense>
+          )}
+        </div>
+      </Layout>
+    </ErrorBoundary>
   );
 };
 
-export default FoodItemsPage;
+export default React.memo(FoodItemsPage);

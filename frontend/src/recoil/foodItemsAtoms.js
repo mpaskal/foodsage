@@ -1,10 +1,9 @@
-// src/recoil/foodItemsAtoms.js
-
 import { atom, selector } from "recoil";
 import {
   calculateExpirationDate,
   formatDateForDisplay,
   getDaysSinceExpiration,
+  getDaysSinceStatusChange,
 } from "../utils/dateUtils";
 
 export const foodItemsState = atom({
@@ -26,8 +25,7 @@ export const activeFoodItemsSelector = selector({
     const activeItems = foodItems.filter((item) => {
       const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
       return (
-        item.status !== "Waste" &&
-        item.status !== "Donation" &&
+        item.status === "Active" &&
         (daysSinceExpiration <= 5 || item.consumed < 100)
       );
     });
@@ -44,8 +42,10 @@ export const wasteItemsSelector = selector({
     console.log("All food items in wasteItemsSelector:", foodItems);
 
     const wasteItems = foodItems.filter((item) => {
-      const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
-      return item.status === "Waste" && daysSinceExpiration <= 30;
+      const daysSinceStatusChange = getDaysSinceStatusChange(
+        item.statusChangeDate
+      );
+      return item.status === "Waste" && daysSinceStatusChange <= 30;
     });
 
     console.log("Filtered waste items:", wasteItems);
@@ -60,17 +60,33 @@ export const donationItemsSelector = selector({
     console.log("All food items in donationItemsSelector:", foodItems);
 
     const donationItems = foodItems.filter((item) => {
-      const daysSinceDonation =
-        (new Date() - new Date(item.lastStateChangeDate)) /
-        (1000 * 60 * 60 * 24);
+      const daysSinceStatusChange = getDaysSinceStatusChange(
+        item.statusChangeDate
+      );
       return (
         (item.status === "Donation" || item.status === "Donated") &&
-        daysSinceDonation <= 30
+        daysSinceStatusChange <= 30
       );
     });
 
     console.log("Filtered donation items:", donationItems);
     return donationItems;
+  },
+});
+
+export const activeDonationItemsSelector = selector({
+  key: "activeDonationItemsSelector",
+  get: ({ get }) => {
+    const donationItems = get(donationItemsSelector);
+    return donationItems.filter((item) => item.status === "Donation");
+  },
+});
+
+export const donatedItemsSelector = selector({
+  key: "donatedItemsSelector",
+  get: ({ get }) => {
+    const donationItems = get(donationItemsSelector);
+    return donationItems.filter((item) => item.status === "Donated");
   },
 });
 
@@ -84,17 +100,15 @@ export const moveItemState = selector({
           ? {
               ...item,
               status: newStatus,
-              lastStateChangeDate: new Date().toISOString(),
-              ...(newStatus === "Waste" && {
-                wasteDate: new Date().toISOString(),
-              }),
-              ...(newStatus === "Donation" && {
-                donationDate: new Date().toISOString(),
+              statusChangeDate: new Date().toISOString(),
+              ...(newStatus === "Consumed" && { consumed: 100 }),
+              ...(newStatus === "Donated" && {
+                donatedDate: new Date().toISOString(),
               }),
             }
           : item
       );
-      console.log("Updated items after move:", updatedItems);
+      console.log("Updated items after change status:", updatedItems);
       return updatedItems;
     });
   },
@@ -115,6 +129,10 @@ export const foodItemsWithCalculatedDates = selector({
         calculateExpirationDate(item.category, item.storage, item.purchasedDate)
       ),
       formattedPurchasedDate: formatDateForDisplay(item.purchasedDate),
+      formattedStatusChangeDate: formatDateForDisplay(item.statusChangeDate),
+      formattedDonatedDate: item.donatedDate
+        ? formatDateForDisplay(item.donatedDate)
+        : null,
     }));
   },
 });
@@ -125,13 +143,19 @@ export const foodItemsStats = selector({
     const foodItems = get(foodItemsState);
     const totalItems = foodItems.length;
     const activeItems = foodItems.filter(
-      (item) => item.status !== "Waste" && item.status !== "Donation"
+      (item) => item.status === "Active"
     ).length;
     const wasteItems = foodItems.filter(
       (item) => item.status === "Waste"
     ).length;
     const donationItems = foodItems.filter(
-      (item) => item.status === "Donation" || item.status === "Donated"
+      (item) => item.status === "Donation"
+    ).length;
+    const donatedItems = foodItems.filter(
+      (item) => item.status === "Donated"
+    ).length;
+    const consumedItems = foodItems.filter(
+      (item) => item.status === "Consumed"
     ).length;
 
     return {
@@ -139,6 +163,8 @@ export const foodItemsStats = selector({
       activeItems,
       wasteItems,
       donationItems,
+      donatedItems,
+      consumedItems,
     };
   },
 });

@@ -8,11 +8,11 @@ exports.getWasteItems = async (req, res) => {
 
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const query = {
-      tenantId,
-      status: "Waste",
-      statusChangeDate: { $gt: thirtyDaysAgo },
-    };
+    // const query = {
+    //   tenantId,
+    //   status: "Waste",
+
+    // };
 
     const totalItems = await FoodItem.countDocuments({
       tenantId,
@@ -22,6 +22,7 @@ exports.getWasteItems = async (req, res) => {
     const wasteItems = await FoodItem.find({
       tenantId,
       status: "Waste",
+      statusChangeDate: { $gt: thirtyDaysAgo },
     })
       .skip((page - 1) * limit)
       .limit(Number(limit))

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { foodItemsState, wasteItemsSelector } from "../recoil/foodItemsAtoms";
 import { useSetRecoilState, useRecoilValue } from "recoil";
+import { foodItemsState, wasteItemsSelector } from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 export const useWasteItemManagement = () => {
@@ -8,65 +8,42 @@ export const useWasteItemManagement = () => {
   const wasteItems = useRecoilValue(wasteItemsSelector);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get(
-        `/waste/items?page=${currentPage}&limit=10`
-      );
-      console.log("API Response in useWasteItemManagement:", response);
-
+      const response = await api.get("/waste/items");
       if (!response.data || !Array.isArray(response.data.data)) {
         throw new Error("Invalid data structure received from the server");
       }
-
       setFoodItems((prevItems) => {
         const nonWasteItems = prevItems.filter(
           (item) => item.status !== "Waste"
         );
-        const newWasteItems = response.data.data.map((item) => ({
-          ...item,
-          status: "Waste",
-        }));
-
-        console.log("New waste items:", newWasteItems);
-
-        const newItems = [...nonWasteItems, ...newWasteItems];
-        console.log("New food items state:", newItems);
-
-        return newItems;
+        return [...nonWasteItems, ...response.data.data];
       });
-
-      setTotalPages(response.data.totalPages);
-      setTotalItems(response.data.totalItems);
-
-      console.log("Fetched Waste Items:", response.data.data);
     } catch (error) {
       setError("Failed to fetch waste items: " + error.message);
       console.error("Error fetching waste items:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [setFoodItems, currentPage]);
+  }, [setFoodItems]);
 
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
         const response = await api.post(`/waste/items/update/${id}`, updates);
-        console.log("Update Response:", response);
-
         if (response.status === 200) {
-          setFoodItems((prevItems) =>
-            prevItems.map((item) =>
-              item._id === id
-                ? { ...item, ...response.data.data, status: "Waste" }
-                : item
-            )
-          );
+          setFoodItems((prevItems) => {
+            return prevItems.map((item) =>
+              item._id === id ? { ...item, ...response.data.data } : item
+            );
+          });
+          // If the status has changed from "Waste", refetch the items
+          if (updates.status && updates.status !== "Waste") {
+            fetchItems();
+          }
         } else {
           throw new Error(
             response.data.message || "Failed to update the waste item"
@@ -77,20 +54,17 @@ export const useWasteItemManagement = () => {
         setError("Failed to update waste item: " + error.message);
       }
     },
-    [setFoodItems]
+    [setFoodItems, fetchItems]
   );
 
   const handleDeleteItem = useCallback(
     async (id) => {
       try {
         const response = await api.post("/waste/items/delete", { _id: id });
-        console.log("Delete response:", response);
-
         if (response.status === 200) {
           setFoodItems((prevItems) =>
             prevItems.filter((item) => item._id !== id)
           );
-          await fetchItems();
           return { success: true, message: "Waste item deleted successfully" };
         } else {
           throw new Error(
@@ -103,28 +77,20 @@ export const useWasteItemManagement = () => {
         return { success: false, error: error.message };
       }
     },
-    [setFoodItems, fetchItems]
+    [setFoodItems]
   );
-
-  const handlePageChange = useCallback((newPage) => {
-    setCurrentPage(newPage);
-  }, []);
 
   useEffect(() => {
     fetchItems();
-  }, [fetchItems, currentPage]);
+  }, [fetchItems]);
 
   return {
     wasteItems,
     error,
     isLoading,
-    currentPage,
-    totalPages,
-    totalItems,
     fetchItems,
     handleInputChange,
     handleDeleteItem,
-    handlePageChange,
   };
 };
 

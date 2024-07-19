@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import InitializeState from "./components/InitializeState";
-import AppContent from "./components/AppContent";
+import AppContent from "./components/Common/AppContent";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";

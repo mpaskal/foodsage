@@ -1,21 +1,21 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { useRecoilValue } from "recoil";
-import { loggedInUserState } from "../recoil/userAtoms";
-import HomePage from "../pages/SitePages/HomePage";
-import AboutPage from "../pages/SitePages/AboutPage";
-import ContactPage from "../pages/SitePages/ContactPage";
-import SignInPage from "../pages/SitePages/SignInPage";
-import SignUpPage from "../pages/SitePages/SignUpPage";
-import DashboardPage from "../pages/AppPages/DashboardPage";
-import UserManagementPage from "../pages/AppPages/UserManagementPage";
-import FoodItemsPage from "../pages/AppPages/FoodItemsPage";
-import FoodInsightsPage from "../pages/AppPages/FoodInsightsPage";
-import DonationItemsPage from "../pages/AppPages/DonationItemsPage";
-import WasteItemsPage from "../pages/AppPages/WasteItemsPage";
-import WasteInsightsPage from "../pages/AppPages/WasteInsightsPage";
-import ProtectedRoute from "./ProtectedRoute";
-import useAxiosInterceptor from "../hooks/useAxiosInterceptor";
+import { loggedInUserState } from "../../recoil/userAtoms";
+import HomePage from "../../pages/SitePages/HomePage";
+import AboutPage from "../../pages/SitePages/AboutPage";
+import ContactPage from "../../pages/SitePages/ContactPage";
+import SignInPage from "../../pages/SitePages/SignInPage";
+import SignUpPage from "../../pages/SitePages/SignUpPage";
+import DashboardPage from "../../pages/AppPages/DashboardPage";
+import UserManagementPage from "../../pages/AppPages/UserManagementPage";
+import FoodItemsPage from "../../pages/AppPages/FoodItemsPage";
+import FoodInsightsPage from "../../pages/AppPages/FoodInsightsPage";
+import DonationItemsPage from "../../pages/AppPages/DonationItemsPage";
+import WasteItemsPage from "../../pages/AppPages/WasteItemsPage";
+import WasteInsightsPage from "../../pages/AppPages/WasteInsightsPage";
+import ProtectedRoute from "../ProtectedRoute";
+import useAxiosInterceptor from "../../hooks/useAxiosInterceptor";
 
 const AppContent = () => {
   const user = useRecoilValue(loggedInUserState);

@@ -10,6 +10,13 @@ export const getDaysSinceExpiration = (expirationDate) => {
   return Math.floor(timeDiff / (1000 * 3600 * 24));
 };
 
+export const getDaysSinceStatusChange = (statusChangeDate) => {
+  const now = new Date();
+  const changeDate = new Date(statusChangeDate);
+  const diffTime = Math.abs(now - changeDate);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 /**
  * Calculates the expiration date based on the category, storage, and purchased date.
  * @param {string} category - The category of the item.

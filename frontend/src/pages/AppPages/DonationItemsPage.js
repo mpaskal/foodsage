@@ -1,190 +1,81 @@
-import React, { useEffect, useCallback, useState } from "react";
-import api from "../../utils/api";
-import { moveItem } from "../../utils/itemMovementUtils";
-import { useRecoilState, useRecoilValue } from "recoil";
-import {
-  foodItemsState,
-  currentItemState,
-  donationItemsSelector,
-} from "../../recoil/foodItemsAtoms";
+import React, { useEffect, useMemo, useCallback } from "react";
+import { useRecoilValue } from "recoil";
+import { donationItemsSelector } from "../../recoil/foodItemsAtoms";
+import { useDonationItemManagement } from "../../hooks/useDonationItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
 import DonationItemTable from "../../components/DonationItem/DonationItemTable";
-import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
-import { Button, Alert, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
+import ErrorBoundary from "../../components/Common/ErrorBoundary";
+
+const ERROR_MESSAGES = {
+  FAILED_TO_DELETE: "Failed to delete the donation item",
+};
 
 const DonationItemsPage = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
   const donationItems = useRecoilValue(donationItemsSelector);
-  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const navigate = useNavigate();
-
-  const fetchDonationItems = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get("/foodItems/donation");
-      if (response.data && Array.isArray(response.data.data)) {
-        const currentDate = new Date();
-        const thirtyDaysAgo = new Date(
-          currentDate.getTime() - 30 * 24 * 60 * 60 * 1000
-        );
-
-        const filteredItems = response.data.data.filter((item) => {
-          const donationDate = new Date(item.donationDate);
-          return donationDate > thirtyDaysAgo;
-        });
-
-        setFoodItems(filteredItems);
-      }
-    } catch (error) {
-      // Error handling
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setFoodItems]);
+  const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
+    useDonationItemManagement();
 
   useEffect(() => {
-    fetchDonationItems();
-  }, [fetchDonationItems]);
+    fetchItems();
+  }, [fetchItems]);
 
-  const handleInputChange = async (itemId, field, value) => {
-    setIsUpdating(true);
-    try {
-      const response = await api.post(`/donationItems/${itemId}`, {
-        [field]: value,
-      });
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === itemId ? { ...item, [field]: value } : item
-          )
-        );
-        toast.success("Item updated successfully");
-      } else {
-        throw new Error("Failed to update the item");
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        const result = await handleDeleteItem(id);
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast.error(ERROR_MESSAGES.FAILED_TO_DELETE);
       }
-    } catch (error) {
-      console.error("Error updating item:", error);
-      setError("An error occurred while updating the item: " + error.message);
-      toast.error("Failed to update the item");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    },
+    [handleDeleteItem]
+  );
 
-  const handleDeleteItem = async (itemId) => {
-    try {
-      const response = await api.delete(`/donationItems/${itemId}`);
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        toast.success("Item deleted successfully");
-      } else {
-        throw new Error("Failed to delete the item");
-      }
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      setError("An error occurred while deleting the item: " + error.message);
-      toast.error("Failed to delete the item");
-    }
-  };
-
-  const handleMoveItem = async (itemId, newstatus) => {
-    try {
-      setIsUpdating(true);
-      const response = await api.post(`/donationItems/${itemId}/move`, {
-        status: newstatus,
-      });
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === itemId ? { ...item, status: newstatus } : item
-          )
-        );
-        toast.success(`Item moved to ${newstatus} successfully`);
-      } else {
-        throw new Error("Failed to move the item");
-      }
-    } catch (error) {
-      console.error("Error moving item:", error);
-      setError("An error occurred while moving the item: " + error.message);
-      toast.error("Failed to move the item");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handlestatusConsume = async (itemId) => {
-    try {
-      const response = await api.post(`/foodItems/${itemId}`, {
-        status: "Active",
-        donationDate: null,
-      });
-      if (response.status === 200) {
-        // Remove the item from the donation items list
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-      }
-    } catch (error) {
-      // Error handling
-    }
-  };
-
-  const handlestatusWaste = async (itemId) => {
-    try {
-      const response = await api.post(`/foodItems/${itemId}`, {
-        status: "Waste",
-        donationDate: null,
-        wasteDate: new Date().toISOString(),
-      });
-      if (response.status === 200) {
-        // Remove the item from the donation items list
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-      }
-    } catch (error) {
-      // Error handling
-    }
-  };
+  const currentDate = useMemo(() => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date().toLocaleDateString("en-US", options);
+  }, []);
 
   return (
-    <Layout>
-      <div className="container">
-        <div className="d-flex justify-content-between my-3">
-          <h1 className="title">Donation Items</h1>
+    <ErrorBoundary>
+      <Layout>
+        <div className="container">
+          <div className="d-flex justify-content-between my-3">
+            <h1 className="title">Donation Inventory</h1>
+            <h2>{currentDate}</h2>
+          </div>
+
+          {error && (
+            <Alert variant="danger" dismissible>
+              <Alert.Heading>Error</Alert.Heading>
+              <p>{error}</p>
+            </Alert>
+          )}
+          {isLoading ? (
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          ) : donationItems.length > 0 ? (
+            <DonationItemTable
+              donationItems={donationItems}
+              handleInputChange={handleInputChange}
+              handleDelete={handleDelete}
+              isUpdating={isLoading}
+            />
+          ) : (
+            <p>No donation items found.</p>
+          )}
         </div>
-        {error && (
-          <Alert variant="danger" onClose={() => setError(null)} dismissible>
-            <Alert.Heading>Error</Alert.Heading>
-            <p>{error}</p>
-          </Alert>
-        )}
-        {isLoading ? (
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
-        ) : donationItems.length > 0 ? (
-          <DonationItemTable
-            donationItems={donationItems}
-            handleInputChange={handleInputChange}
-            handleDelete={handleDeleteItem}
-            handleMove={handleMoveItem}
-            isUpdating={isUpdating}
-          />
-        ) : (
-          <p>No donation items found.</p>
-        )}
-      </div>
-    </Layout>
+      </Layout>
+    </ErrorBoundary>
   );
 };
 
-export default DonationItemsPage;
+export default React.memo(DonationItemsPage);
