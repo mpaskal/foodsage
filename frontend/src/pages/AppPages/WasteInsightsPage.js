@@ -1,5 +1,7 @@
-import React from "react";
-import Layout from "../../components/Layout/LayoutApp";
+import React, { lazy } from "react";
+//import Layout from "../../components/Layout/LayoutApp";
+
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
 const WasteInsightsPage = () => {
   return (

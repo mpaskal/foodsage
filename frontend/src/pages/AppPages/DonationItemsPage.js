@@ -1,13 +1,14 @@
-import React, { useEffect, useMemo, useCallback } from "react";
+import React, { useEffect, useMemo, useCallback, lazy } from "react";
 import { useRecoilValue } from "recoil";
 import { donationItemsSelector } from "../../recoil/foodItemsAtoms";
 import { useDonationItemManagement } from "../../hooks/useDonationItemManagement";
-import Layout from "../../components/Layout/LayoutApp";
+//import Layout from "../../components/Layout/LayoutApp";
 import DonationItemTable from "../../components/DonationItem/DonationItemTable";
 import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
 
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 const ERROR_MESSAGES = {
   FAILED_TO_DELETE: "Failed to delete the donation item",
 };

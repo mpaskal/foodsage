@@ -15,30 +15,13 @@ export const useFoodInsights = () => {
   const fetchInsights = useCallback(async (startDate, endDate) => {
     try {
       setLoading(true);
-      console.log(
-        `Fetching insights from: ${api.defaults.baseURL}/food/insights`
-      );
-      console.log("With params:", { startDate, endDate });
-
-      // Ensure the token is set in the request headers
-      const token = localStorage.getItem("token");
-      if (token) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
-
       const response = await api.get("/food/insights", {
         params: { startDate, endDate },
       });
-      console.log("Insights response:", response.data);
       setInsights(response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching insights:", error.response || error);
-      if (error.response && error.response.status === 401) {
-        // Handle unauthorized error (e.g., redirect to login)
-        console.log("Unauthorized access. Redirecting to login...");
-        // Implement your redirect logic here
-      }
       setError(error);
       throw error;
     } finally {

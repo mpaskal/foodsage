@@ -1,26 +1,35 @@
 import { useState, useCallback, useEffect } from "react";
-import { useSetRecoilState, useRecoilValue } from "recoil";
-import { foodItemsState, wasteItemsSelector } from "../recoil/foodItemsAtoms";
+import { useRecoilState } from "recoil";
+import { foodItemsState } from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 export const useWasteItemManagement = () => {
-  const setFoodItems = useSetRecoilState(foodItemsState);
-  const wasteItems = useRecoilValue(wasteItemsSelector);
+  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const wasteItems = foodItems.filter((item) => item.status === "Waste");
 
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await api.get("/waste/items");
+      console.log("API Response:", response);
+
       if (!response.data || !Array.isArray(response.data.data)) {
         throw new Error("Invalid data structure received from the server");
       }
+
+      const newWasteItems = response.data.data;
+      console.log("New waste items:", newWasteItems);
+
       setFoodItems((prevItems) => {
         const nonWasteItems = prevItems.filter(
           (item) => item.status !== "Waste"
         );
-        return [...nonWasteItems, ...response.data.data];
+        const updatedItems = [...nonWasteItems, ...newWasteItems];
+        console.log("Updated food items:", updatedItems);
+        return updatedItems;
       });
     } catch (error) {
       setError("Failed to fetch waste items: " + error.message);
@@ -34,13 +43,14 @@ export const useWasteItemManagement = () => {
     async (id, updates) => {
       try {
         const response = await api.post(`/waste/items/update/${id}`, updates);
+        console.log("Update response:", response);
+
         if (response.status === 200) {
-          setFoodItems((prevItems) => {
-            return prevItems.map((item) =>
+          setFoodItems((prevItems) =>
+            prevItems.map((item) =>
               item._id === id ? { ...item, ...response.data.data } : item
-            );
-          });
-          // If the status has changed from "Waste", refetch the items
+            )
+          );
           if (updates.status && updates.status !== "Waste") {
             fetchItems();
           }
@@ -61,6 +71,8 @@ export const useWasteItemManagement = () => {
     async (id) => {
       try {
         const response = await api.post("/waste/items/delete", { _id: id });
+        console.log("Delete response:", response);
+
         if (response.status === 200) {
           setFoodItems((prevItems) =>
             prevItems.filter((item) => item._id !== id)
@@ -83,6 +95,10 @@ export const useWasteItemManagement = () => {
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  useEffect(() => {
+    console.log("Current waste items:", wasteItems);
+  }, [wasteItems]);
 
   return {
     wasteItems,

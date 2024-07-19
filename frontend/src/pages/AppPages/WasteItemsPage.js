@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useEffect, useMemo, useCallback, lazy } from "react";
 import { useWasteItemManagement } from "../../hooks/useWasteItemManagement";
-import Layout from "../../components/Layout/LayoutApp";
+// import Layout from "../../components/Layout/LayoutApp";
 import WasteItemTable from "../../components/WasteItem/WasteItemTable";
 import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
+
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
 const ERROR_MESSAGES = {
   FAILED_TO_DELETE: "Failed to delete the waste item",
