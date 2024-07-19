@@ -33,6 +33,11 @@ export const useFoodItemManagement = (pageType) => {
           item.storage,
           item.purchasedDate
         ),
+        purchasedDate: formatDateForDisplay(new Date(item.purchasedDate)),
+        // Format expirationDate if it exists
+        ...(item.expirationDate && {
+          expirationDate: formatDateForDisplay(new Date(item.expirationDate)),
+        }),
       }));
 
       console.log("Processed Items:", items);
@@ -74,10 +79,14 @@ export const useFoodItemManagement = (pageType) => {
       try {
         // Ensure the date fields are formatted correctly
         if (updates.purchasedDate) {
-          updates.purchasedDate = new Date(updates.purchasedDate);
+          updates.purchasedDate = formatDateForDisplay(
+            new Date(updates.purchasedDate)
+          );
         }
         if (updates.expirationDate) {
-          updates.expirationDate = new Date(updates.expirationDate);
+          updates.expirationDate = formatDateForDisplay(
+            new Date(updates.expirationDate)
+          );
         }
 
         const response = await api.post(`/food/items/update/${id}`, updates);

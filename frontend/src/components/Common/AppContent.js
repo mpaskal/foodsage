@@ -31,6 +31,11 @@ const AppContent = () => {
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route element={<ProtectedRoute role={role} />}>
+        <Route
+          path="/users"
+          element={<UserManagementPage />}
+          requiredRole="admin"
+        />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/fooditems" element={<FoodItemsPage />} />
         <Route path="/foodinsights" element={<FoodInsightsPage />} />

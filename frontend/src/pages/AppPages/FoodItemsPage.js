@@ -11,8 +11,8 @@ import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
+import { formatDateForDisplay } from "../../utils/dateUtils";
 import api from "../../utils/api";
-import { format } from "date-fns";
 
 const FoodItemModal = React.lazy(() =>
   import("../../components/FoodItem/FoodItemModal")
@@ -28,7 +28,7 @@ const FoodItemsPage = () => {
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
-    useFoodItemManagement();
+    useFoodItemManagement("food");
 
   useEffect(() => {
     fetchItems();
@@ -42,7 +42,19 @@ const FoodItemsPage = () => {
           if (key === "image" && newItem[key] instanceof File) {
             formData.append(key, newItem[key], newItem[key].name);
           } else if (key === "purchasedDate" || key === "expirationDate") {
-            const formattedDate = format(new Date(newItem[key]), "yyyy-MM-dd");
+            let date;
+            if (newItem[key] instanceof Date) {
+              date = newItem[key];
+            } else if (typeof newItem[key] === "string") {
+              date = new Date(newItem[key]);
+            } else {
+              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
+            }
+
+            if (isNaN(date.getTime())) {
+              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
+            }
+            const formattedDate = formatDateForDisplay(date);
             formData.append(key, formattedDate);
           } else {
             formData.append(key, newItem[key]);
@@ -59,7 +71,7 @@ const FoodItemsPage = () => {
           fetchItems();
           toast.success("Food item added successfully");
         } else {
-          throw new Error(ERROR_MESSAGES.FAILED_TO_ADD);
+          throw new Error("Failed to add the food item.");
         }
       } catch (error) {
         console.error("Error adding item:", error);

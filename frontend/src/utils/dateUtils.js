@@ -112,19 +112,10 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
  * @returns {string} - The formatted date in the "yyyy-mm-dd" format or an empty string if the date is invalid.
  */
 export const formatDateForDisplay = (date) => {
-  if (!date) return "";
-
-  const localDate = new Date(date);
-  if (isNaN(localDate.getTime())) return ""; // Check for invalid date
-
-  // Adjust for timezone offset
-  localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-
-  const year = localDate.getFullYear();
-  const month = String(localDate.getMonth() + 1).padStart(2, "0");
-  const day = String(localDate.getDate()).padStart(2, "0"); // Removed + 1 as it's not necessary after timezone adjustment
-
-  return `${year}-${month}-${day}`;
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
+  return date.toISOString().split("T")[0];
 };
 
 /**
