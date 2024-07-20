@@ -97,7 +97,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       "purchasedDate",
       "quantityMeasurement",
       "status",
-      "source",
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
@@ -124,6 +123,11 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         expirationDate: formatDateForDisplay(new Date(form.expirationDate)),
         statusChangeDate: new Date().toISOString(),
       };
+
+      // If source is empty, set it to null or a default value
+      if (!formattedItem.source.trim()) {
+        formattedItem.source = null; // or 'Unknown' or any other default value
+      }
 
       await handleSubmit(formattedItem);
       handleClose();
@@ -247,13 +251,12 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             </Col>
           </Row>
           <Form.Group controlId="source">
-            <Form.Label>Source</Form.Label>
+            <Form.Label>Source (Optional)</Form.Label>
             <Form.Control
               type="text"
               name="source"
               value={form.source}
               onChange={handleChange}
-              required
             />
           </Form.Group>
           <Form.Group controlId="purchasedDate">
