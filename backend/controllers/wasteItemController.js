@@ -114,7 +114,7 @@ exports.changeWasteItemStatus = async (req, res) => {
     if (status === "Consumed") {
       updates.consumed = 100;
     } else if (status === "Donation") {
-      updates.donationDate = new Date();
+      updates.statusChangeDate = new Date();
     }
 
     const wasteItem = await FoodItem.findOneAndUpdate(

@@ -112,10 +112,12 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
  * @returns {string} - The formatted date in the "yyyy-mm-dd" format or an empty string if the date is invalid.
  */
 export const formatDateForDisplay = (date) => {
-  if (!(date instanceof Date)) {
-    date = new Date(date);
-  }
-  return date.toISOString().split("T")[0];
+  if (!date) return "";
+
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate.getTime())) return ""; // Return empty string for invalid date
+
+  return parsedDate.toISOString().split("T")[0];
 };
 
 /**

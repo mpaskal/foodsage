@@ -61,6 +61,11 @@ const FoodItemsPage = () => {
           }
         }
 
+        // Log formData before sending
+        for (const [key, value] of formData.entries()) {
+          console.log(`${key}: ${value}`);
+        }
+
         const response = await api.post("/food/items", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -75,6 +80,12 @@ const FoodItemsPage = () => {
         }
       } catch (error) {
         console.error("Error adding item:", error);
+        if (error.response) {
+          // Log the server response error details
+          console.error("API response data:", error.response.data);
+          console.error("API response status:", error.response.status);
+          console.error("API response headers:", error.response.headers);
+        }
         const errorMessage = error.response?.data?.message || error.message;
         toast.error(`${ERROR_MESSAGES.FAILED_TO_ADD}: ${errorMessage}`);
       }

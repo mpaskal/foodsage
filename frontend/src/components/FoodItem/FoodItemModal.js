@@ -9,38 +9,14 @@ import {
   formatDateForDisplay,
   calculateExpirationDate,
 } from "../../utils/dateUtils";
+import {
+  categories,
+  storages,
+  statusOptions,
+  quantityMeasurementsByCategory,
+} from "../../utils/constants";
 
-const categories = [
-  "Dairy",
-  "Fresh",
-  "Grains and Bread",
-  "Packaged and Snack Foods",
-  "Frozen Goods",
-  "Other",
-];
-const storages = ["Fridge", "Freezer", "Pantry", "Cellar"];
-const quantityMeasurementsByCategory = {
-  Dairy: ["L", "Oz", "Item"],
-  Fresh: ["Gr", "Oz", "Item", "Kg", "Lb"],
-  "Grains and Bread": ["Item", "Kg", "Lb", "Gr", "Box"],
-  "Packaged and Snack Foods": ["Item", "Box", "Kg", "Lb", "Gr"],
-  "Frozen Goods": ["Kg", "Lb", "Item"],
-  Other: ["Item", "Kg", "Lb", "L", "Oz", "Gr", "Box"],
-  Fridge: ["L", "Oz", "Item", "Gr", "Kg", "Lb"],
-  Freezer: ["Kg", "Lb", "Item"],
-  Pantry: ["Item", "Box", "Kg", "Lb", "Gr"],
-  Cellar: ["L", "Item", "Box"],
-};
-const statusOptions = [
-  "Active",
-  "Inactive",
-  "Consumed",
-  "Waste",
-  "Donation",
-  "Donated",
-];
-
-const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
+const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const foodItemsWithExpiration = useRecoilValue(activeFoodItemsSelector);
   const [localError, setLocalError] = useState(null);
@@ -69,8 +45,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
     image: null,
     consumed: 0,
     status: "Active",
-    donationDate: null,
-    wasteDate: null,
+    statusChangeDate: new Date(),
   });
 
   useEffect(() => {
@@ -150,9 +125,9 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
         if (value === "Consumed") {
           updatedForm.consumed = 100;
         } else if (value === "Donation" || value === "Donated") {
-          updatedForm.donationDate = new Date().toISOString();
+          updatedForm.statusChangeDate = new Date().toISOString();
         } else if (value === "Waste") {
-          updatedForm.wasteDate = new Date().toISOString();
+          updatedForm.statusChangeDate = new Date().toISOString();
         }
       }
 
@@ -189,7 +164,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setLocalError(null);
-    if (setError) setError(null); // Only call setError if it's provided
 
     const requiredFields = [
       "name",
@@ -198,6 +172,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
       "purchasedDate",
       "quantityMeasurement",
       "status",
+      "source", // Ensure source is also required
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
@@ -208,25 +183,43 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
       return;
     }
 
+    const normalizeToUTC = (date) => {
+      const d = new Date(date);
+      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    };
+
+    // Validate expirationDate before formatting
+    if (
+      !form.expirationDate ||
+      isNaN(new Date(form.expirationDate).getTime())
+    ) {
+      setLocalError("Please provide a valid expiration date.");
+      return;
+    }
+
     try {
-      await handleSubmit({
+      const formattedItem = {
         ...form,
         consumed: parseInt(form.consumed, 10),
         status: form.consumed === 100 ? "Consumed" : form.status,
-        purchasedDate: new Date(form.purchasedDate),
-        expirationDate: new Date(form.expirationDate),
-      });
+        purchasedDate: formatDateForDisplay(normalizeToUTC(form.purchasedDate)),
+        expirationDate: formatDateForDisplay(
+          normalizeToUTC(form.expirationDate)
+        ),
+        statusChangeDate: new Date().toISOString(), // Ensure statusChangeDate is in ISO format
+      };
+
+      console.log("Submitting item:", formattedItem); // Add this line for debugging
+
+      await handleSubmit(formattedItem);
       handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
       const errorMessage =
         error.response?.data?.message ||
+        error.message ||
         "An error occurred while submitting the form.";
-      if (setError) {
-        setError(errorMessage); // Set parent error if setError is provided
-      } else {
-        setLocalError(errorMessage); // Otherwise, set local error
-      }
+      setLocalError(errorMessage);
     }
   };
 
@@ -351,6 +344,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit, setError }) => {
               name="source"
               value={form.source}
               onChange={handleChange}
+              required
             />
           </Form.Group>
           <Form.Group controlId="purchasedDate">
