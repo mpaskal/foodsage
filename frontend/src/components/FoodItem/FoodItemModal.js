@@ -126,7 +126,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
 
       // If source is empty, set it to null or a default value
       if (!formattedItem.source.trim()) {
-        formattedItem.source = null; // or 'Unknown' or any other default value
+        formattedItem.source = "N/A";
       }
 
       await handleSubmit(formattedItem);
