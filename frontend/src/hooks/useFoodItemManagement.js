@@ -108,13 +108,14 @@ export const useFoodItemManagement = (pageType) => {
   const handleDeleteItem = useCallback(
     async (id) => {
       try {
-        await api.post(`/food/items/delete`, { id });
+        await api.post(`/food/items/delete`, { _id: id });
         setFoodItems((prevItems) =>
           prevItems.filter((item) => item._id !== id)
         );
+        return { success: true, message: "Item deleted successfully" };
       } catch (error) {
-        setError("Failed to delete item");
         console.error("Error deleting item:", error);
+        return { success: false, error: "Failed to delete item" };
       }
     },
     [setFoodItems]

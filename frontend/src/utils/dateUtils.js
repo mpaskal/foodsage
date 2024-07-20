@@ -17,22 +17,14 @@ export const getDaysSinceStatusChange = (statusChangeDate) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-/**
- * Calculates the expiration date based on the category, storage, and purchased date.
- * @param {string} category - The category of the item.
- * @param {string} storage - The storage condition of the item.
- * @param {Date|string|null} purchasedDate - The date the item was purchased.
- * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
- */
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
-  if (!purchasedDate) return null;
+  if (!purchasedDate) return "";
 
   const purchased = new Date(purchasedDate);
-  if (isNaN(purchased.getTime())) return null; // Check for invalid date
+  if (isNaN(purchased.getTime())) return "";
 
-  let expirationDate = new Date(purchasedDate); // Initialize with purchased date
+  let expirationDate = new Date(purchased);
 
-  // Define expiration logic based on category and storage
   switch (category) {
     case "Dairy":
       expirationDate.setDate(
@@ -100,10 +92,11 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
       );
       break;
     default:
-      expirationDate = null;
+      expirationDate.setDate(purchased.getDate() + 7); // Default to 7 days if no specific rule
   }
 
-  return expirationDate ? expirationDate.toISOString().split("T")[0] : null;
+  console.log("Calculated Expiration Date:", expirationDate);
+  return expirationDate.toISOString().split("T")[0];
 };
 
 /**
@@ -137,8 +130,13 @@ export const processDateInput = (date) => {
   return inputDate.toISOString().split("T")[0];
 };
 
-/**
- * Gets the current date in "yyyy-mm-dd" format.
- * @returns {string} - The current date in "yyyy-mm-dd" format.
- */
-export const getCurrentDate = () => new Date().toISOString().split("T")[0];
+export const getCurrentDate = () => {
+  const now = new Date();
+  return now.toISOString().split("T")[0];
+};
+
+export const formatDateForInput = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
+};

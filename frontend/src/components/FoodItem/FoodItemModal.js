@@ -1,10 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
-import { useRecoilValue, useRecoilState } from "recoil";
-import {
-  currentItemState,
-  activeFoodItemsSelector,
-} from "../../recoil/foodItemsAtoms";
 import {
   formatDateForDisplay,
   calculateExpirationDate,
@@ -18,21 +13,10 @@ import {
 } from "../../utils/constants";
 
 const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
-  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const foodItemsWithExpiration = useRecoilValue(activeFoodItemsSelector);
   const [localError, setLocalError] = useState(null);
   const [userChangedExpiration, setUserChangedExpiration] = useState(false);
 
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return getCurrentDate();
-    try {
-      return dateString.slice(0, 10);
-    } catch {
-      return getCurrentDate();
-    }
-  };
-
-  const [form, setForm] = useState({
+  const initialForm = {
     name: "",
     category: "Dairy",
     quantity: "",
@@ -45,54 +29,21 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     image: null,
     consumed: 0,
     status: "Active",
-    statusChangeDate: new Date(),
-  });
-  console.log("exprirationDate", form.expirationDate);
+  };
+
+  const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
-    if (currentItem) {
-      const itemWithExpiration = foodItemsWithExpiration.find(
-        (item) => item._id === currentItem._id
-      );
-      if (itemWithExpiration) {
-        setForm({
-          ...itemWithExpiration,
-          purchasedDate:
-            formatDateForInput(itemWithExpiration.purchasedDate) ||
-            getCurrentDate(),
-          expirationDate:
-            formatDateForInput(itemWithExpiration.expirationDate) || "",
-          consumed: itemWithExpiration.consumed || 0,
-          status: itemWithExpiration.status || "Active",
-        });
-      }
-      setUserChangedExpiration(true);
-    } else {
-      const category = "Dairy";
-      const storage = "Fridge";
-      const purchasedDate = getCurrentDate();
-      const expirationDate = calculateExpirationDate(
-        category,
-        storage,
-        purchasedDate
-      );
-      setForm({
-        name: "",
-        category: category,
-        quantity: "",
-        quantityMeasurement: "L",
-        storage: storage,
-        cost: "",
-        source: "",
-        purchasedDate: purchasedDate,
-        expirationDate: formatDateForDisplay(expirationDate),
-        image: null,
-        consumed: 0,
-        status: "Active",
-      });
-      setUserChangedExpiration(false);
-    }
-  }, [currentItem, foodItemsWithExpiration]);
+    const expirationDate = calculateExpirationDate(
+      form.category,
+      form.storage,
+      form.purchasedDate
+    );
+    setForm((prevForm) => ({
+      ...prevForm,
+      expirationDate,
+    }));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,32 +65,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
           updatedForm.storage,
           updatedForm.purchasedDate
         );
-        updatedForm.expirationDate = formatDateForDisplay(
-          calculatedExpirationDate
-        );
-      }
-
-      if (name === "status") {
-        if (value === "Active") {
-          const fourDaysFromNow = new Date();
-          fourDaysFromNow.setDate(fourDaysFromNow.getDate() + 4);
-          calculateExpirationDate(
-            updatedForm.category,
-            updatedForm.storage,
-            updatedForm.purchasedDate
-          );
-          setLocalError(null);
-        } else {
-          setLocalError(null);
-        }
-
-        if (value === "Consumed") {
-          updatedForm.consumed = 100;
-        } else if (value === "Donation" || value === "Donated") {
-          updatedForm.statusChangeDate = new Date().toISOString();
-        } else if (value === "Waste") {
-          updatedForm.statusChangeDate = new Date().toISOString();
-        }
+        updatedForm.expirationDate = calculatedExpirationDate;
       }
 
       return updatedForm;
@@ -182,11 +108,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       return;
     }
 
-    const normalizeToUTC = (date) => {
-      const d = new Date(date);
-      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    };
-
     if (
       !form.expirationDate ||
       isNaN(new Date(form.expirationDate).getTime())
@@ -199,18 +120,14 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       const formattedItem = {
         ...form,
         consumed: parseInt(form.consumed, 10),
-        status: form.consumed === 100 ? "Consumed" : form.status,
-        purchasedDate: formatDateForDisplay(normalizeToUTC(form.purchasedDate)),
-        expirationDate: formatDateForDisplay(
-          normalizeToUTC(form.expirationDate)
-        ),
+        purchasedDate: formatDateForDisplay(new Date(form.purchasedDate)),
+        expirationDate: formatDateForDisplay(new Date(form.expirationDate)),
         statusChangeDate: new Date().toISOString(),
       };
 
-      console.log("Submitting item:", formattedItem);
-
       await handleSubmit(formattedItem);
       handleClose();
+      setForm(initialForm);
     } catch (error) {
       console.error("Error submitting form:", error);
       const errorMessage =
@@ -222,17 +139,13 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   };
 
   const quantityMeasurements = useMemo(() => {
-    const categoryMeasurements =
-      quantityMeasurementsByCategory[form.category] || [];
-    return [...categoryMeasurements];
+    return quantityMeasurementsByCategory[form.category] || [];
   }, [form.category]);
 
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>
-          {currentItem ? "Edit Food Item" : "Add Food Item"}
-        </Modal.Title>
+        <Modal.Title>Add Food Item</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
@@ -348,7 +261,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             <Form.Control
               type="date"
               name="purchasedDate"
-              value={formatDateForInput(form.purchasedDate)}
+              value={form.purchasedDate}
               onChange={handleChange}
               required
             />
@@ -358,7 +271,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             <Form.Control
               type="date"
               name="expirationDate"
-              value={formatDateForInput(form.expirationDate)}
+              value={form.expirationDate}
               onChange={handleChange}
               required
             />
@@ -404,7 +317,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
             Cancel
           </Button>
           <Button variant="primary" type="submit">
-            {currentItem ? "Save Changes" : "Add Food Item"}
+            Add Food Item
           </Button>
         </Modal.Footer>
       </Form>
