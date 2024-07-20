@@ -22,8 +22,8 @@ const wasteRecordSchema = new mongoose.Schema(
     },
     dateRecorded: { type: Date, default: Date.now, index: true },
     expirationDate: { type: Date, required: true },
-    purchaseDate: { type: Date, required: true },
-    wasteCost: { type: Number, required: true },
+    purchaseDated: { type: Date, required: true },
+    statusChangeDate: { type: Date, required: true },
     quantity: { type: Number, required: true },
     quantityUnit: { type: String, required: true },
     percentWasted: {

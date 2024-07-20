@@ -8,6 +8,7 @@ import {
 import {
   formatDateForDisplay,
   calculateExpirationDate,
+  getCurrentDate,
 } from "../../utils/dateUtils";
 import {
   categories,
@@ -20,13 +21,12 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
   const foodItemsWithExpiration = useRecoilValue(activeFoodItemsSelector);
   const [localError, setLocalError] = useState(null);
-
-  const getCurrentDate = () => new Date().toISOString().slice(0, 10);
+  const [userChangedExpiration, setUserChangedExpiration] = useState(false);
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return getCurrentDate();
     try {
-      return dateString.slice(0, 10); // This will work for both ISO strings and 'yyyy-MM-dd' formats
+      return dateString.slice(0, 10);
     } catch {
       return getCurrentDate();
     }
@@ -47,6 +47,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     status: "Active",
     statusChangeDate: new Date(),
   });
+  console.log("exprirationDate", form.expirationDate);
 
   useEffect(() => {
     if (currentItem) {
@@ -65,6 +66,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
           status: itemWithExpiration.status || "Active",
         });
       }
+      setUserChangedExpiration(true);
     } else {
       const category = "Dairy";
       const storage = "Fridge";
@@ -88,36 +90,45 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         consumed: 0,
         status: "Active",
       });
+      setUserChangedExpiration(false);
     }
   }, [currentItem, foodItemsWithExpiration]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prevForm) => {
-      let updatedValue = value;
+      let updatedForm = { ...prevForm, [name]: value };
 
-      if (name === "purchasedDate" || name === "expirationDate") {
-        updatedValue = value; // Keep the value as is for date inputs
+      if (name === "expirationDate") {
+        setUserChangedExpiration(true);
       }
 
-      const updatedForm = { ...prevForm, [name]: updatedValue };
+      if (
+        (name === "category" ||
+          name === "storage" ||
+          name === "purchasedDate") &&
+        !userChangedExpiration
+      ) {
+        const calculatedExpirationDate = calculateExpirationDate(
+          updatedForm.category,
+          updatedForm.storage,
+          updatedForm.purchasedDate
+        );
+        updatedForm.expirationDate = formatDateForDisplay(
+          calculatedExpirationDate
+        );
+      }
 
       if (name === "status") {
         if (value === "Active") {
           const fourDaysFromNow = new Date();
           fourDaysFromNow.setDate(fourDaysFromNow.getDate() + 4);
-          const calculatedExpirationDate = calculateExpirationDate(
+          calculateExpirationDate(
             updatedForm.category,
             updatedForm.storage,
             updatedForm.purchasedDate
           );
-          if (new Date(calculatedExpirationDate) < fourDaysFromNow) {
-            setLocalError(
-              "When moving an item back to Active, the expiration date must be at least 4 days from now. Please adjust the category, storage, or purchased date."
-            );
-          } else {
-            setLocalError(null);
-          }
+          setLocalError(null);
         } else {
           setLocalError(null);
         }
@@ -129,18 +140,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         } else if (value === "Waste") {
           updatedForm.statusChangeDate = new Date().toISOString();
         }
-      }
-
-      if (
-        name === "category" ||
-        name === "storage" ||
-        name === "purchasedDate"
-      ) {
-        updatedForm.expirationDate = calculateExpirationDate(
-          updatedForm.category,
-          updatedForm.storage,
-          updatedForm.purchasedDate
-        );
       }
 
       return updatedForm;
@@ -172,7 +171,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       "purchasedDate",
       "quantityMeasurement",
       "status",
-      "source", // Ensure source is also required
+      "source",
     ];
     const missingFields = requiredFields.filter((field) => !form[field]);
 
@@ -188,7 +187,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     };
 
-    // Validate expirationDate before formatting
     if (
       !form.expirationDate ||
       isNaN(new Date(form.expirationDate).getTime())
@@ -206,10 +204,10 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         expirationDate: formatDateForDisplay(
           normalizeToUTC(form.expirationDate)
         ),
-        statusChangeDate: new Date().toISOString(), // Ensure statusChangeDate is in ISO format
+        statusChangeDate: new Date().toISOString(),
       };
 
-      console.log("Submitting item:", formattedItem); // Add this line for debugging
+      console.log("Submitting item:", formattedItem);
 
       await handleSubmit(formattedItem);
       handleClose();
@@ -239,7 +237,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
         <Modal.Body>
           {localError && <Alert variant="danger">{localError}</Alert>}
-          {/* Form fields */}
           <Row>
             <Col md={6}>
               <Form.Group controlId="name">
@@ -272,7 +269,6 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
               </Form.Group>
             </Col>
           </Row>
-          {/* Add other form fields here */}
           <Row>
             <Col md={6}>
               <Form.Group controlId="quantity">
