@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal, Button } from "react-bootstrap";
 
-const DeleteConfirmationModal = ({ show, handleClose, confirmDelete }) => {
+const DeleteFoodConfirmationModal = ({ show, handleClose, confirmDelete }) => {
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
@@ -9,8 +9,8 @@ const DeleteConfirmationModal = ({ show, handleClose, confirmDelete }) => {
       </Modal.Header>
       <Modal.Body>
         <p>
-          Are you sure you want to delete this donation item? This action cannot
-          be undone.
+          Are you sure you want to delete this food item? This action cannot be
+          undone.
         </p>
       </Modal.Body>
       <Modal.Footer>
@@ -25,4 +25,4 @@ const DeleteConfirmationModal = ({ show, handleClose, confirmDelete }) => {
   );
 };
 
-export default DeleteConfirmationModal;
+export default DeleteFoodConfirmationModal;

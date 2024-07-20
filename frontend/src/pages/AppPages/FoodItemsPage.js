@@ -1,258 +1,162 @@
-import React, { useEffect, useCallback, useState } from "react";
-import api from "../../utils/api";
-import { useNavigate } from "react-router-dom";
-import { useRecoilState, useRecoilValue } from "recoil";
+import React, { useEffect, useMemo, useCallback, Suspense } from "react";
+import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
 import {
   foodItemsState,
-  foodItemsWithExpirationState,
+  activeFoodItemsSelector,
   currentItemState,
 } from "../../recoil/foodItemsAtoms";
+import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
-import FoodItemModal from "../../components/FoodItem/FoodItemModal";
 import { Button, Alert, Spinner } from "react-bootstrap";
-import { debounce } from "lodash";
 import { toast } from "react-toastify";
-import { formatDateForDisplay, processDateInput } from "../../utils/dateUtils";
+import ErrorBoundary from "../../components/Common/ErrorBoundary";
+import { formatDateForDisplay } from "../../utils/dateUtils";
+import api from "../../utils/api";
+
+const FoodItemModal = React.lazy(() =>
+  import("../../components/FoodItem/FoodItemModal")
+);
+
+const ERROR_MESSAGES = {
+  FAILED_TO_ADD: "Failed to add the food item",
+  FAILED_TO_DELETE: "Failed to delete the food item",
+};
 
 const FoodItemsPage = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
-  const foodItemsWithExpiration = useRecoilValue(foodItemsWithExpirationState);
+  const setFoodItems = useSetRecoilState(foodItemsState);
+  const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
-  const [showModal, setShowModal] = useState(false);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const navigate = useNavigate();
-
-  const fetchFoodItems = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get("/fooditems");
-      if (response.data && Array.isArray(response.data.data)) {
-        setFoodItems(response.data.data);
-      } else {
-        console.error("Unexpected response structure:", response.data);
-        setError("Unexpected data structure received. Please try again later.");
-        toast.error(
-          "Unexpected data structure received. Please try again later."
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching food items:", error);
-      if (error.response && error.response.status === 401) {
-        toast.info("Your session has expired. Please sign in again.", {
-          onClose: () => navigate("/signin"),
-        });
-      } else {
-        const errorMessage = error.response?.data?.message || error.message;
-        setError(`Unable to fetch food items. ${errorMessage}`);
-        toast.error(`Unable to fetch food items. ${errorMessage}`);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setFoodItems, navigate]);
+  const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
+    useFoodItemManagement("food");
 
   useEffect(() => {
-    fetchFoodItems();
-  }, [fetchFoodItems]);
+    fetchItems();
+  }, [fetchItems]);
 
-  const handleInputChange = debounce(async (itemId, field, value) => {
-    if (!itemId) {
-      console.error("Error updating item: Item ID is undefined");
-      setError("An error occurred while updating the food item.");
-      toast.error("An error occurred while updating the food item.");
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (newItem) => {
+      try {
+        const formData = new FormData();
+        for (const key in newItem) {
+          if (key === "image" && newItem[key] instanceof File) {
+            formData.append(key, newItem[key], newItem[key].name);
+          } else if (key === "purchasedDate" || key === "expirationDate") {
+            let date;
+            if (newItem[key] instanceof Date) {
+              date = newItem[key];
+            } else if (typeof newItem[key] === "string") {
+              date = new Date(newItem[key]);
+            } else {
+              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
+            }
 
-    setFoodItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === itemId ? { ...item, [field]: value } : item
-      )
-    );
-
-    try {
-      setIsUpdating(true);
-      let updates = { [field]: value };
-
-      const response = await api.post(`/fooditems/${itemId}`, updates);
-      if (response.status !== 200) {
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === itemId ? { ...item, [field]: item[field] } : item
-          )
-        );
-        setError("Failed to update the food item.");
-        toast.error("Failed to update the food item.");
-        console.error("Error updating item:", response.data);
-      }
-    } catch (error) {
-      setFoodItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === itemId ? { ...item, [field]: item[field] } : item
-        )
-      );
-      setError("An error occurred while updating the food item.");
-      toast.error("An error occurred while updating the food item.");
-      console.error("Error updating item:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  }, 150);
-
-  const handleDeleteItem = async (itemId) => {
-    try {
-      const response = await api.delete(`/fooditems/${itemId}`);
-      if (response.status === 200) {
-        setFoodItems((prevItems) =>
-          prevItems.filter((item) => item._id !== itemId)
-        );
-        toast.success("Item deleted successfully");
-      } else if (response.status === 404) {
-        setError(`The food item with ID ${itemId} was not found.`);
-        toast.error(`The food item with ID ${itemId} was not found.`);
-        console.error(`Error deleting item: Item with ID ${itemId} not found`);
-      } else {
-        setError("Failed to delete the food item.");
-        toast.error("Failed to delete the food item.");
-        console.error("Error deleting item:", response.data);
-      }
-    } catch (error) {
-      setError("An error occurred while deleting the food item.");
-      toast.error("An error occurred while deleting the food item.");
-      console.error("Error deleting item:", error);
-    }
-  };
-
-  const handleSubmit = async (newItem) => {
-    try {
-      setIsUpdating(true);
-      const formData = new FormData();
-      for (const key in newItem) {
-        if (key === "image" && newItem[key] instanceof File) {
-          formData.append(key, newItem[key], newItem[key].name);
-        } else {
-          formData.append(key, newItem[key]);
+            if (isNaN(date.getTime())) {
+              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
+            }
+            const formattedDate = formatDateForDisplay(date);
+            formData.append(key, formattedDate);
+          } else {
+            formData.append(key, newItem[key]);
+          }
         }
+
+        const response = await api.post("/food/items", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (response.status === 201) {
+          setFoodItems((prevItems) => [...prevItems, response.data]);
+          setCurrentItem(null);
+          fetchItems();
+          toast.success("Food item added successfully");
+        } else {
+          throw new Error("Failed to add the food item.");
+        }
+      } catch (error) {
+        console.error("Error adding item:", error);
+        const errorMessage = error.response?.data?.message || error.message;
+        toast.error(`${ERROR_MESSAGES.FAILED_TO_ADD}: ${errorMessage}`);
       }
+    },
+    [setFoodItems, setCurrentItem, fetchItems]
+  );
 
-      console.log("Sending data to server:", Object.fromEntries(formData));
-
-      const response = await api.post("/fooditems", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (response.status === 201) {
-        setFoodItems((prevItems) => [...prevItems, response.data]);
-        setShowModal(false);
-        setCurrentItem(null);
-        fetchFoodItems();
-        toast.success("Food item added successfully");
-      } else {
-        throw new Error("Failed to add the food item.");
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        const result = await handleDeleteItem(id);
+        if (result && result.success) {
+          toast.success(result.message);
+          fetchItems(); // Refetch items after successful deletion
+        } else {
+          toast.error(result ? result.error : ERROR_MESSAGES.FAILED_TO_DELETE);
+        }
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast.error(ERROR_MESSAGES.FAILED_TO_DELETE);
       }
-    } catch (error) {
-      console.error("Error adding item:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
-        setError(
-          "Failed to add the food item: " +
-            (error.response.data.message || error.response.statusText)
-        );
-        toast.error(
-          "Failed to add the food item: " +
-            (error.response.data.message || error.response.statusText)
-        );
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        setError("No response received from the server. Please try again.");
-        toast.error("No response received from the server. Please try again.");
-      } else {
-        console.error("Error setting up request:", error.message);
-        setError(
-          "An error occurred while setting up the request: " + error.message
-        );
-        toast.error(
-          "An error occurred while setting up the request: " + error.message
-        );
-      }
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    },
+    [handleDeleteItem, fetchItems]
+  );
 
-  const getCurrentDateFormatted = () => {
-    const currentDate = new Date();
+  const currentDate = useMemo(() => {
     const options = { year: "numeric", month: "long", day: "numeric" };
-    return currentDate.toLocaleDateString("en-US", options);
-  };
-
-  const currentDate = getCurrentDateFormatted();
+    return new Date().toLocaleDateString("en-US", options);
+  }, []);
 
   return (
-    <Layout>
-      <div className="container">
-        <div className="d-flex justify-content-between my-3">
-          <h1 className="title">Food Inventory</h1>
-          <h2>{currentDate}</h2>
-        </div>
-        <div className="d-flex justify-content-end mb-1">
-          <Button
-            variant="success"
-            className="ml-auto"
-            onClick={() => {
-              setCurrentItem(null);
-              setShowModal(true);
-            }}
-          >
-            Add Food Item
-          </Button>
-        </div>
+    <ErrorBoundary>
+      <Layout>
+        <div className="container">
+          <div className="d-flex justify-content-between my-3">
+            <h1 className="title">Food Inventory</h1>
+            <h2>{currentDate}</h2>
+          </div>
+          <div className="d-flex justify-content-end mb-1">
+            <Button
+              variant="success"
+              className="ml-auto"
+              onClick={() => setCurrentItem({})}
+            >
+              Add Food Item
+            </Button>
+          </div>
 
-        {error && (
-          <Alert variant="danger" onClose={() => setError(null)} dismissible>
-            <Alert.Heading>Error</Alert.Heading>
-            <p>{error}</p>
-          </Alert>
-        )}
-        {isLoading ? (
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
-        ) : foodItemsWithExpiration.length > 0 ? (
-          <FoodItemTable
-            foodItems={foodItemsWithExpiration}
-            handleInputChange={handleInputChange}
-            handleEdit={(item) => {
-              setCurrentItem(item);
-              setShowModal(true);
-            }}
-            handleDelete={handleDeleteItem}
-            isUpdating={isUpdating}
-          />
-        ) : (
-          <p>No food items found.</p>
-        )}
+          {error && (
+            <Alert variant="danger" dismissible>
+              <Alert.Heading>Error</Alert.Heading>
+              <p>{error}</p>
+            </Alert>
+          )}
+          {isLoading ? (
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          ) : activeFoodItems.length > 0 ? (
+            <FoodItemTable
+              foodItems={activeFoodItems}
+              handleInputChange={handleInputChange}
+              handleDelete={handleDelete}
+              isUpdating={isLoading}
+            />
+          ) : (
+            <p>No food items found.</p>
+          )}
 
-        {showModal && (
-          <FoodItemModal
-            show={showModal}
-            handleClose={() => {
-              setShowModal(false);
-              setCurrentItem(null);
-            }}
-            handleSubmit={handleSubmit}
-          />
-        )}
-      </div>
-    </Layout>
+          {currentItem && (
+            <Suspense fallback={<div>Loading...</div>}>
+              <FoodItemModal
+                show={Boolean(currentItem)}
+                handleClose={() => setCurrentItem(null)}
+                handleSubmit={handleSubmit}
+              />
+            </Suspense>
+          )}
+        </div>
+      </Layout>
+    </ErrorBoundary>
   );
 };
 
-export default FoodItemsPage;
+export default React.memo(FoodItemsPage);

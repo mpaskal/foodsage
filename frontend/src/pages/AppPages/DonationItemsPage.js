@@ -1,26 +1,22 @@
 import React, { useEffect, useMemo, useCallback, lazy } from "react";
-import { useWasteItemManagement } from "../../hooks/useWasteItemManagement";
-// import Layout from "../../components/Layout/LayoutApp";
-import WasteItemTable from "../../components/WasteItem/WasteItemTable";
+import { useRecoilValue } from "recoil";
+import { donationItemsSelector } from "../../recoil/foodItemsAtoms";
+import { useDonationItemManagement } from "../../hooks/useDonationItemManagement";
+//import Layout from "../../components/Layout/LayoutApp";
+import DonationItemTable from "../../components/DonationItem/DonationItemTable";
 import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
-
 const ERROR_MESSAGES = {
-  FAILED_TO_DELETE: "Failed to delete the waste item",
+  FAILED_TO_DELETE: "Failed to delete the donation item",
 };
 
-const WasteItemsPage = () => {
-  const {
-    wasteItems,
-    error,
-    isLoading,
-    fetchItems,
-    handleInputChange,
-    handleDeleteItem,
-  } = useWasteItemManagement();
+const DonationItemsPage = () => {
+  const donationItems = useRecoilValue(donationItemsSelector);
+  const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
+    useDonationItemManagement();
 
   useEffect(() => {
     fetchItems();
@@ -36,7 +32,7 @@ const WasteItemsPage = () => {
           toast.error(result.error);
         }
       } catch (error) {
-        console.error("Error deleting waste item:", error);
+        console.error("Error deleting item:", error);
         toast.error(ERROR_MESSAGES.FAILED_TO_DELETE);
       }
     },
@@ -53,7 +49,7 @@ const WasteItemsPage = () => {
       <Layout>
         <div className="container">
           <div className="d-flex justify-content-between my-3">
-            <h1 className="title">Waste Items</h1>
+            <h1 className="title">Donation Inventory</h1>
             <h2>{currentDate}</h2>
           </div>
 
@@ -67,15 +63,15 @@ const WasteItemsPage = () => {
             <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
             </Spinner>
-          ) : wasteItems.length > 0 ? (
-            <WasteItemTable
-              wasteItems={wasteItems}
+          ) : donationItems.length > 0 ? (
+            <DonationItemTable
+              donationItems={donationItems}
               handleInputChange={handleInputChange}
               handleDelete={handleDelete}
               isUpdating={isLoading}
             />
           ) : (
-            <p>No waste items found.</p>
+            <p>No donation items found.</p>
           )}
         </div>
       </Layout>
@@ -83,4 +79,4 @@ const WasteItemsPage = () => {
   );
 };
 
-export default React.memo(WasteItemsPage);
+export default React.memo(DonationItemsPage);

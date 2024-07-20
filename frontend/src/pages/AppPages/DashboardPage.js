@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Layout from "../../components/Layout/LayoutApp";
+//import Layout from "../../components/Layout/LayoutApp";
 import { useSetRecoilState, useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import Img1 from "../../assets/images/dashboard-img1.jpg";
 import Img2 from "../../assets/images/dashboard-img2.jpg";
 
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 const DashboardPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();

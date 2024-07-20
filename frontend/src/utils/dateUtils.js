@@ -1,19 +1,30 @@
 /**
- * Calculates the expiration date based on the category, storage, and purchased date.
- * @param {string} category - The category of the item.
- * @param {string} storage - The storage condition of the item.
- * @param {Date|string|null} purchasedDate - The date the item was purchased.
- * @returns {string|null} - The calculated expiration date in ISO format or null if purchasedDate is invalid.
+ * Calculates the number of days since the expiration date.
+ * @param {Date|string} expirationDate - The expiration date of the item.
+ * @returns {number} - The number of days since the expiration date (negative if not yet expired).
  */
+export const getDaysSinceExpiration = (expirationDate) => {
+  const today = new Date();
+  const expDate = new Date(expirationDate);
+  const timeDiff = today - expDate;
+  return Math.floor(timeDiff / (1000 * 3600 * 24));
+};
+
+export const getDaysSinceStatusChange = (statusChangeDate) => {
+  const now = new Date();
+  const changeDate = new Date(statusChangeDate);
+  const diffTime = Math.abs(now - changeDate);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 export const calculateExpirationDate = (category, storage, purchasedDate) => {
-  if (!purchasedDate) return null;
+  if (!purchasedDate) return "";
 
   const purchased = new Date(purchasedDate);
-  if (isNaN(purchased.getTime())) return null; // Check for invalid date
+  if (isNaN(purchased.getTime())) return "";
 
-  let expirationDate = new Date(purchasedDate); // Initialize with purchased date
+  let expirationDate = new Date(purchased);
 
-  // Define expiration logic based on category and storage
   switch (category) {
     case "Dairy":
       expirationDate.setDate(
@@ -81,10 +92,11 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
       );
       break;
     default:
-      expirationDate = null;
+      expirationDate.setDate(purchased.getDate() + 7); // Default to 7 days if no specific rule
   }
 
-  return expirationDate ? expirationDate.toISOString() : null;
+  console.log("Calculated Expiration Date:", expirationDate);
+  return expirationDate.toISOString().split("T")[0];
 };
 
 /**
@@ -95,16 +107,10 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
 export const formatDateForDisplay = (date) => {
   if (!date) return "";
 
-  const localDate = new Date(date);
-  if (isNaN(localDate.getTime())) return ""; // Check for invalid date
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate.getTime())) return ""; // Return empty string for invalid date
 
-  localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-
-  const year = localDate.getFullYear();
-  const month = String(localDate.getMonth() + 1).padStart(2, "0");
-  const day = String(localDate.getDate() + 1).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return parsedDate.toISOString().split("T")[0];
 };
 
 /**
@@ -121,5 +127,16 @@ export const processDateInput = (date) => {
 
   if (isNaN(inputDate.getTime())) return ""; // Check for invalid date
 
-  return inputDate.toISOString();
+  return inputDate.toISOString().split("T")[0];
+};
+
+export const getCurrentDate = () => {
+  const now = new Date();
+  return now.toISOString().split("T")[0];
+};
+
+export const formatDateForInput = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
 };

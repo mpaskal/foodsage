@@ -6,7 +6,7 @@ import {
   isUserModalOpenState,
   loggedInUserState,
 } from "../../recoil/userAtoms";
-import { useUpdateUser, useAddUser } from "../../actions/userActions";
+import { useUpdateUser, useAddUser } from "../../hooks/useUserManagement";
 import { currentPageState, usersPerPageState } from "../../recoil/userAtoms";
 
 const UserModal = ({

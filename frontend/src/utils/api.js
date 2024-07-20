@@ -6,10 +6,16 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  // Add authorization token
   const token = JSON.parse(localStorage.getItem("user"))?.token;
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
+
+  // Add timezone offset
+  const timezoneOffset = new Date().getTimezoneOffset();
+  config.headers["X-Timezone-Offset"] = timezoneOffset;
+
   return config;
 });
 

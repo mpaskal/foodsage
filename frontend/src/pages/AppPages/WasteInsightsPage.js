@@ -3,6 +3,7 @@ import { useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import Layout from "../../components/Layout/LayoutApp";
 import { Alert, Spinner } from "react-bootstrap";
+
 import VegetablesInsightsImg from '../../assets/images/vegetables-insights.jpg';
 import TableReduceFoodWasteImg from '../../assets/images/table_reduce_food_waste.png';
 
@@ -48,13 +49,16 @@ const WasteInsightsPage = () => {
 
   return (
     <Layout>
+
     <div className="container my-5 waste-insights-container">
+
         <h1 className="mb-4">Waste Insights</h1>
         {user && (
           <Alert variant="info" className="mb-4">
             Welcome, {user.firstName}! Here are some insights to help you reduce food waste.
           </Alert>
         )}
+
         <img src={VegetablesInsightsImg} alt="Insights on Vegetables" className="full-width-image"/>
   
 
@@ -166,11 +170,8 @@ and discover practical ways to minimize it.
     </li>
   </ul>
 </section>
-
-
     </div>
 </Layout>
-
   );
 };
 
