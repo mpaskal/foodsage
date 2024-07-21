@@ -14,7 +14,7 @@ function App() {
     <Suspense fallback={<Spinner animation="border" />}>
       <InitializeState>
         <AppContent />
-        <ToastContainer position="top-center" autoClose={5000} />
+        <ToastContainer position="top-center" autoClose={3000} />
       </InitializeState>
     </Suspense>
   );
