@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { useRecoilValue } from "recoil";
 import {
   wasteAtGlanceSelector,
@@ -7,8 +7,18 @@ import {
   actionNeededSelector,
 } from "../../recoil/foodItemsAtoms";
 import { loggedInUserState } from "../../recoil/userAtoms";
-import { Alert, Spinner, Container, Row, Col, Card } from "react-bootstrap";
+import {
+  Alert,
+  Spinner,
+  Container,
+  Modal,
+  Row,
+  Col,
+  Card,
+} from "react-bootstrap";
 import useDashboardData from "../../hooks/useDashboardData";
+import { useNavigate } from "react-router-dom";
+import ActionNeededModal from "../../components/Dashboard/ActionNeededModal";
 import { Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -51,6 +61,8 @@ const DashboardOverview = () => {
   const inventoryStatus = useRecoilValue(inventoryStatusSelector);
   const actionNeeded = useRecoilValue(actionNeededSelector);
   const user = useRecoilValue(loggedInUserState);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -113,18 +125,21 @@ const DashboardOverview = () => {
       value: inventoryStatus.totalActiveItems,
       icon: FaChartLine,
       color: "#4BC0C0",
+      onClick: () => navigate("/fooditems"),
     },
     {
       title: "Wasted This Month",
       value: wasteAtGlance.totalWastedThisMonth,
       icon: FaTrash,
       color: "#FF6384",
+      onClick: () => navigate("/wasteitems"),
     },
     {
       title: "Money Lost",
       value: `$${moneyMatters.moneyLostThisMonth.toFixed(2)}`,
       icon: FaDollarSign,
       color: "#FFCE56",
+      onClick: () => navigate("/savingtracking"), // You'll need to create this route
     },
     {
       title: "Actions Needed",
@@ -133,6 +148,7 @@ const DashboardOverview = () => {
         actionNeeded.donationItemsNotMarkedCount,
       icon: FaExclamationTriangle,
       color: "#36A2EB",
+      onClick: () => setShowActionModal(true), // We'll create a modal for this
     },
   ];
 
@@ -151,7 +167,11 @@ const DashboardOverview = () => {
           <Row className="g-3 mb-4">
             {summaryCards.map((card, index) => (
               <Col key={index} lg={3} md={6}>
-                <Card className="h-100 border-0 shadow-sm">
+                <Card
+                  className="h-100 border-0 shadow-sm"
+                  onClick={card.onClick}
+                  style={{ cursor: "pointer" }}
+                >
                   <Card.Body className="d-flex align-items-center">
                     <div
                       style={{
@@ -254,17 +274,20 @@ const DashboardOverview = () => {
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
                   <Card.Title className="d-flex align-items-center mb-3">
-                    <FaExclamationTriangle className="me-2" />
+                    <FaExclamationTriangle className="me-2 text-warning" />
                     Action Needed
                   </Card.Title>
                   <ul className="list-unstyled">
-                    <li>Expired Items: {actionNeeded.expiredItemsCount}</li>
-                    <li>
-                      Items to Mark as Donated:{" "}
+                    <li className="mb-2">
+                      <strong>Expired Items:</strong>{" "}
+                      {actionNeeded.expiredItemsCount}
+                    </li>
+                    <li className="mb-2">
+                      <strong>Items to Mark as Donated:</strong>{" "}
                       {actionNeeded.donationItemsNotMarkedCount}
                     </li>
                   </ul>
-                  <small className="text-muted">
+                  <small className="text-muted d-block mb-3">
                     "Items to Mark as Donated" are items set for donation but
                     not yet confirmed as donated. Please update their status if
                     they have been donated.
@@ -275,6 +298,12 @@ const DashboardOverview = () => {
           </Row>
         </div>
       </Suspense>
+      <ActionNeededModal
+        show={showActionModal}
+        onHide={() => setShowActionModal(false)}
+        expiredCount={actionNeeded.expiredItemsCount}
+        donationCount={actionNeeded.donationItemsNotMarkedCount}
+      />
     </Layout>
   );
 };

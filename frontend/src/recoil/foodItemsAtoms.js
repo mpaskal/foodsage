@@ -311,26 +311,29 @@ export const actionNeededSelector = selector({
   get: ({ get }) => {
     const foodItems = get(foodItemsState);
     const currentDate = new Date();
-
+    console.log("All food items:", foodItems);
     const expiredItems = foodItems.filter((item) => {
       const expirationDate = new Date(item.expirationDate);
       return item.status === "Active" && expirationDate < currentDate;
     });
-
     const donationItemsNotMarked = foodItems.filter((item) => {
       const statusChangeDate = new Date(item.statusChangeDate);
       const daysSinceStatusChange = Math.floor(
         (currentDate - statusChangeDate) / (1000 * 60 * 60 * 24)
       );
-      return item.status === "Donation" && daysSinceStatusChange > 3;
+      const isNotMarked = item.status === "Donation";
+      console.log(
+        `Item ${item._id}: status=${item.status}, daysSinceStatusChange=${daysSinceStatusChange}, isNotMarked=${isNotMarked}`
+      );
+      return isNotMarked;
     });
 
+    console.log("Donation items not marked:", donationItemsNotMarked);
     // Add any other actions you want to track here
     const otherActions = foodItems.filter((item) => {
       // Example: items that are low in quantity
       return item.status === "Active" && item.quantity < 5;
     });
-
     return {
       expiredItemsCount: expiredItems.length,
       donationItemsNotMarkedCount: donationItemsNotMarked.length,

@@ -19,8 +19,12 @@ export const useDashboardData = () => {
       const wasteResponse = await api.get("/waste/items");
       const wasteItems = wasteResponse.data.data;
 
+      // Fetch donation items
+      const donationResponse = await api.get("/donation/items");
+      const donationItems = donationResponse.data.data;
+
       // Combine active and waste items
-      const allItems = [...activeItems, ...wasteItems];
+      const allItems = [...activeItems, ...wasteItems, ...donationItems];
 
       setFoodItems(allItems);
     } catch (error) {
