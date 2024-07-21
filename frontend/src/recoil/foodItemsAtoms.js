@@ -168,3 +168,140 @@ export const foodItemsStats = selector({
     };
   },
 });
+
+/* Dashboard */
+export const wasteAtGlanceSelector = selector({
+  key: "wasteAtGlanceSelector",
+  get: async ({ get }) => {
+    const foodItems = get(foodItemsState);
+    const currentDate = new Date();
+    const firstDayOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+
+    const wastedThisMonth = foodItems.filter(
+      (item) =>
+        item.status === "Waste" &&
+        new Date(item.statusChangeDate) >= firstDayOfMonth
+    );
+
+    const totalWastedThisMonth = wastedThisMonth.length;
+
+    // Calculate percentage change from last month
+    const lastMonthStart = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1
+    );
+    const lastMonthEnd = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      0
+    );
+
+    const wastedLastMonth = foodItems.filter(
+      (item) =>
+        item.status === "Waste" &&
+        new Date(item.statusChangeDate) >= lastMonthStart &&
+        new Date(item.statusChangeDate) <= lastMonthEnd
+    );
+
+    const percentageChange =
+      wastedLastMonth.length > 0
+        ? ((totalWastedThisMonth - wastedLastMonth.length) /
+            wastedLastMonth.length) *
+          100
+        : 100;
+
+    return {
+      totalWastedThisMonth,
+      percentageChange,
+      quickTip:
+        "Try implementing a FIFO (First In, First Out) system to reduce waste.",
+    };
+  },
+});
+
+export const moneyMattersSelector = selector({
+  key: "moneyMattersSelector",
+  get: async ({ get }) => {
+    const foodItems = get(foodItemsState);
+    const currentDate = new Date();
+    const firstDayOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+
+    const wastedThisMonth = foodItems.filter(
+      (item) =>
+        item.status === "Waste" &&
+        new Date(item.statusChangeDate) >= firstDayOfMonth
+    );
+
+    const moneyLostThisMonth = wastedThisMonth.reduce(
+      (total, item) => total + item.cost * (item.consumed / 100),
+      0
+    );
+
+    const activeItems = foodItems.filter((item) => item.status === "Active");
+    const potentialSavings = activeItems.reduce(
+      (total, item) => total + item.cost * ((100 - item.consumed) / 100),
+      0
+    );
+
+    return {
+      moneyLostThisMonth,
+      potentialSavings,
+    };
+  },
+});
+
+export const inventoryStatusSelector = selector({
+  key: "inventoryStatusSelector",
+  get: async ({ get }) => {
+    const foodItems = get(foodItemsState);
+    const currentDate = new Date();
+    const activeItems = foodItems.filter((item) => item.status === "Active");
+    const expiringItems = activeItems.filter((item) => {
+      const expirationDate = new Date(item.expirationDate);
+      const daysUntilExpiration = Math.floor(
+        (expirationDate - currentDate) / (1000 * 60 * 60 * 24)
+      );
+      return daysUntilExpiration <= 3;
+    });
+
+    return {
+      totalActiveItems: activeItems.length,
+      itemsExpiringInThreeDays: expiringItems.length,
+    };
+  },
+});
+
+export const actionNeededSelector = selector({
+  key: "actionNeededSelector",
+  get: async ({ get }) => {
+    const foodItems = get(foodItemsState);
+    const currentDate = new Date();
+
+    const expiredItems = foodItems.filter((item) => {
+      const expirationDate = new Date(item.expirationDate);
+      return item.status === "Active" && expirationDate < currentDate;
+    });
+
+    const donationItemsNotMarked = foodItems.filter((item) => {
+      const statusChangeDate = new Date(item.statusChangeDate);
+      const daysSinceStatusChange = Math.floor(
+        (currentDate - statusChangeDate) / (1000 * 60 * 60 * 24)
+      );
+      return item.status === "Donation" && daysSinceStatusChange > 3;
+    });
+
+    return {
+      expiredItemsCount: expiredItems.length,
+      donationItemsNotMarkedCount: donationItemsNotMarked.length,
+    };
+  },
+});
