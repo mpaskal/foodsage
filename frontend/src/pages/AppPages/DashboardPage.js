@@ -1,75 +1,83 @@
-import React, { useEffect, useState, lazy } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-//import Layout from "../../components/Layout/LayoutApp";
-import { useSetRecoilState, useRecoilValue } from "recoil";
+import React, { lazy } from "react";
+import { useRecoilValue } from "recoil";
+import {
+  wasteAtGlanceSelector,
+  moneyMattersSelector,
+  inventoryStatusSelector,
+  actionNeededSelector,
+} from "../../recoil/foodItemsAtoms";
 import { loggedInUserState } from "../../recoil/userAtoms";
-import Img1 from "../../assets/images/dashboard-img1.jpg";
-import Img2 from "../../assets/images/dashboard-img2.jpg";
+import { Alert, Spinner } from "react-bootstrap";
+import useDashboardData from "../../hooks/useDashboardData";
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
-const DashboardPage = () => {
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-  const setLoggedInUser = useSetRecoilState(loggedInUserState);
+const DashboardOverview = () => {
+  const { error, isLoading } = useDashboardData();
+  const wasteAtGlance = useRecoilValue(wasteAtGlanceSelector);
+  const moneyMatters = useRecoilValue(moneyMattersSelector);
+  const inventoryStatus = useRecoilValue(inventoryStatusSelector);
+  const actionNeeded = useRecoilValue(actionNeededSelector);
   const user = useRecoilValue(loggedInUserState);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser && storedUser !== "undefined") {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setLoggedInUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        setError("There was an error loading your user data.");
-        toast.error("There was an error loading your user data.");
-      }
-    } else {
-      setError("No user data found. Please sign in.");
-      toast.info("No user data found. Please sign in.", {
-        onClose: () => navigate("/signin"),
-        autoClose: 5000,
-      });
-    }
-  }, [setLoggedInUser, navigate]);
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="error-container">
-          <h2>Error</h2>
-          <p>{error}</p>
-        </div>
-      </Layout>
-    );
+  if (isLoading) {
+    return <div>Loading dashboard data...</div>;
   }
 
-  if (!user) {
-    return (
-      <Layout>
-        <div className="loading-container">
-          <p>Loading...</p>
-        </div>
-      </Layout>
-    );
+  if (error) {
+    return <div>Error: {error}</div>;
   }
 
   return (
     <Layout>
-      <div className="dashboard">
-        <div className="welcome-section">
-          <h1>
-            Welcome to Food Sage application, {user.firstName} {user.lastName}!
-          </h1>
-        </div>
-        <div className="image-container">
-          <img src={Img1} alt="Graph1" />
-          <img src={Img2} alt="Graph2" />
-        </div>
+      <div className="container">
+        <h1 className="mb-4">Dashboard Overview</h1>
+        {user && (
+          <Alert variant="info" className="mb-4">
+            Welcome, {user.firstName}! Here are some insights to help you reduce
+            food waste.
+          </Alert>
+        )}
+        <section className="waste-at-glance">
+          <h3>Waste at a Glance</h3>
+          <p>Total wasted this month: {wasteAtGlance.totalWastedThisMonth}</p>
+          <p>
+            Percentage change from last month:{" "}
+            {wasteAtGlance.percentageChange.toFixed(2)}%
+          </p>
+          <p>Quick tip: {wasteAtGlance.quickTip}</p>
+        </section>
+
+        <section className="money-matters">
+          <h3>Money Matters</h3>
+          <p>
+            Money lost due to waste this month: $
+            {moneyMatters.moneyLostThisMonth.toFixed(2)}
+          </p>
+          <p>Potential savings: ${moneyMatters.potentialSavings.toFixed(2)}</p>
+        </section>
+
+        <section className="inventory-status">
+          <h3>Current Inventory Status</h3>
+          <p>Total active food items: {inventoryStatus.totalActiveItems}</p>
+          <p>
+            Items expiring in the next 3 days:{" "}
+            {inventoryStatus.itemsExpiringInThreeDays}
+          </p>
+        </section>
+
+        <section className="action-needed">
+          <h3>Action Needed</h3>
+          <p>
+            Expired items requiring attention: {actionNeeded.expiredItemsCount}
+          </p>
+          <p>
+            Donation items not marked as "Donated" for over 3 days:{" "}
+            {actionNeeded.donationItemsNotMarkedCount}
+          </p>
+        </section>
       </div>
     </Layout>
   );
 };
 
-export default DashboardPage;
+export default DashboardOverview;

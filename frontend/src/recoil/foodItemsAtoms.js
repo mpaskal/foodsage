@@ -172,7 +172,7 @@ export const foodItemsStats = selector({
 /* Dashboard */
 export const wasteAtGlanceSelector = selector({
   key: "wasteAtGlanceSelector",
-  get: async ({ get }) => {
+  get: ({ get }) => {
     const foodItems = get(foodItemsState);
     const currentDate = new Date();
     const firstDayOfMonth = new Date(
@@ -181,11 +181,17 @@ export const wasteAtGlanceSelector = selector({
       1
     );
 
-    const wastedThisMonth = foodItems.filter(
-      (item) =>
-        item.status === "Waste" &&
-        new Date(item.statusChangeDate) >= firstDayOfMonth
-    );
+    console.log("All food items in wasteAtGlanceSelector:", foodItems);
+
+    const wastedThisMonth = foodItems.filter((item) => {
+      const itemStatusChangeDate = new Date(item.statusChangeDate);
+      console.log(
+        `Item ${item.name}: Status: ${item.status}, Status Change Date: ${itemStatusChangeDate}`
+      );
+      return item.status === "Waste" && itemStatusChangeDate >= firstDayOfMonth;
+    });
+
+    console.log("Wasted items this month:", wastedThisMonth);
 
     const totalWastedThisMonth = wastedThisMonth.length;
 
@@ -201,19 +207,23 @@ export const wasteAtGlanceSelector = selector({
       0
     );
 
-    const wastedLastMonth = foodItems.filter(
-      (item) =>
+    const wastedLastMonth = foodItems.filter((item) => {
+      const itemStatusChangeDate = new Date(item.statusChangeDate);
+      return (
         item.status === "Waste" &&
-        new Date(item.statusChangeDate) >= lastMonthStart &&
-        new Date(item.statusChangeDate) <= lastMonthEnd
-    );
+        itemStatusChangeDate >= lastMonthStart &&
+        itemStatusChangeDate <= lastMonthEnd
+      );
+    });
 
     const percentageChange =
       wastedLastMonth.length > 0
         ? ((totalWastedThisMonth - wastedLastMonth.length) /
             wastedLastMonth.length) *
           100
-        : 100;
+        : totalWastedThisMonth > 0
+        ? 100
+        : 0;
 
     return {
       totalWastedThisMonth,
@@ -226,7 +236,7 @@ export const wasteAtGlanceSelector = selector({
 
 export const moneyMattersSelector = selector({
   key: "moneyMattersSelector",
-  get: async ({ get }) => {
+  get: ({ get }) => {
     const foodItems = get(foodItemsState);
     const currentDate = new Date();
     const firstDayOfMonth = new Date(
@@ -235,22 +245,38 @@ export const moneyMattersSelector = selector({
       1
     );
 
-    const wastedThisMonth = foodItems.filter(
-      (item) =>
-        item.status === "Waste" &&
-        new Date(item.statusChangeDate) >= firstDayOfMonth
-    );
+    console.log("All food items in moneyMattersSelector:", foodItems);
 
-    const moneyLostThisMonth = wastedThisMonth.reduce(
-      (total, item) => total + item.cost * (item.consumed / 100),
-      0
-    );
+    const wastedThisMonth = foodItems.filter((item) => {
+      const itemStatusChangeDate = new Date(item.statusChangeDate);
+      console.log(
+        `Item ${item.name}: Status: ${item.status}, Status Change Date: ${itemStatusChangeDate}`
+      );
+      return item.status === "Waste" && itemStatusChangeDate >= firstDayOfMonth;
+    });
+
+    console.log("Wasted items this month:", wastedThisMonth);
+
+    const moneyLostThisMonth = wastedThisMonth.reduce((total, item) => {
+      const lostAmount = item.cost * ((100 - item.consumed) / 100);
+      console.log(
+        `Item ${item.name}: Cost: ${item.cost}, Consumed: ${item.consumed}%, Lost: ${lostAmount}`
+      );
+      return total + lostAmount;
+    }, 0);
+
+    console.log("Total money lost this month:", moneyLostThisMonth);
 
     const activeItems = foodItems.filter((item) => item.status === "Active");
-    const potentialSavings = activeItems.reduce(
-      (total, item) => total + item.cost * ((100 - item.consumed) / 100),
-      0
-    );
+    const potentialSavings = activeItems.reduce((total, item) => {
+      const potentialSaving = item.cost * ((100 - item.consumed) / 100);
+      console.log(
+        `Active item ${item.name}: Cost: ${item.cost}, Consumed: ${item.consumed}%, Potential Saving: ${potentialSaving}`
+      );
+      return total + potentialSaving;
+    }, 0);
+
+    console.log("Total potential savings:", potentialSavings);
 
     return {
       moneyLostThisMonth,

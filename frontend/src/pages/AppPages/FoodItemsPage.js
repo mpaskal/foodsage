@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useEffect, useCallback, Suspense } from "react";
 import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
 import {
   foodItemsState,
@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
 import { formatDateForDisplay } from "../../utils/dateUtils";
 import api from "../../utils/api";
+import { getCurrentDateFormatted } from "../../utils/dateUtils";
 
 const FoodItemModal = React.lazy(() =>
   import("../../components/FoodItem/FoodItemModal")
@@ -24,6 +25,7 @@ const ERROR_MESSAGES = {
 };
 
 const FoodItemsPage = () => {
+  const currentDate = getCurrentDateFormatted();
   const setFoodItems = useSetRecoilState(foodItemsState);
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
@@ -99,11 +101,6 @@ const FoodItemsPage = () => {
     },
     [handleDeleteItem, fetchItems]
   );
-
-  const currentDate = useMemo(() => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date().toLocaleDateString("en-US", options);
-  }, []);
 
   return (
     <ErrorBoundary>

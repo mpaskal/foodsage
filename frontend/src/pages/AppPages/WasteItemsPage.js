@@ -5,6 +5,7 @@ import WasteItemTable from "../../components/WasteItem/WasteItemTable";
 import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
+import { getCurrentDateFormatted } from "../../utils/dateUtils";
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
@@ -21,6 +22,7 @@ const WasteItemsPage = () => {
     handleInputChange,
     handleDeleteItem,
   } = useWasteItemManagement();
+  const currentDate = getCurrentDateFormatted();
 
   useEffect(() => {
     fetchItems();
@@ -42,11 +44,6 @@ const WasteItemsPage = () => {
     },
     [handleDeleteItem]
   );
-
-  const currentDate = useMemo(() => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date().toLocaleDateString("en-US", options);
-  }, []);
 
   return (
     <ErrorBoundary>
