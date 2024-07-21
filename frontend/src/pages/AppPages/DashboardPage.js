@@ -9,7 +9,7 @@ import {
 import { loggedInUserState } from "../../recoil/userAtoms";
 import { Alert, Spinner, Container, Row, Col, Card } from "react-bootstrap";
 import useDashboardData from "../../hooks/useDashboardData";
-import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -27,6 +27,7 @@ import {
   FaDollarSign,
   FaBoxOpen,
   FaExclamationTriangle,
+  FaChartLine,
 } from "react-icons/fa";
 
 ChartJS.register(
@@ -106,82 +107,168 @@ const DashboardOverview = () => {
     ],
   };
 
+  const summaryCards = [
+    {
+      title: "Total Active Items",
+      value: inventoryStatus.totalActiveItems,
+      icon: FaChartLine,
+      color: "#4BC0C0",
+    },
+    {
+      title: "Wasted This Month",
+      value: wasteAtGlance.totalWastedThisMonth,
+      icon: FaTrash,
+      color: "#FF6384",
+    },
+    {
+      title: "Money Lost",
+      value: `$${moneyMatters.moneyLostThisMonth.toFixed(2)}`,
+      icon: FaDollarSign,
+      color: "#FFCE56",
+    },
+    {
+      title: "Actions Needed",
+      value:
+        actionNeeded.expiredItemsCount +
+        actionNeeded.donationItemsNotMarkedCount,
+      icon: FaExclamationTriangle,
+      color: "#36A2EB",
+    },
+  ];
+
   return (
     <Layout>
       <Suspense fallback={<Spinner animation="border" />}>
-        <div className="container">
-          <h1 className="my-4">Dashboard Overview</h1>
+        <div className="container py-3">
+          <h1 className="h3 mb-4">Dashboard Overview</h1>
           {user && (
             <Alert variant="info" className="mb-4">
               Welcome, {user.firstName}! Here are some insights to help you
               reduce food waste.
             </Alert>
           )}
-          <Row>
-            <Col lg={3} md={6} className="mb-4">
-              <Card className="h-100">
+
+          <Row className="g-3 mb-4">
+            {summaryCards.map((card, index) => (
+              <Col key={index} lg={3} md={6}>
+                <Card className="h-100 border-0 shadow-sm">
+                  <Card.Body className="d-flex align-items-center">
+                    <div
+                      style={{
+                        color: card.color,
+                        fontSize: "2rem",
+                        marginRight: "1rem",
+                      }}
+                    >
+                      <card.icon />
+                    </div>
+                    <div>
+                      <Card.Title className="mb-0 fs-6">
+                        {card.title}
+                      </Card.Title>
+                      <div className="fs-4 fw-bold">{card.value}</div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          <Row className="g-3">
+            <Col lg={6} md={12} className="mb-4">
+              <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title className="d-flex align-items-center mb-3">
                     <FaTrash className="me-2" />
                     Waste at a Glance
                   </Card.Title>
-                  <Doughnut data={wasteData} />
-                  <Card.Text className="mt-3">
-                    Change: {wasteAtGlance.percentageChange.toFixed(2)}%
-                  </Card.Text>
-                  <Card.Text>{wasteAtGlance.quickTip}</Card.Text>
+                  <div style={{ height: "200px" }}>
+                    <Doughnut
+                      data={wasteData}
+                      options={{ responsive: true, maintainAspectRatio: false }}
+                    />
+                  </div>
+                  <div className="mt-3 text-center">
+                    <small>
+                      Change: {wasteAtGlance.percentageChange.toFixed(2)}%
+                    </small>
+                    <p className="mb-0">
+                      <small>{wasteAtGlance.quickTip}</small>
+                    </p>
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col lg={3} md={6} className="mb-4">
-              <Card className="h-100">
+            <Col lg={6} md={12} className="mb-4">
+              <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title className="d-flex align-items-center mb-3">
                     <FaDollarSign className="me-2" />
                     Money Matters
                   </Card.Title>
-                  <Bar data={moneyData} />
-                  <Card.Text className="mt-3">
-                    Lost: ${moneyMatters.moneyLostThisMonth.toFixed(2)}
-                  </Card.Text>
-                  <Card.Text>
-                    Potential Savings: $
-                    {moneyMatters.potentialSavings.toFixed(2)}
-                  </Card.Text>
+                  <div style={{ height: "200px" }}>
+                    <Bar
+                      data={moneyData}
+                      options={{ responsive: true, maintainAspectRatio: false }}
+                    />
+                  </div>
+                  <div className="mt-3 text-center">
+                    <small>
+                      Lost: ${moneyMatters.moneyLostThisMonth.toFixed(2)}
+                    </small>
+                    <br />
+                    <small>
+                      Potential Savings: $
+                      {moneyMatters.potentialSavings.toFixed(2)}
+                    </small>
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col lg={3} md={6} className="mb-4">
-              <Card className="h-100">
+            <Col lg={6} md={12} className="mb-4">
+              <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title className="d-flex align-items-center mb-3">
                     <FaBoxOpen className="me-2" />
                     Inventory Status
                   </Card.Title>
-                  <Bar data={inventoryData} />
-                  <Card.Text className="mt-3">
-                    Active Items: {inventoryStatus.totalActiveItems}
-                  </Card.Text>
-                  <Card.Text>
-                    Expiring Soon: {inventoryStatus.itemsExpiringInThreeDays}
-                  </Card.Text>
+                  <div style={{ height: "200px" }}>
+                    <Bar
+                      data={inventoryData}
+                      options={{ responsive: true, maintainAspectRatio: false }}
+                    />
+                  </div>
+                  <div className="mt-3 text-center">
+                    <small>
+                      Active Items: {inventoryStatus.totalActiveItems}
+                    </small>
+                    <br />
+                    <small>
+                      Expiring Soon: {inventoryStatus.itemsExpiringInThreeDays}
+                    </small>
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col lg={3} md={6} className="mb-4">
-              <Card className="h-100">
+            <Col lg={6} md={12} className="mb-4">
+              <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title className="d-flex align-items-center mb-3">
                     <FaExclamationTriangle className="me-2" />
                     Action Needed
                   </Card.Title>
-                  <Card.Text>
-                    Expired Items: {actionNeeded.expiredItemsCount}
-                  </Card.Text>
-                  <Card.Text>
-                    Unmarked Donations:{" "}
-                    {actionNeeded.donationItemsNotMarkedCount}
-                  </Card.Text>
+                  <ul className="list-unstyled">
+                    <li>Expired Items: {actionNeeded.expiredItemsCount}</li>
+                    <li>
+                      Items to Mark as Donated:{" "}
+                      {actionNeeded.donationItemsNotMarkedCount}
+                    </li>
+                  </ul>
+                  <small className="text-muted">
+                    "Items to Mark as Donated" are items set for donation but
+                    not yet confirmed as donated. Please update their status if
+                    they have been donated.
+                  </small>
                 </Card.Body>
               </Card>
             </Col>

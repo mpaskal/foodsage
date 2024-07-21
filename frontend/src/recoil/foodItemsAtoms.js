@@ -308,7 +308,7 @@ export const inventoryStatusSelector = selector({
 
 export const actionNeededSelector = selector({
   key: "actionNeededSelector",
-  get: async ({ get }) => {
+  get: ({ get }) => {
     const foodItems = get(foodItemsState);
     const currentDate = new Date();
 
@@ -325,9 +325,16 @@ export const actionNeededSelector = selector({
       return item.status === "Donation" && daysSinceStatusChange > 3;
     });
 
+    // Add any other actions you want to track here
+    const otherActions = foodItems.filter((item) => {
+      // Example: items that are low in quantity
+      return item.status === "Active" && item.quantity < 5;
+    });
+
     return {
       expiredItemsCount: expiredItems.length,
       donationItemsNotMarkedCount: donationItemsNotMarked.length,
+      otherActionsCount: otherActions.length,
     };
   },
 });
