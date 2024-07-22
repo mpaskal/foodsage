@@ -599,6 +599,16 @@ a:hover {
   background-color: #058240;
 }
 
+/* Card */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 /* Dashboard */
 .dashboard {
   padding: 1rem;

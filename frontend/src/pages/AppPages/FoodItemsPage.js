@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useCallback, Suspense } from "react";
-import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import {
-  foodItemsState,
+  allFoodItemsState,
   activeFoodItemsSelector,
-  currentItemState,
+  foodItemsWithCalculatedDates,
 } from "../../recoil/foodItemsAtoms";
 import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
 import { formatDateForDisplay } from "../../utils/dateUtils";
 import api from "../../utils/api";
+import { getCurrentDateFormatted } from "../../utils/dateUtils";
 
 const FoodItemModal = React.lazy(() =>
   import("../../components/FoodItem/FoodItemModal")
@@ -24,9 +25,10 @@ const ERROR_MESSAGES = {
 };
 
 const FoodItemsPage = () => {
-  const setFoodItems = useSetRecoilState(foodItemsState);
+  const currentDate = getCurrentDateFormatted();
+  const setAllFoodItems = useSetRecoilState(allFoodItemsState);
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
-  const [currentItem, setCurrentItem] = useRecoilState(currentItemState);
+  const [currentItem, setCurrentItem] = useState(null);
   const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
     useFoodItemManagement("food");
 
@@ -66,7 +68,7 @@ const FoodItemsPage = () => {
         });
 
         if (response.status === 201) {
-          setFoodItems((prevItems) => [...prevItems, response.data]);
+          setAllFoodItems((prevItems) => [...prevItems, response.data]);
           setCurrentItem(null);
           fetchItems();
           toast.success("Food item added successfully");
@@ -79,7 +81,7 @@ const FoodItemsPage = () => {
         toast.error(`${ERROR_MESSAGES.FAILED_TO_ADD}: ${errorMessage}`);
       }
     },
-    [setFoodItems, setCurrentItem, fetchItems]
+    [setAllFoodItems, fetchItems]
   );
 
   const handleDelete = useCallback(
@@ -99,11 +101,6 @@ const FoodItemsPage = () => {
     },
     [handleDeleteItem, fetchItems]
   );
-
-  const currentDate = useMemo(() => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date().toLocaleDateString("en-US", options);
-  }, []);
 
   return (
     <ErrorBoundary>
@@ -150,6 +147,7 @@ const FoodItemsPage = () => {
                 show={Boolean(currentItem)}
                 handleClose={() => setCurrentItem(null)}
                 handleSubmit={handleSubmit}
+                initialData={currentItem}
               />
             </Suspense>
           )}

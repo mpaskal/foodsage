@@ -16,6 +16,31 @@ const formatDate = (dateString) => {
   }
 };
 
+// Get all food items
+exports.getAllFoodItems = async (req, res) => {
+  const tenantId = req.user.tenantId;
+
+  try {
+    const allItems = await FoodItem.countDocuments({
+      tenantId,
+    });
+    console.log("allItems in controller foodItems", allItems);
+    const allFoodItems = await FoodItem.find({
+      tenantId,
+    });
+    const allFoodItemsLength = allFoodItems.length;
+    //  console.log("food items in controller foodItems", foodItems);
+    res.status(200).json({
+      data: allFoodItems,
+      allItems: allItems,
+      allFoodItemsLength: allFoodItemsLength,
+    });
+  } catch (error) {
+    console.error("Error fetching food items:", error);
+    res.status(500).json({ message: "Error fetching food items", error });
+  }
+};
+
 // Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
   console.log("food items in controller req.query", req.query);

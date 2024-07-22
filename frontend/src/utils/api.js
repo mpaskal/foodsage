@@ -19,4 +19,8 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const getAllFoodItems = () => {
+  return api.get("/food/items/all");
+};
+
 export default api;

@@ -135,6 +135,11 @@ export const getCurrentDate = () => {
   return now.toISOString().split("T")[0];
 };
 
+export const getCurrentDateFormatted = () => {
+  const options = { year: "numeric", month: "long", day: "numeric" };
+  return new Date().toLocaleDateString("en-US", options);
+};
+
 export const formatDateForInput = (dateString) => {
   if (!dateString) return "";
   const date = new Date(dateString);

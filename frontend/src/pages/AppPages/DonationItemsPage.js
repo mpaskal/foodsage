@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useCallback, lazy } from "react";
 import { useRecoilValue } from "recoil";
 import { donationItemsSelector } from "../../recoil/foodItemsAtoms";
 import { useDonationItemManagement } from "../../hooks/useDonationItemManagement";
-//import Layout from "../../components/Layout/LayoutApp";
 import DonationItemTable from "../../components/DonationItem/DonationItemTable";
 import { Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
+import { getCurrentDateFormatted } from "../../utils/dateUtils";
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 const ERROR_MESSAGES = {
@@ -14,6 +14,7 @@ const ERROR_MESSAGES = {
 };
 
 const DonationItemsPage = () => {
+  const currentDate = getCurrentDateFormatted();
   const donationItems = useRecoilValue(donationItemsSelector);
   const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
     useDonationItemManagement();
@@ -38,11 +39,6 @@ const DonationItemsPage = () => {
     },
     [handleDeleteItem]
   );
-
-  const currentDate = useMemo(() => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date().toLocaleDateString("en-US", options);
-  }, []);
 
   return (
     <ErrorBoundary>

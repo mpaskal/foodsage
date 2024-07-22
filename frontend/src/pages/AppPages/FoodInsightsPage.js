@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy } from "react";
 import useFoodInsights from "../../hooks/useFoodInsights";
 import { Spinner, Alert } from "react-bootstrap";
-import Layout from "../../components/Layout/LayoutApp";
+import { getCurrentDateFormatted } from "../../utils/dateUtils";
+
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
 const FoodInsightsPage = () => {
   const { insights, loading, error, calculateWasteCost, predictFutureWaste } =
     useFoodInsights();
-
+  const currentDate = getCurrentDateFormatted();
   const [wasteCost, setWasteCost] = useState(null);
   const [predictedWaste, setPredictedWaste] = useState(null);
 
@@ -32,17 +34,12 @@ const FoodInsightsPage = () => {
 
   const { consumptionRate, wasteRate } = insights.insights || {};
 
-  const getCurrentDateFormatted = () => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date().toLocaleDateString("en-US", options);
-  };
-
   return (
     <Layout>
       <div className="container">
         <div className="d-flex justify-content-between my-3">
           <h1 className="title">Food Management Insights</h1>
-          <h2>{getCurrentDateFormatted()}</h2>
+          <h2>{currentDate}</h2>
         </div>
         <div className="d-flex flex-column mb-1">
           <p>Consumption Rate: {consumptionRate?.toFixed(2) || "N/A"}%</p>

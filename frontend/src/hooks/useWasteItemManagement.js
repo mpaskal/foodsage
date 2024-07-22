@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { foodItemsState } from "../recoil/foodItemsAtoms";
+import { allFoodItemsState } from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 export const useWasteItemManagement = () => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+  const [foodItems, setFoodItems] = useRecoilState(allFoodItemsState);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 

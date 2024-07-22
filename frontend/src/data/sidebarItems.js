@@ -37,4 +37,10 @@ export const sidebarItems = [
       { name: "Donation Insights", path: "/donationinsights" },
     ],
   },
+
+  {
+    name: "Financial Insights",
+    icon: GiReceiveMoney,
+    items: [{ name: "Savings Tracker", path: "/savings" }],
+  },
 ];

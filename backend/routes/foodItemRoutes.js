@@ -4,6 +4,9 @@ const uploadMiddleware = require("../middlewares/uploadMiddleware");
 const userAuth = require("../middlewares/userAuth");
 const foodItemController = require("../controllers/foodItemController");
 
+// Get all food items (regardless of status)
+router.get("/all", userAuth, foodItemController.getAllFoodItems);
+
 // Get all food items (Active)
 router.get("/", userAuth, foodItemController.getFoodItems);
 
