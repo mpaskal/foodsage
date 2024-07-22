@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRecoilState, useSetRecoilState } from "recoil";
-import { allFoodItemsState } from "../recoil/foodItemsAtoms";
+import {
+  allFoodItemsState,
+  recentActivityState,
+} from "../recoil/foodItemsAtoms";
 import {
   calculateExpirationDate,
   getDaysSinceExpiration,
@@ -10,10 +13,12 @@ import api from "../utils/api";
 
 export const useFoodItemManagement = (pageType) => {
   const [foodItems, setFoodItems] = useRecoilState(allFoodItemsState);
+  const setRecentActivity = useSetRecoilState(recentActivityState);
   const [error, setError] = useState(null);
-  const setRecoilFoodItems = useSetRecoilState(allFoodItemsState);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchItems = useCallback(async () => {
+    setIsLoading(true);
     try {
       const response = await api.get("/food/items/all");
       console.log("API Response:", response);
@@ -34,10 +39,12 @@ export const useFoodItemManagement = (pageType) => {
           item.purchasedDate
         ),
         purchasedDate: formatDateForDisplay(new Date(item.purchasedDate)),
-        // Format expirationDate if it exists
         ...(item.expirationDate && {
           expirationDate: formatDateForDisplay(new Date(item.expirationDate)),
         }),
+        updatedByName: item.updatedBy
+          ? `${item.updatedBy.firstName} ${item.updatedBy.lastName}`
+          : "Unknown User",
       }));
 
       console.log("Processed Items:", items);
@@ -71,13 +78,23 @@ export const useFoodItemManagement = (pageType) => {
     } catch (error) {
       setError("Failed to fetch items");
       console.error("Error fetching items:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, [pageType, setFoodItems]);
+
+  const fetchRecentActivity = useCallback(async () => {
+    try {
+      const response = await api.get("/food/items/recent-activity");
+      setRecentActivity(response.data);
+    } catch (error) {
+      console.error("Error fetching recent activity:", error);
+    }
+  }, [setRecentActivity]);
 
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        // Ensure the date fields are formatted correctly
         if (updates.purchasedDate) {
           updates.purchasedDate = formatDateForDisplay(
             new Date(updates.purchasedDate)
@@ -94,15 +111,17 @@ export const useFoodItemManagement = (pageType) => {
 
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === id ? { ...item, ...updates } : item
+            item._id === id ? { ...item, ...response.data.data } : item
           )
         );
+
+        await fetchRecentActivity();
       } catch (error) {
         setError("Failed to update item");
         console.error("Error updating item:", error);
       }
     },
-    [setFoodItems]
+    [setFoodItems, fetchRecentActivity]
   );
 
   const handleDeleteItem = useCallback(
@@ -112,48 +131,28 @@ export const useFoodItemManagement = (pageType) => {
         setFoodItems((prevItems) =>
           prevItems.filter((item) => item._id !== id)
         );
+        await fetchRecentActivity();
         return { success: true, message: "Item deleted successfully" };
       } catch (error) {
         console.error("Error deleting item:", error);
         return { success: false, error: "Failed to delete item" };
       }
     },
-    [setFoodItems]
+    [setFoodItems, fetchRecentActivity]
   );
 
   useEffect(() => {
-    const fetchInitialItems = async () => {
-      try {
-        const response = await api.get("/food/items/all");
-        console.log(
-          "Raw API response for food items state:",
-          response.data.data
-        );
-        setRecoilFoodItems(
-          response.data.data.map((item) => ({
-            ...item,
-            expirationDate: new Date(
-              calculateExpirationDate(
-                item.category,
-                item.storage,
-                item.purchasedDate
-              )
-            ),
-          }))
-        );
-      } catch (error) {
-        console.error("Failed to fetch items:", error);
-      }
-    };
-
-    fetchInitialItems();
-  }, [setRecoilFoodItems]);
+    fetchItems();
+    fetchRecentActivity();
+  }, [fetchItems, fetchRecentActivity]);
 
   return {
     foodItems,
     error,
+    isLoading,
     fetchItems,
     handleInputChange,
     handleDeleteItem,
+    fetchRecentActivity,
   };
 };

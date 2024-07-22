@@ -20,8 +20,6 @@ const useFoodInsights = () => {
   }, []);
 
   const calculateInsights = useCallback(() => {
-    // Implement logic to calculate insights based on foodItems
-    // This is a placeholder and should be replaced with actual logic
     const consumptionRate =
       (foodItems.filter((item) => item.status === "Consumed").length /
         foodItems.length) *
@@ -31,10 +29,35 @@ const useFoodInsights = () => {
         foodItems.length) *
       100;
 
+    let recommendations = [];
+
+    if (wasteRate > 20) {
+      recommendations.push(
+        "Your waste rate is higher than average. Consider meal planning to reduce food waste."
+      );
+    }
+
+    if (consumptionRate > 80) {
+      recommendations.push(
+        "You're doing great with consumption! Keep up the good work."
+      );
+    }
+
+    if (wasteRate > consumptionRate) {
+      recommendations.push(
+        "Try freezing excess produce to extend its life and reduce waste."
+      );
+      recommendations.push(
+        "Consider donating excess non-perishables to local food banks."
+      );
+    }
+
+    // Add more conditions and recommendations based on your business logic
+
     setInsights({
       consumptionRate,
       wasteRate,
-      recommendations: ["Placeholder recommendation"],
+      recommendations,
     });
   }, [foodItems]);
 

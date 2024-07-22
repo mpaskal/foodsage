@@ -1,8 +1,10 @@
-import React, { useEffect, useState, lazy, Suspense } from "react";
-import useFoodInsights from "../../hooks/useFoodInsights";
+// src/pages/AppPages/DonationInsightsPage.js
+
+import React, { useEffect, lazy, Suspense } from "react";
+import useDonationInsights from "../../hooks/useDonationInsights";
 import { Spinner, Alert, Card, Row, Col, ListGroup } from "react-bootstrap";
 import { getCurrentDateFormatted } from "../../utils/dateUtils";
-import { Bar, Doughnut } from "react-chartjs-2";
+import { Doughnut, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -26,62 +28,52 @@ ChartJS.register(
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
-const FoodInsightsPage = () => {
+const DonationInsightsPage = () => {
   const {
-    foodItems,
+    donationItems,
     insights,
     loading,
     error,
-    fetchAllFoodItems,
+    fetchDonationItems,
     calculateInsights,
-    calculateWasteCost,
-    predictFutureWaste,
-  } = useFoodInsights();
+  } = useDonationInsights();
   const currentDate = getCurrentDateFormatted();
-  const [wasteCost, setWasteCost] = useState(null);
-  const [predictedWaste, setPredictedWaste] = useState(null);
 
   useEffect(() => {
-    fetchAllFoodItems();
-  }, [fetchAllFoodItems]);
+    fetchDonationItems();
+  }, [fetchDonationItems]);
 
   useEffect(() => {
-    if (foodItems.length > 0) {
+    if (donationItems.length > 0) {
       calculateInsights();
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const endDate = new Date();
-      const wasteCostData = calculateWasteCost(startDate, endDate);
-      setWasteCost(wasteCostData);
-
-      const predictedWasteData = predictFutureWaste(30);
-      setPredictedWaste(predictedWasteData);
     }
-  }, [foodItems, calculateInsights, calculateWasteCost, predictFutureWaste]);
+  }, [donationItems, calculateInsights]);
 
   if (loading) return <Spinner animation="border" />;
-  if (error) return <Alert variant="danger">Error: {error.message}</Alert>;
+  if (error) return <Alert variant="danger">Error: {error}</Alert>;
   if (!insights) return <Alert variant="info">No insights available.</Alert>;
 
-  const { consumptionRate, wasteRate } = insights;
+  const { totalDonations, donatedItems, pendingDonations, donationRate } =
+    insights;
 
-  const ratesData = {
-    labels: ["Consumption", "Waste"],
+  const donationStatusData = {
+    labels: ["Donated", "Pending"],
     datasets: [
       {
-        data: [consumptionRate, wasteRate],
-        backgroundColor: ["#36A2EB", "#FF6384"],
-        hoverBackgroundColor: ["#36A2EB", "#FF6384"],
+        data: [donatedItems, pendingDonations],
+        backgroundColor: ["#36A2EB", "#FFCE56"],
+        hoverBackgroundColor: ["#36A2EB", "#FFCE56"],
       },
     ],
   };
 
-  const wasteCostData = {
-    labels: ["Current Waste Cost", "Predicted Waste"],
+  const donationTrendsData = {
+    labels: ["Total Donations", "Donated Items", "Pending Donations"],
     datasets: [
       {
-        label: "Waste Cost ($)",
-        data: [wasteCost, predictedWaste],
-        backgroundColor: ["#4BC0C0", "#FFCE56"],
+        label: "Donation Trends",
+        data: [totalDonations, donatedItems, pendingDonations],
+        backgroundColor: ["#4BC0C0", "#36A2EB", "#FFCE56"],
       },
     ],
   };
@@ -91,24 +83,24 @@ const FoodInsightsPage = () => {
       <Layout>
         <div className="container py-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1 className="title">Food Management Insights</h1>
+            <h1 className="title">Donation Insights</h1>
             <h2 className="text-muted">{currentDate}</h2>
           </div>
           <Row className="g-4">
             <Col md={6}>
               <Card className="h-100">
                 <Card.Body>
-                  <Card.Title>Consumption vs Waste Rate</Card.Title>
-                  <Doughnut data={ratesData} />
+                  <Card.Title>Donation Status</Card.Title>
+                  <Doughnut data={donationStatusData} />
                 </Card.Body>
               </Card>
             </Col>
             <Col md={6}>
               <Card className="h-100">
                 <Card.Body>
-                  <Card.Title>Waste Cost Analysis</Card.Title>
+                  <Card.Title>Donation Trends</Card.Title>
                   <Bar
-                    data={wasteCostData}
+                    data={donationTrendsData}
                     options={{
                       responsive: true,
                       scales: {
@@ -124,21 +116,19 @@ const FoodInsightsPage = () => {
             <Col md={6}>
               <Card className="h-100">
                 <Card.Body>
-                  <Card.Title>Key Metrics</Card.Title>
+                  <Card.Title>Donation Metrics</Card.Title>
                   <ListGroup variant="flush">
                     <ListGroup.Item>
-                      Consumption Rate: {consumptionRate?.toFixed(2) || "N/A"}%
+                      Total Donations: {totalDonations}
                     </ListGroup.Item>
                     <ListGroup.Item>
-                      Waste Rate: {wasteRate?.toFixed(2) || "N/A"}%
+                      Donated Items: {donatedItems}
                     </ListGroup.Item>
                     <ListGroup.Item>
-                      Total Waste Cost (Last 30 days): $
-                      {wasteCost?.toFixed(2) || "N/A"}
+                      Pending Donations: {pendingDonations}
                     </ListGroup.Item>
                     <ListGroup.Item>
-                      Predicted Waste (Next 30 days): $
-                      {predictedWaste?.toFixed(2) || "N/A"}
+                      Donation Rate: {donationRate.toFixed(2)}%
                     </ListGroup.Item>
                   </ListGroup>
                 </Card.Body>
@@ -147,12 +137,15 @@ const FoodInsightsPage = () => {
             <Col md={6}>
               <Card className="h-100">
                 <Card.Body>
-                  <Card.Title>Recommendations</Card.Title>
-                  <ListGroup variant="flush">
-                    {insights.recommendations?.map((rec, index) => (
-                      <ListGroup.Item key={index}>{rec}</ListGroup.Item>
-                    ))}
-                  </ListGroup>
+                  <Card.Title>Donation Impact</Card.Title>
+                  <p>
+                    Your donations have helped {donatedItems} items find new
+                    homes!
+                  </p>
+                  <p>
+                    Keep up the great work in reducing food waste through
+                    donations.
+                  </p>
                 </Card.Body>
               </Card>
             </Col>
@@ -163,4 +156,4 @@ const FoodInsightsPage = () => {
   );
 };
 
-export default FoodInsightsPage;
+export default DonationInsightsPage;

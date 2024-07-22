@@ -1,30 +1,55 @@
-import { useEffect } from "react";
-import { useSetRecoilState } from "recoil";
-import { allFoodItemsState } from "../recoil/foodItemsAtoms";
+import { useState, useEffect } from "react";
+import { useSetRecoilState, useRecoilValue } from "recoil";
+import {
+  allFoodItemsState,
+  wasteAtGlanceSelector,
+  moneyMattersSelector,
+  inventoryStatusSelector,
+  actionNeededSelector,
+  recentActivityState,
+} from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 export const useDashboard = () => {
   const setFoodItems = useSetRecoilState(allFoodItemsState);
+  const setRecentActivity = useSetRecoilState(recentActivityState);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const wasteAtGlance = useRecoilValue(wasteAtGlanceSelector);
+  const moneyMatters = useRecoilValue(moneyMattersSelector);
+  const inventoryStatus = useRecoilValue(inventoryStatusSelector);
+  const actionNeeded = useRecoilValue(actionNeededSelector);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      setLoading(true);
       try {
-        const response = await api.get("/food/items/all");
-        console.log("Dashboard API Response:", response.data);
+        const [itemsResponse, activityResponse] = await Promise.all([
+          api.get("/food/items/all"),
+          api.get("/food/items/recent-activity"),
+        ]);
 
-        const items = response.data.data.map((item) => ({
-          ...item,
-          statusChangeDate: new Date(item.statusChangeDate),
-          expirationDate: new Date(item.expirationDate),
-          purchasedDate: new Date(item.purchasedDate),
-        }));
-
-        setFoodItems(items);
+        setFoodItems(itemsResponse.data.data);
+        setRecentActivity(activityResponse.data);
+        setError(null);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        setError("Failed to fetch dashboard data");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [setFoodItems]);
+  }, [setFoodItems, setRecentActivity]);
+
+  return {
+    loading,
+    error,
+    wasteAtGlance,
+    moneyMatters,
+    inventoryStatus,
+    actionNeeded,
+  };
 };

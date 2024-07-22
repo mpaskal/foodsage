@@ -27,10 +27,16 @@ const foodItemSchema = new Schema(
       enum: ["Active", "Inactive", "Consumed", "Waste", "Donation", "Donated"],
     },
     statusChangeDate: { type: Date, default: Date.now },
+    previousStatus: { type: String },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",
       required: true,
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
     },
   },
   {
