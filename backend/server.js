@@ -11,6 +11,7 @@ const foodInsightRoutes = require("./routes/foodInsightRoutes");
 const wasteItemRoutes = require("./routes/wasteItemRoutes");
 const wasteInsightRoutes = require("./routes/wasteInsightRoutes");
 const donationItemRoutes = require("./routes/donationItemRoutes");
+const donationInsightRoutes = require("./routes/donationInsightRoutes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/food/insights", foodInsightRoutes);
 app.use("/api/waste/items", wasteItemRoutes);
 app.use("/api/waste/insights", wasteInsightRoutes);
 app.use("/api/donation/items", donationItemRoutes);
+app.use("/api/donation/insights", donationInsightRoutes);
 
 const port = process.env.PORT || 5000;
 
