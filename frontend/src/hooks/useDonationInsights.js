@@ -1,21 +1,19 @@
 // src/hooks/useDonationInsights.js
 
 import { useState, useCallback } from "react";
-import { useRecoilValue } from "recoil";
-import { donationItemsSelector } from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 const useDonationInsights = () => {
-  const donationItems = useRecoilValue(donationItemsSelector);
+  const [donationItems, setDonationItems] = useState([]);
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchDonationInsights = useCallback(async () => {
+  const fetchDonationItems = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get("/donation/insights");
-      setInsights(response.data);
+      const response = await api.get("/donation/items");
+      setDonationItems(response.data.data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,7 +37,14 @@ const useDonationInsights = () => {
     });
   }, [donationItems]);
 
-  return { insights, loading, error, fetchDonationInsights, calculateInsights };
+  return {
+    donationItems,
+    insights,
+    loading,
+    error,
+    fetchDonationItems,
+    calculateInsights,
+  };
 };
 
 export default useDonationInsights;

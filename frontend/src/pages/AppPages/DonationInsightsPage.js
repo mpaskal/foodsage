@@ -29,14 +29,25 @@ ChartJS.register(
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
 const DonationInsightsPage = () => {
-  const { insights, loading, error, fetchDonationInsights, calculateInsights } =
-    useDonationInsights();
+  const {
+    donationItems,
+    insights,
+    loading,
+    error,
+    fetchDonationItems,
+    calculateInsights,
+  } = useDonationInsights();
   const currentDate = getCurrentDateFormatted();
 
   useEffect(() => {
-    fetchDonationInsights();
-    calculateInsights();
-  }, [fetchDonationInsights, calculateInsights]);
+    fetchDonationItems();
+  }, [fetchDonationItems]);
+
+  useEffect(() => {
+    if (donationItems.length > 0) {
+      calculateInsights();
+    }
+  }, [donationItems, calculateInsights]);
 
   if (loading) return <Spinner animation="border" />;
   if (error) return <Alert variant="danger">Error: {error}</Alert>;
