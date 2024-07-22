@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy } from "react";
 import useFoodInsights from "../../hooks/useFoodInsights";
 import { Spinner, Alert } from "react-bootstrap";
-import Layout from "../../components/Layout/LayoutApp";
 import { getCurrentDateFormatted } from "../../utils/dateUtils";
+
+const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
 const FoodInsightsPage = () => {
   const { insights, loading, error, calculateWasteCost, predictFutureWaste } =

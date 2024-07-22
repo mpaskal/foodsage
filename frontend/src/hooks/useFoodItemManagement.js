@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRecoilState, useSetRecoilState } from "recoil";
-import { foodItemsState } from "../recoil/foodItemsAtoms";
+import { allFoodItemsState } from "../recoil/foodItemsAtoms";
 import {
   calculateExpirationDate,
   getDaysSinceExpiration,
@@ -9,13 +9,13 @@ import {
 import api from "../utils/api";
 
 export const useFoodItemManagement = (pageType) => {
-  const [foodItems, setFoodItems] = useRecoilState(foodItemsState);
+  const [foodItems, setFoodItems] = useRecoilState(allFoodItemsState);
   const [error, setError] = useState(null);
-  const setRecoilFoodItems = useSetRecoilState(foodItemsState);
+  const setRecoilFoodItems = useSetRecoilState(allFoodItemsState);
 
   const fetchItems = useCallback(async () => {
     try {
-      const response = await api.get("/food/items");
+      const response = await api.get("/food/items/all");
       console.log("API Response:", response);
 
       const itemsArray = Array.isArray(response.data)
@@ -124,7 +124,7 @@ export const useFoodItemManagement = (pageType) => {
   useEffect(() => {
     const fetchInitialItems = async () => {
       try {
-        const response = await api.get("/food/items");
+        const response = await api.get("/food/items/all");
         console.log(
           "Raw API response for food items state:",
           response.data.data

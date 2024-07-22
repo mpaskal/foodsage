@@ -14,6 +14,7 @@ import FoodInsightsPage from "../../pages/AppPages/FoodInsightsPage";
 import DonationItemsPage from "../../pages/AppPages/DonationItemsPage";
 import WasteItemsPage from "../../pages/AppPages/WasteItemsPage";
 import WasteInsightsPage from "../../pages/AppPages/WasteInsightsPage";
+import SavingTrackingPage from "../../pages/AppPages/SavingTrackingPage.js";
 import ProtectedRoute from "../ProtectedRoute";
 import useAxiosInterceptor from "../../hooks/useAxiosInterceptor";
 
@@ -42,6 +43,7 @@ const AppContent = () => {
         <Route path="/wasteitems" element={<WasteItemsPage />} />
         <Route path="/donationitems" element={<DonationItemsPage />} />
         <Route path="/wasteinsights" element={<WasteInsightsPage />} />
+        <Route path="/savings" element={<SavingTrackingPage />} />
       </Route>
     </Routes>
   );

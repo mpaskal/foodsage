@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRecoilCallback, useRecoilValue } from "recoil";
-import { foodItemsState } from "../recoil/foodItemsAtoms";
+import { allFoodItemsState } from "../recoil/foodItemsAtoms";
 import {
   calculateAverageTimeToConsumption,
   calculateFoodTurnoverRate,
@@ -60,7 +60,7 @@ export const useFoodInsights = () => {
     ({ snapshot }) =>
       async () => {
         try {
-          const foodItems = await snapshot.getPromise(foodItemsState);
+          const foodItems = await snapshot.getPromise(allFoodItemsState);
           return calculateAverageTimeToConsumption(foodItems);
         } catch (error) {
           console.error("Error calculating average consumption time", error);
@@ -89,7 +89,7 @@ export const useFoodInsights = () => {
     ({ snapshot }) =>
       async (period) => {
         try {
-          const foodItems = await snapshot.getPromise(foodItemsState);
+          const foodItems = await snapshot.getPromise(allFoodItemsState);
           return calculateFoodTurnoverRate(foodItems, period);
         } catch (error) {
           console.error("Error calculating turnover rate", error);

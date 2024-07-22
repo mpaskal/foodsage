@@ -1,15 +1,15 @@
 import { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
-import { foodItemsState } from "../recoil/foodItemsAtoms";
+import { allFoodItemsState } from "../recoil/foodItemsAtoms";
 import api from "../utils/api";
 
 export const useDashboard = () => {
-  const setFoodItems = useSetRecoilState(foodItemsState);
+  const setFoodItems = useSetRecoilState(allFoodItemsState);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await api.get("/food/items");
+        const response = await api.get("/food/items/all");
         console.log("Dashboard API Response:", response.data);
 
         const items = response.data.data.map((item) => ({

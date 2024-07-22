@@ -139,7 +139,7 @@ const DashboardOverview = () => {
       value: `$${moneyMatters.moneyLostThisMonth.toFixed(2)}`,
       icon: FaDollarSign,
       color: "#FFCE56",
-      onClick: () => navigate("/savingtracking"), // You'll need to create this route
+      onClick: () => navigate("/savingtracking"),
     },
     {
       title: "Actions Needed",
