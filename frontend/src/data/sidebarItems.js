@@ -1,15 +1,7 @@
-import {
-  FaBox,
-  FaExclamationTriangle,
-  FaMoneyBillWave,
-  FaGift,
-  FaChartLine,
-  FaUserAlt,
-} from "react-icons/fa";
 import { AiOutlineDashboard } from "react-icons/ai";
-import { GiReceiveMoney, GiFoodTruck } from "react-icons/gi";
-import { MdOutlineInventory, MdOutlineInsights } from "react-icons/md";
+import { MdOutlineInventory } from "react-icons/md";
 import { FcExpired } from "react-icons/fc";
+import { GiFoodTruck } from "react-icons/gi";
 
 export const sidebarItems = [
   {
@@ -25,7 +17,7 @@ export const sidebarItems = [
     name: "Inventory",
     icon: MdOutlineInventory,
     items: [
-      { name: "Inventory Tracker", path: "/foodItems" },
+      { name: "Inventory Tracker", path: "/fooditems" },
       { name: "Inventory Insights", path: "/foodinsights" },
     ],
   },
@@ -45,14 +37,4 @@ export const sidebarItems = [
       { name: "Donation Insights", path: "/donationinsights" },
     ],
   },
-  {
-    name: "Financial Insights",
-    icon: GiReceiveMoney,
-    items: [
-      { name: "Savings Tracker", path: "/money" },
-      { name: "Financial Analysis", path: "/moneyinsights" },
-    ],
-  },
 ];
-
-export default sidebarItems;
