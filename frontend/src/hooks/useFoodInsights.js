@@ -1,113 +1,79 @@
-import { useState, useEffect, useCallback } from "react";
-import { useRecoilCallback, useRecoilValue } from "recoil";
-import { allFoodItemsState } from "../recoil/foodItemsAtoms";
-import {
-  calculateAverageTimeToConsumption,
-  calculateFoodTurnoverRate,
-} from "../utils/foodItemCalcUtils";
+import { useState, useCallback } from "react";
 import api from "../utils/api";
 
-export const useFoodInsights = () => {
+const useFoodInsights = () => {
+  const [foodItems, setFoodItems] = useState([]);
   const [insights, setInsights] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchInsights = useCallback(async (startDate, endDate) => {
+  const fetchAllFoodItems = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await api.get("/food/insights", {
-        params: { startDate, endDate },
-      });
-      setInsights(response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching insights:", error.response || error);
-      setError(error);
-      throw error;
+      const response = await api.get("/food/items/all");
+      setFoodItems(response.data.data);
+    } catch (err) {
+      setError(err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    const startDate = new Date(
-      Date.now() - 30 * 24 * 60 * 60 * 1000
-    ).toISOString();
-    const endDate = new Date().toISOString();
-    fetchInsights(startDate, endDate);
-  }, [fetchInsights]);
+  const calculateInsights = useCallback(() => {
+    // Implement logic to calculate insights based on foodItems
+    // This is a placeholder and should be replaced with actual logic
+    const consumptionRate =
+      (foodItems.filter((item) => item.status === "Consumed").length /
+        foodItems.length) *
+      100;
+    const wasteRate =
+      (foodItems.filter((item) => item.status === "Waste").length /
+        foodItems.length) *
+      100;
 
-  const generateInsights = useCallback(
-    async (startDate, endDate) => {
-      return fetchInsights(startDate, endDate);
+    setInsights({
+      consumptionRate,
+      wasteRate,
+      recommendations: ["Placeholder recommendation"],
+    });
+  }, [foodItems]);
+
+  const calculateWasteCost = useCallback(
+    (startDate, endDate) => {
+      // Implement logic to calculate waste cost based on foodItems
+      // This is a placeholder and should be replaced with actual logic
+      return foodItems
+        .filter(
+          (item) =>
+            item.status === "Waste" &&
+            new Date(item.statusChangeDate) >= startDate &&
+            new Date(item.statusChangeDate) <= endDate
+        )
+        .reduce((sum, item) => sum + item.cost, 0);
     },
-    [fetchInsights]
+    [foodItems]
   );
 
-  const predictFutureWaste = useCallback(async (days) => {
-    try {
-      const response = await api.get("/food/insights/predictwaste", {
-        params: { days },
-      });
-      return response.data.predictedWaste;
-    } catch (error) {
-      console.error("Error predicting future waste", error);
-      throw error;
-    }
-  }, []);
-
-  const calculateAverageConsumptionTime = useRecoilCallback(
-    ({ snapshot }) =>
-      async () => {
-        try {
-          const foodItems = await snapshot.getPromise(allFoodItemsState);
-          return calculateAverageTimeToConsumption(foodItems);
-        } catch (error) {
-          console.error("Error calculating average consumption time", error);
-          throw error;
-        }
-      },
-    []
-  );
-
-  const calculateWasteCost = useCallback(async (startDate, endDate) => {
-    try {
-      const response = await api.get("/food/insights/wastecost", {
-        params: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-        },
-      });
-      return response.data.totalWasteCost;
-    } catch (error) {
-      console.error("Error calculating waste cost", error);
-      throw error;
-    }
-  }, []);
-
-  const calculateTurnoverRate = useRecoilCallback(
-    ({ snapshot }) =>
-      async (period) => {
-        try {
-          const foodItems = await snapshot.getPromise(allFoodItemsState);
-          return calculateFoodTurnoverRate(foodItems, period);
-        } catch (error) {
-          console.error("Error calculating turnover rate", error);
-          throw error;
-        }
-      },
-    []
+  const predictFutureWaste = useCallback(
+    (days) => {
+      // Implement logic to predict future waste based on foodItems
+      // This is a placeholder and should be replaced with actual logic
+      const averageDailyWaste =
+        foodItems.filter((item) => item.status === "Waste").length / 30;
+      return averageDailyWaste * days;
+    },
+    [foodItems]
   );
 
   return {
+    foodItems,
     insights,
     loading,
     error,
-    generateInsights,
+    fetchAllFoodItems,
+    calculateInsights,
     calculateWasteCost,
     predictFutureWaste,
-    calculateAverageConsumptionTime,
-    calculateTurnoverRate,
   };
 };
 
