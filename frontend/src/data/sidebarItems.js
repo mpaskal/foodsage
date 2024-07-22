@@ -1,7 +1,7 @@
 import { AiOutlineDashboard } from "react-icons/ai";
 import { MdOutlineInventory } from "react-icons/md";
 import { FcExpired } from "react-icons/fc";
-import { GiFoodTruck } from "react-icons/gi";
+import { GiFoodTruck, GiReceiveMoney } from "react-icons/gi";
 
 export const sidebarItems = [
   {
