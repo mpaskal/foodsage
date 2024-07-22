@@ -21,19 +21,16 @@ exports.getAllFoodItems = async (req, res) => {
   const tenantId = req.user.tenantId;
 
   try {
-    const allItems = await FoodItem.countDocuments({
-      tenantId,
-    });
-    console.log("allItems in controller foodItems", allItems);
-    const allFoodItems = await FoodItem.find({
-      tenantId,
-    });
-    const allFoodItemsLength = allFoodItems.length;
-    //  console.log("food items in controller foodItems", foodItems);
+    const allItems = await FoodItem.countDocuments({ tenantId });
+    const allFoodItems = await FoodItem.find({ tenantId }).populate(
+      "updatedBy",
+      "firstName lastName"
+    );
+
     res.status(200).json({
       data: allFoodItems,
       allItems: allItems,
-      allFoodItemsLength: allFoodItemsLength,
+      allFoodItemsLength: allFoodItems.length,
     });
   } catch (error) {
     console.error("Error fetching food items:", error);
@@ -57,6 +54,7 @@ exports.getFoodItems = async (req, res) => {
       tenantId,
       status: { $in: ["Active", "Inactive"] },
     })
+      .populate("updatedBy", "firstName lastName")
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -76,15 +74,15 @@ exports.getFoodItems = async (req, res) => {
 };
 
 exports.createFoodItem = async (req, res) => {
-  console.log("req.body", req.body);
-
   try {
     const tenantId = req.user.tenantId;
+    const userId = req.user._id;
 
     const newFoodItem = new FoodItem({
       ...req.body,
       image: req.body.image || null,
       tenantId,
+      updatedBy: userId,
       status: req.body.status || "Active",
       consumed: req.body.consumed || 0,
       purchasedDate: formatDate(req.body.purchasedDate),
@@ -104,43 +102,29 @@ exports.createFoodItem = async (req, res) => {
 exports.updateFoodItem = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const updates = {
-      ...req.body,
-      image: req.body.image || req.body.existingImage,
-    };
-
-    // Only update dates if they are provided
-    if (req.body.purchasedDate) {
-      updates.purchasedDate = new Date(req.body.purchasedDate);
-    }
-    if (req.body.expirationDate) {
-      updates.expirationDate = new Date(req.body.expirationDate);
-    }
-
-    // Handle status changes
-    if (updates.status === "Consumed") {
-      updates.consumed = 100;
-    } else if (updates.status === "Waste" || updates.status === "Donation") {
-      updates.statusChangeDate = new Date();
-    }
-
-    const foodItem = await FoodItem.findOneAndUpdate(
-      { _id: req.params.id, tenantId },
-      updates,
-      {
-        new: true,
-        runValidators: true,
-        context: "query",
-      }
-    );
+    const userId = req.user._id;
+    const foodItem = await FoodItem.findOne({ _id: req.params.id, tenantId });
 
     if (!foodItem) {
       return res.status(404).json({ message: "Food item not found" });
     }
 
+    const previousStatus = foodItem.status;
+    const updates = {
+      ...req.body,
+      updatedBy: userId,
+      previousStatus: previousStatus,
+    };
+
+    const updatedFoodItem = await FoodItem.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      updates,
+      { new: true, runValidators: true }
+    ).populate("updatedBy", "firstName lastName");
+
     res.status(200).json({
       message: "Food item updated successfully",
-      data: foodItem,
+      data: updatedFoodItem,
     });
   } catch (error) {
     console.error("Error updating food item:", error);
@@ -148,16 +132,12 @@ exports.updateFoodItem = async (req, res) => {
   }
 };
 
-// In foodItemController.js
-
 exports.deleteFoodItem = async (req, res) => {
   const { _id } = req.body;
   const tenantId = req.user.tenantId;
-  // console.log("Attempting to delete item:", { _id, tenantId });
 
   try {
     const result = await FoodItem.findOneAndDelete({ _id, tenantId });
-    //  console.log("Delete operation result:", result);
 
     if (result) {
       res
@@ -242,3 +222,51 @@ exports.predictFutureWaste = async (req, res) => {
     handleError(res, error, "Error predicting future waste");
   }
 };
+
+exports.getRecentActivity = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const recentActivity = await FoodItem.find({ tenantId })
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .populate("updatedBy", "firstName lastName")
+      .select("name status updatedAt updatedBy");
+
+    const formattedActivity = recentActivity.map((item) => ({
+      itemName: item.name,
+      action: getActionFromStatus(item.status, item.previousStatus),
+      user: item.updatedBy
+        ? `${item.updatedBy.firstName} ${item.updatedBy.lastName}`
+        : "Unknown User",
+      date: item.updatedAt,
+    }));
+
+    res.json(formattedActivity);
+  } catch (error) {
+    console.error("Error fetching recent activity:", error);
+    res.status(500).json({
+      message: "Error fetching recent activity",
+      error: error.message,
+    });
+  }
+};
+
+function getActionFromStatus(currentStatus, previousStatus) {
+  if (previousStatus && currentStatus !== previousStatus) {
+    return `changed status from ${previousStatus} to ${currentStatus}`;
+  }
+  switch (currentStatus) {
+    case "Active":
+      return "added";
+    case "Consumed":
+      return "consumed";
+    case "Waste":
+      return "wasted";
+    case "Donation":
+      return "marked for donation";
+    case "Donated":
+      return "donated";
+    default:
+      return "updated";
+  }
+}

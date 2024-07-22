@@ -12,6 +12,7 @@ const wasteItemRoutes = require("./routes/wasteItemRoutes");
 const wasteInsightRoutes = require("./routes/wasteInsightRoutes");
 const donationItemRoutes = require("./routes/donationItemRoutes");
 const donationInsightRoutes = require("./routes/donationInsightRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/waste/items", wasteItemRoutes);
 app.use("/api/waste/insights", wasteInsightRoutes);
 app.use("/api/donation/items", donationItemRoutes);
 app.use("/api/donation/insights", donationInsightRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const port = process.env.PORT || 5000;
 

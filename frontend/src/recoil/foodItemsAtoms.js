@@ -365,3 +365,20 @@ export const savingsTrackingSelector = selector({
     };
   },
 });
+
+// Recent activity on Dashboard
+export const recentActivityState = atom({
+  key: "recentActivityState",
+  default: [],
+});
+
+export const recentActivitySelector = selector({
+  key: "recentActivitySelector",
+  get: ({ get }) => {
+    const recentActivity = get(recentActivityState);
+    return recentActivity.map((activity) => ({
+      ...activity,
+      date: new Date(activity.date).toLocaleDateString(),
+    }));
+  },
+});

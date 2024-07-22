@@ -545,17 +545,16 @@ a:hover {
 /* Container for the buttons, ensuring they are in a flex container */
 .actions-cell {
   display: flex;
-  justify-content: space-between; 
-  align-items: center; 
-  padding: 2px; 
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px;
 }
 
 /* Style for all buttons inside the actions cell */
 .actions-cell .btn {
-  flex: 1; 
-  margin: 0 4px; 
+  flex: 1;
+  margin: 0 4px;
 }
-
 
 /* Styling for the Edit button */
 .btn-info {
@@ -577,7 +576,6 @@ a:hover {
 .btn-danger:hover {
   background-color: darkred !important; /* Hover state background color */
 }
-
 
 /* Responsive settings for smaller screens */
 @media (max-width: 768px) {
@@ -672,7 +670,6 @@ main {
   margin-bottom: -3px;
 }
 
-
 .header-left {
   display: flex;
   align-items: center;
@@ -689,8 +686,8 @@ main {
   justify-content: flex-end;
   gap: 1.3em;
   height: 100%;
-  margin-right: 30px;}
-
+  margin-right: 30px;
+}
 
 .search-bar {
   display: flex;
@@ -964,7 +961,7 @@ header-site {
 .layout-app-content.sidebar-collapsed {
   margin-left: 60px; /* Width of collapsed sidebar */
 }
-/* Inventory page*/
+/* Food page*/
 .title {
   text-align: center;
 }
@@ -980,6 +977,17 @@ header-site {
 
 .food-item-table {
   margin-left: 170px;
+}
+
+.pagination {
+  justify-content: center;
+}
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 @media (min-width: 768px) {
@@ -1002,24 +1010,23 @@ header-site {
   }
 }
 
-
 /* logo settings before login */
 .logo {
-  height: auto;            
-  max-height: 50px;        
-  width: auto;            
-  border-radius: 0;        
-  margin: 0px 45px;       
-  object-fit: contain;    
+  height: auto;
+  max-height: 50px;
+  width: auto;
+  border-radius: 0;
+  margin: 0px 45px;
+  object-fit: contain;
 }
 .header-site {
   display: flex;
-  align-items: center; 
-  justify-content: flex-start; 
+  align-items: center;
+  justify-content: flex-start;
   padding: 10px 0;
-  width: 100%; 
+  width: 100%;
 }
-/* Sidebar */
+
 /* Sidebar */
 .sidebar {
   background-color: #058240;
@@ -1060,7 +1067,7 @@ header-site {
 }
 
 .sidebar-items {
-  padding-top: 40px; 
+  padding-top: 40px;
 }
 
 .sidebar-item {
@@ -1076,14 +1083,14 @@ header-site {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: #ffffff; 
+  color: #ffffff;
   padding: 0.7em;
- 
+
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-sublink {
-  margin-left: 0.5em; 
+  margin-left: 0.5em;
 }
 
 .sidebar-link:hover,
@@ -1142,31 +1149,19 @@ header-site {
   }
 }
 
-  .layout-app-content {
-    margin-left: 60px;
-  }
-  .layout-app-content.sidebar-visible {
-    margin-left: 250px;
-  }
-
-
-/* Food Inventory page */
-.pagination {
-  justify-content: center;
+.layout-app-content {
+  margin-left: 60px;
 }
-.form-control {
-  display: block;
-  width: 20%;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  font-weight: 400;} 
-  
+.layout-app-content.sidebar-visible {
+  margin-left: 250px;
+}
+
 /* Waste Insights Page */
-.h2-name{
+.h2-name {
   text-align: center;
   color: #058240; /* Green color for headings */
 }
-.h2-name2{
+.h2-name2 {
   color: #8bc34a;
   text-align: center;
 }
@@ -1183,12 +1178,11 @@ header-site {
   background-color: #f9f9f9; /* Light gray background */
   padding: 30px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Shadow around the outer container */
-
 }
 
 .mb-4 {
- text-align: center; 
- margin-top: 10px;
+  text-align: center;
+  margin-top: 10px;
 }
 .row {
   padding: 20px;
@@ -1196,27 +1190,27 @@ header-site {
 }
 /* Section styles with a clear white background */
 .waste-insights-container section {
-  background-color: #fff; 
+  background-color: #fff;
   padding: 20px;
-  border: 1px solid #ddd; 
+  border: 1px solid #ddd;
 }
 
 /* Styling headers within sections */
 .waste-insights-container h2 {
- 
-padding: 20px;
+  padding: 20px;
 }
 
 /* Content styling */
-.waste-insights-container p, .waste-insights-container ul {
-  color: #333; 
+.waste-insights-container p,
+.waste-insights-container ul {
+  color: #333;
   line-height: 1.6;
 }
 
 /* Button styles */
 .waste-insights-container .btn-primary {
-  background-color: #4CAF50;
-  border-color: #367C39;
+  background-color: #4caf50;
+  border-color: #367c39;
 }
 
 /* Embed and iframe adjustments */
@@ -1228,26 +1222,26 @@ padding: 20px;
   justify-content: center;
 }
 .h2-name2 img.full-width-image {
-  width: 100%; 
-  height: auto; 
-  max-height: unset; 
+  width: 100%;
+  height: auto;
+  max-height: unset;
 }
 /* Adjustments for list items for readability */
 .waste-insights-container li {
   padding: 5px 0;
 }
 .alert-info {
- background-color:#ddf2cd;
+  background-color: #ddf2cd;
 }
-.h2-name-text{
-justify-content: center;
+.h2-name-text {
+  justify-content: center;
 }
 .btn btn-primary {
   justify-content: center;
 }
 /* Style for links within sections */
 .h2-name2 a {
-  color: #4CAF50; /* Green color for links */
+  color: #4caf50; /* Green color for links */
   text-decoration: none; /* No underline by default */
 }
 
@@ -1267,7 +1261,6 @@ justify-content: center;
   list-style-type: none; /* Removes bullet points */
   text-align: left; /* Aligns text to the left within the centered block */
   margin-left: 200px;
-
 }
 mb-5 li {
   margin-bottom: 10px;
@@ -1275,27 +1268,26 @@ mb-5 li {
   display: flex;
   align-items: start;
   text-indent: -5px;
-  padding-left: 20px;}
+  padding-left: 20px;
+}
 
 .mb-5 li::before {
   content: "•"; /* Custom bullet */
-  color: #4CAF50; /* Bullet color */
+  color: #4caf50; /* Bullet color */
   font-size: 20px; /* Bullet size */
   margin-right: 10px; /* Space between bullet and text */
   flex-shrink: 0; /* Prevents bullet from shrinking */
 }
-
 
 .file-name {
   text-decoration: underline; /* Underlines the filename */
   font-weight: bold; /* Makes the file name bold */
 }
 
-
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
   .waste-insights-container {
-      margin-left: 0; /* Remove sidebar offset on smaller screens */
-      padding: 10px; /* Smaller padding for smaller screens */
+    margin-left: 0; /* Remove sidebar offset on smaller screens */
+    padding: 10px; /* Smaller padding for smaller screens */
   }
 }

@@ -8,17 +8,13 @@ export const sidebarItems = [
     name: "Dashboard",
     path: "/dashboard",
     icon: AiOutlineDashboard,
-    items: [
-      { name: "Overview", path: "/dashboard" },
-      { name: "Key Metrics", path: "/dashboard/metrics" },
-    ],
   },
   {
-    name: "Inventory",
+    name: "Food Management",
     icon: MdOutlineInventory,
     items: [
-      { name: "Inventory Tracker", path: "/fooditems" },
-      { name: "Inventory Insights", path: "/foodinsights" },
+      { name: "Food Tracker", path: "/fooditems" },
+      { name: "Food Insights", path: "/foodinsights" },
     ],
   },
   {
@@ -30,7 +26,7 @@ export const sidebarItems = [
     ],
   },
   {
-    name: "Donations",
+    name: "Donations Management",
     icon: GiFoodTruck,
     items: [
       { name: "Donation Tracker", path: "/donationitems" },
@@ -39,7 +35,7 @@ export const sidebarItems = [
   },
 
   {
-    name: "Financial Insights",
+    name: "Money Management",
     icon: GiReceiveMoney,
     items: [{ name: "Savings Tracker", path: "/savings" }],
   },
