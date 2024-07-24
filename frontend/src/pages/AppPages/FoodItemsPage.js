@@ -3,17 +3,19 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 import {
   allFoodItemsState,
   activeFoodItemsSelector,
-  foodItemsWithCalculatedDates,
 } from "../../recoil/foodItemsAtoms";
+import { loggedInUserState, authTokenState } from "../../recoil/userAtoms";
 import { useFoodItemManagement } from "../../hooks/useFoodItemManagement";
 import Layout from "../../components/Layout/LayoutApp";
 import FoodItemTable from "../../components/FoodItem/FoodItemTable";
 import { Button, Alert, Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
-import { formatDateForDisplay } from "../../utils/dateUtils";
+import {
+  formatDateForDisplay,
+  getCurrentDateFormatted,
+} from "../../utils/dateUtils";
 import api from "../../utils/api";
-import { getCurrentDateFormatted } from "../../utils/dateUtils";
 
 const FoodItemModal = React.lazy(() =>
   import("../../components/FoodItem/FoodItemModal")
@@ -28,6 +30,8 @@ const FoodItemsPage = () => {
   const currentDate = getCurrentDateFormatted();
   const setAllFoodItems = useSetRecoilState(allFoodItemsState);
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
+  const loggedInUser = useRecoilValue(loggedInUserState);
+  const authToken = useRecoilValue(authTokenState);
   const [currentItem, setCurrentItem] = useState(null);
   const { error, isLoading, fetchItems, handleInputChange, handleDeleteItem } =
     useFoodItemManagement("food");
@@ -36,39 +40,47 @@ const FoodItemsPage = () => {
     fetchItems();
   }, [fetchItems]);
 
+  useEffect(() => {
+    console.log("FoodItemsPage re-rendered");
+  }, [activeFoodItems, error, isLoading]);
+
   const handleSubmit = useCallback(
     async (newItem) => {
       try {
+        console.log("Received item in FoodItemsPage:", newItem);
+
         const formData = new FormData();
         for (const key in newItem) {
           if (key === "image" && newItem[key] instanceof File) {
             formData.append(key, newItem[key], newItem[key].name);
-          } else if (key === "purchasedDate" || key === "expirationDate") {
-            let date;
-            if (newItem[key] instanceof Date) {
-              date = newItem[key];
-            } else if (typeof newItem[key] === "string") {
-              date = new Date(newItem[key]);
-            } else {
-              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
-            }
-
-            if (isNaN(date.getTime())) {
-              throw new Error(`Invalid ${key} provided: ${newItem[key]}`);
-            }
-            const formattedDate = formatDateForDisplay(date);
-            formData.append(key, formattedDate);
           } else {
             formData.append(key, newItem[key]);
           }
         }
 
+        formData.append("updatedBy", loggedInUser.id);
+
+        console.log("FormData entries:");
+        for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+        }
+
         const response = await api.post("/food/items", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${authToken}`,
+          },
         });
 
+        console.log("Server response:", response.data);
+
         if (response.status === 201) {
-          setAllFoodItems((prevItems) => [...prevItems, response.data]);
+          console.log("New item added:", response.data);
+          setAllFoodItems((prevItems) => {
+            const newItems = [...prevItems, response.data];
+            console.log("Updated all food items:", newItems);
+            return newItems;
+          });
           setCurrentItem(null);
           fetchItems();
           toast.success("Food item added successfully");
@@ -76,12 +88,27 @@ const FoodItemsPage = () => {
           throw new Error("Failed to add the food item.");
         }
       } catch (error) {
-        console.error("Error adding item:", error);
-        const errorMessage = error.response?.data?.message || error.message;
+        console.error("Error adding item in FoodItemsPage:", error);
+        let errorMessage;
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message
+        ) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = "An unknown error occurred";
+        }
         toast.error(`${ERROR_MESSAGES.FAILED_TO_ADD}: ${errorMessage}`);
+        console.log("Full error object:", error);
+        if (error.response) {
+          console.log("Error response:", error.response);
+        }
       }
     },
-    [setAllFoodItems, fetchItems]
+    [setAllFoodItems, fetchItems, authToken, loggedInUser]
   );
 
   const handleDelete = useCallback(
@@ -90,17 +117,25 @@ const FoodItemsPage = () => {
         const result = await handleDeleteItem(id);
         if (result && result.success) {
           toast.success(result.message);
-          fetchItems(); // Refetch items after successful deletion
+          fetchItems();
         } else {
-          toast.error(result ? result.error : ERROR_MESSAGES.FAILED_TO_DELETE);
+          toast.error(
+            result && result.error
+              ? result.error
+              : ERROR_MESSAGES.FAILED_TO_DELETE
+          );
         }
       } catch (error) {
         console.error("Error deleting item:", error);
-        toast.error(ERROR_MESSAGES.FAILED_TO_DELETE);
+        toast.error(
+          typeof error === "string" ? error : ERROR_MESSAGES.FAILED_TO_DELETE
+        );
       }
     },
     [handleDeleteItem, fetchItems]
   );
+
+  console.log("Active Food Items:", activeFoodItems);
 
   return (
     <ErrorBoundary>
@@ -123,7 +158,11 @@ const FoodItemsPage = () => {
           {error && (
             <Alert variant="danger" dismissible>
               <Alert.Heading>Error</Alert.Heading>
-              <p>{error}</p>
+              <p>
+                {typeof error === "object"
+                  ? JSON.stringify(error)
+                  : error.toString()}
+              </p>
             </Alert>
           )}
           {isLoading ? (

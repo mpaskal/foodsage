@@ -1,5 +1,7 @@
+const mongoose = require("mongoose");
 const FoodItem = require("../models/FoodItem");
 const WasteRecord = require("../models/WasteRecord");
+const { getActionFromStatus } = require("../utils/statusUtils");
 const handleError = require("../utils/handleError");
 const {
   calculateInsights,
@@ -32,6 +34,7 @@ exports.getAllFoodItems = async (req, res) => {
       allItems: allItems,
       allFoodItemsLength: allFoodItems.length,
     });
+    console.log("allItems in controller foodItems", allItems);
   } catch (error) {
     console.error("Error fetching food items:", error);
     res.status(500).json({ message: "Error fetching food items", error });
@@ -58,7 +61,7 @@ exports.getFoodItems = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
-    //  console.log("food items in controller foodItems", foodItems);
+
     res.status(200).json({
       data: foodItems,
       totalPages: Math.ceil(totalItems / limit),
@@ -73,10 +76,13 @@ exports.getFoodItems = async (req, res) => {
   }
 };
 
+// In foodItemController.js
+
 exports.createFoodItem = async (req, res) => {
+  console.log("Received food item data createFoodItem:", req);
   try {
     const tenantId = req.user.tenantId;
-    const userId = req.user._id;
+    const userId = req.user.id; // Make sure this is set correctly in your auth middleware
 
     const newFoodItem = new FoodItem({
       ...req.body,
@@ -87,22 +93,36 @@ exports.createFoodItem = async (req, res) => {
       consumed: req.body.consumed || 0,
       purchasedDate: formatDate(req.body.purchasedDate),
       expirationDate: formatDate(req.body.expirationDate),
+      activityLog: [
+        {
+          updatedBy: userId,
+          action: "added",
+          timestamp: new Date(),
+          newStatus: req.body.status || "Active",
+        },
+      ],
     });
 
     await newFoodItem.save();
+
+    // Populate the updatedBy field after saving
+    await newFoodItem.populate("updatedBy", "firstName lastName");
+
     res.status(201).json({
       message: "Food item created successfully",
       data: newFoodItem,
     });
   } catch (error) {
+    console.error("Error in createFoodItem:", error);
     handleError(res, error, "Failed to create new food item");
   }
 };
 
 exports.updateFoodItem = async (req, res) => {
   try {
+    console.log("Received update data:", req.body);
+
     const tenantId = req.user.tenantId;
-    const userId = req.user._id;
     const foodItem = await FoodItem.findOne({ _id: req.params.id, tenantId });
 
     if (!foodItem) {
@@ -112,15 +132,31 @@ exports.updateFoodItem = async (req, res) => {
     const previousStatus = foodItem.status;
     const updates = {
       ...req.body,
-      updatedBy: userId,
+      updatedBy: req.body.updatedBy || req.user._id,
       previousStatus: previousStatus,
     };
+
+    // Create a new activity log entry
+    const newActivity = {
+      updatedBy: updates.updatedBy,
+      action: getActionFromStatus(updates.status, previousStatus, false),
+      timestamp: new Date(),
+      previousStatus: previousStatus,
+      newStatus: updates.status,
+    };
+
+    // Add the new activity to the updates
+    updates.$push = { activityLog: newActivity };
+
+    console.log("Updates to be applied:", updates);
 
     const updatedFoodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
       updates,
       { new: true, runValidators: true }
     ).populate("updatedBy", "firstName lastName");
+
+    console.log("Updated food item:", updatedFoodItem);
 
     res.status(200).json({
       message: "Food item updated successfully",
@@ -226,22 +262,31 @@ exports.predictFutureWaste = async (req, res) => {
 exports.getRecentActivity = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const recentActivity = await FoodItem.find({ tenantId })
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .populate("updatedBy", "firstName lastName")
-      .select("name status updatedAt updatedBy");
+    const recentActivity = await FoodItem.aggregate([
+      { $match: { tenantId: new mongoose.Types.ObjectId(tenantId) } },
+      { $unwind: "$activityLog" },
+      { $sort: { "activityLog.timestamp": -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "activityLog.updatedBy",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          itemName: "$name",
+          action: "$activityLog.action",
+          user: { $concat: ["$user.firstName", " ", "$user.lastName"] },
+          date: "$activityLog.timestamp",
+        },
+      },
+    ]);
 
-    const formattedActivity = recentActivity.map((item) => ({
-      itemName: item.name,
-      action: getActionFromStatus(item.status, item.previousStatus),
-      user: item.updatedBy
-        ? `${item.updatedBy.firstName} ${item.updatedBy.lastName}`
-        : "Unknown User",
-      date: item.updatedAt,
-    }));
-
-    res.json(formattedActivity);
+    res.json(recentActivity);
   } catch (error) {
     console.error("Error fetching recent activity:", error);
     res.status(500).json({
@@ -250,23 +295,3 @@ exports.getRecentActivity = async (req, res) => {
     });
   }
 };
-
-function getActionFromStatus(currentStatus, previousStatus) {
-  if (previousStatus && currentStatus !== previousStatus) {
-    return `changed status from ${previousStatus} to ${currentStatus}`;
-  }
-  switch (currentStatus) {
-    case "Active":
-      return "added";
-    case "Consumed":
-      return "consumed";
-    case "Waste":
-      return "wasted";
-    case "Donation":
-      return "marked for donation";
-    case "Donated":
-      return "donated";
-    default:
-      return "updated";
-  }
-}

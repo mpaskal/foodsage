@@ -1,17 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
-import { loggedInUserState } from "../recoil/userAtoms";
+import { loggedInUserState, authTokenState } from "../recoil/userAtoms";
 
 const InitializeState = ({ children }) => {
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
+  const setAuthToken = useSetRecoilState(authTokenState);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     console.log("User retrieved from local storage:", user);
     if (user && user.token) {
       setLoggedInUser(user);
+      setAuthToken(user.token);
     }
-  }, [setLoggedInUser]);
+  }, [setLoggedInUser, setAuthToken]);
 
   return <>{children}</>;
 };

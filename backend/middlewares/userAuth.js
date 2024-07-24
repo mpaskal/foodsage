@@ -14,14 +14,23 @@ const userAuth = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user;
 
-    const user = await User.findById(req.user.id);
+    // Ensure that decoded.user exists
+    if (!decoded.user || !decoded.user.id) {
+      return res.status(401).json({ msg: "Invalid token structure" });
+    }
+
+    const user = await User.findById(decoded.user.id);
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    req.user.tenantId = user.tenantId; // Attach tenantId to req.user
+    req.user = {
+      id: user._id,
+      tenantId: user.tenantId,
+      // Add any other user properties you need
+    };
+
     next();
   } catch (err) {
     console.error(err);

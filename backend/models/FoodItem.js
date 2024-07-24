@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const activitySchema = require("./Activity");
 
 const foodItemSchema = new Schema(
   {
@@ -36,8 +37,9 @@ const foodItemSchema = new Schema(
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      required: true,
     },
+    activityLog: [activitySchema],
   },
   {
     timestamps: true,

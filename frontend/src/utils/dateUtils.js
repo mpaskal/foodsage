@@ -94,8 +94,6 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
     default:
       expirationDate.setDate(purchased.getDate() + 7); // Default to 7 days if no specific rule
   }
-
-  console.log("Calculated Expiration Date:", expirationDate);
   return expirationDate.toISOString().split("T")[0];
 };
 
