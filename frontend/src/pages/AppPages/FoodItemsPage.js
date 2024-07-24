@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, Suspense } from "react";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import {
   allFoodItemsState,
   activeFoodItemsSelector,
@@ -28,7 +28,7 @@ const ERROR_MESSAGES = {
 
 const FoodItemsPage = () => {
   const currentDate = getCurrentDateFormatted();
-  const setAllFoodItems = useSetRecoilState(allFoodItemsState);
+  const [allFoodItems, setAllFoodItems] = useRecoilState(allFoodItemsState);
   const activeFoodItems = useRecoilValue(activeFoodItemsSelector);
   const loggedInUser = useRecoilValue(loggedInUserState);
   const authToken = useRecoilValue(authTokenState);
@@ -39,10 +39,6 @@ const FoodItemsPage = () => {
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
-
-  useEffect(() => {
-    console.log("FoodItemsPage re-rendered");
-  }, [activeFoodItems, error, isLoading]);
 
   const handleSubmit = useCallback(
     async (newItem) => {
@@ -76,13 +72,8 @@ const FoodItemsPage = () => {
 
         if (response.status === 201) {
           console.log("New item added:", response.data);
-          setAllFoodItems((prevItems) => {
-            const newItems = [...prevItems, response.data];
-            console.log("Updated all food items:", newItems);
-            return newItems;
-          });
+          setAllFoodItems((prevItems) => [...prevItems, response.data.data]);
           setCurrentItem(null);
-          fetchItems();
           toast.success("Food item added successfully");
         } else {
           throw new Error("Failed to add the food item.");
@@ -108,7 +99,7 @@ const FoodItemsPage = () => {
         }
       }
     },
-    [setAllFoodItems, fetchItems, authToken, loggedInUser]
+    [setAllFoodItems, authToken, loggedInUser]
   );
 
   const handleDelete = useCallback(
@@ -116,8 +107,10 @@ const FoodItemsPage = () => {
       try {
         const result = await handleDeleteItem(id);
         if (result && result.success) {
+          setAllFoodItems((prevItems) =>
+            prevItems.filter((item) => item._id !== id)
+          );
           toast.success(result.message);
-          fetchItems();
         } else {
           toast.error(
             result && result.error
@@ -132,10 +125,8 @@ const FoodItemsPage = () => {
         );
       }
     },
-    [handleDeleteItem, fetchItems]
+    [handleDeleteItem, setAllFoodItems]
   );
-
-  console.log("Active Food Items:", activeFoodItems);
 
   return (
     <ErrorBoundary>
@@ -179,7 +170,6 @@ const FoodItemsPage = () => {
           ) : (
             <p>No food items found.</p>
           )}
-
           {currentItem && (
             <Suspense fallback={<div>Loading...</div>}>
               <FoodItemModal

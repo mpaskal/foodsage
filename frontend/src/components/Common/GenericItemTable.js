@@ -35,15 +35,17 @@ const GenericItemTable = React.memo(
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    const memoizedItems = useMemo(() => items, [items]);
+
     const filteredItems = useMemo(() => {
-      return items.filter((item) =>
+      return memoizedItems.filter((item) =>
         Object.values(item).some(
           (value) =>
             typeof value === "string" &&
             value.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
-    }, [items, searchQuery]);
+    }, [memoizedItems, searchQuery]);
 
     const sortedItems = useMemo(() => {
       let sortableItems = [...filteredItems];
@@ -89,7 +91,7 @@ const GenericItemTable = React.memo(
           updates[field] = processDateInput(value);
         }
 
-        const itemToUpdate = items.find((item) => item._id === id);
+        const itemToUpdate = memoizedItems.find((item) => item._id === id);
         if (!itemToUpdate) return;
 
         if (field === "category") {
@@ -127,7 +129,7 @@ const GenericItemTable = React.memo(
 
         handleInputChange(id, updates);
       },
-      [handleInputChange, items, quantityMeasurementsByCategory]
+      [handleInputChange, memoizedItems, quantityMeasurementsByCategory]
     );
 
     const confirmDelete = useCallback(async () => {
@@ -204,67 +206,65 @@ const GenericItemTable = React.memo(
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(
-              (item) => (
-                console.log("Rendering item:", item),
-                (
-                  <tr key={item._id}>
-                    {tableColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        style={
-                          column.key === "expirationDate"
-                            ? getExpirationDateStyle(item[column.key])
-                            : {}
+            {paginatedItems.map((item) => {
+              console.log("Rendering item:", item);
+              return (
+                <tr key={item._id}>
+                  {tableColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      style={
+                        column.key === "expirationDate"
+                          ? getExpirationDateStyle(item[column.key])
+                          : {}
+                      }
+                    >
+                      <InlineEditControl
+                        type={column.type}
+                        options={
+                          column.key === "quantityMeasurement"
+                            ? quantityMeasurementsByCategory[item.category] ||
+                              []
+                            : column.key === "status"
+                            ? statusOptions
+                            : column.options
                         }
-                      >
-                        <InlineEditControl
-                          type={column.type}
-                          options={
-                            column.key === "quantityMeasurement"
-                              ? quantityMeasurementsByCategory[item.category] ||
-                                []
-                              : column.key === "status"
-                              ? statusOptions
-                              : column.options
-                          }
-                          value={
-                            column.type === "date"
-                              ? formatDateForDisplay(item[column.key])
-                              : column.key === "consumed"
-                              ? item[column.key].toString()
-                              : item[column.key]
-                              ? item[column.key].toString()
-                              : ""
-                          }
-                          onChange={(value) =>
-                            column.type === "file"
-                              ? handleFileChange(item._id, value)
-                              : handleLocalInputChange(
-                                  item._id,
-                                  column.key,
-                                  value
-                                )
-                          }
-                          getImageSrc={
-                            column.type === "file" ? getImageSrc : undefined
-                          }
-                        />
-                      </td>
-                    ))}
-                    <td>
-                      <Button
-                        variant="danger"
-                        onClick={() => handleDeleteClick(item)}
-                        disabled={isUpdating}
-                      >
-                        Delete
-                      </Button>
+                        value={
+                          column.type === "date"
+                            ? formatDateForDisplay(item[column.key])
+                            : column.key === "consumed"
+                            ? item[column.key].toString()
+                            : item[column.key]
+                            ? item[column.key].toString()
+                            : ""
+                        }
+                        onChange={(value) =>
+                          column.type === "file"
+                            ? handleFileChange(item._id, value)
+                            : handleLocalInputChange(
+                                item._id,
+                                column.key,
+                                value
+                              )
+                        }
+                        getImageSrc={
+                          column.type === "file" ? getImageSrc : undefined
+                        }
+                      />
                     </td>
-                  </tr>
-                )
-              )
-            )}
+                  ))}
+                  <td>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteClick(item)}
+                      disabled={isUpdating}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </Table>
         <Pagination>
