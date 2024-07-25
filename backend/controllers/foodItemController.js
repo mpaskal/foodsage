@@ -143,6 +143,7 @@ exports.updateFoodItem = async (req, res) => {
       }
     }
 
+    console.log("Received file:", req.file);
     if (req.file) {
       updates.image = req.file.buffer.toString("base64");
     }
@@ -150,14 +151,19 @@ exports.updateFoodItem = async (req, res) => {
     updates.updatedBy = req.user._id;
 
     const updatedFields = Object.keys(updates).filter(
-      (key) => key !== "updatedBy" && foodItem[key] !== updates[key]
+      (key) =>
+        key !== "updatedBy" &&
+        JSON.stringify(foodItem[key]) !== JSON.stringify(updates[key])
     );
 
-    const action = getActionFromStatus(
-      updates.status || foodItem.status,
-      previousStatus,
-      updatedFields
-    );
+    let action;
+    if (updates.status && updates.status !== previousStatus) {
+      action = `changed status from ${previousStatus} to ${updates.status}`;
+    } else if (updatedFields.length > 0) {
+      action = `updated ${updatedFields.join(", ")}`;
+    } else {
+      action = "updated";
+    }
 
     const newActivity = {
       updatedBy: updates.updatedBy,
@@ -181,7 +187,9 @@ exports.updateFoodItem = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating food item:", error);
-    handleError(res, error, "Error updating food item");
+    res
+      .status(500)
+      .json({ message: "Error updating food item", error: error.message });
   }
 };
 

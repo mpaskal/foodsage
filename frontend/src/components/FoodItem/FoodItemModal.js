@@ -176,7 +176,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   }, [form.category]);
 
   return (
-    <Modal show={show} onHide={handleClose}>
+    <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
       <Modal.Header closeButton>
         <Modal.Title>Add Food Item</Modal.Title>
       </Modal.Header>

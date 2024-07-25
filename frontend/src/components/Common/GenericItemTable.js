@@ -82,61 +82,61 @@ const GenericItemTable = React.memo(
       }
       return null;
     };
+    const handleLocalInputChange = useCallback((id, field, value) => {
+      let updates = { [field]: value };
 
-    const handleLocalInputChange = useCallback(
-      (id, field, value) => {
-        let updates = { [field]: value };
+      if (field === "purchasedDate" || field === "expirationDate") {
+        updates[field] = processDateInput(value);
+      }
 
-        if (field === "purchasedDate" || field === "expirationDate") {
-          updates[field] = processDateInput(value);
+      const itemToUpdate = memoizedItems.find((item) => item._id === id);
+      if (!itemToUpdate) return;
+
+      if (
+        field === "category" ||
+        field === "storage" ||
+        field === "purchasedDate"
+      ) {
+        if (
+          !updates.expirationDate &&
+          itemToUpdate.expirationDate === itemToUpdate.calculatedExpirationDate
+        ) {
+          updates.expirationDate = calculateExpirationDate(
+            field === "category" ? value : itemToUpdate.category,
+            field === "storage" ? value : itemToUpdate.storage,
+            field === "purchasedDate" ? value : itemToUpdate.purchasedDate
+          );
         }
+      }
 
-        const itemToUpdate = memoizedItems.find((item) => item._id === id);
-        if (!itemToUpdate) return;
-
-        if (field === "category") {
-          const defaultMeasurement = quantityMeasurementsByCategory[value][0];
-          updates["quantityMeasurement"] = defaultMeasurement;
-          // Only calculate expiration date if it wasn't directly edited
-          if (field !== "expirationDate") {
-            updates["expirationDate"] = calculateExpirationDate(
-              value,
-              updates.storage || itemToUpdate.storage,
-              updates.purchasedDate || itemToUpdate.purchasedDate
-            );
-          }
+      if (field === "storage" || field === "purchasedDate") {
+        // Only calculate expiration date if it wasn't directly edited
+        if (field !== "expirationDate") {
+          updates["expirationDate"] = calculateExpirationDate(
+            itemToUpdate.category,
+            field === "storage" ? value : itemToUpdate.storage,
+            field === "purchasedDate" ? value : itemToUpdate.purchasedDate
+          );
         }
+      }
 
-        if (field === "storage" || field === "purchasedDate") {
-          // Only calculate expiration date if it wasn't directly edited
-          if (field !== "expirationDate") {
-            updates["expirationDate"] = calculateExpirationDate(
-              itemToUpdate.category,
-              field === "storage" ? value : itemToUpdate.storage,
-              field === "purchasedDate" ? value : itemToUpdate.purchasedDate
-            );
-          }
+      if (field === "consumed") {
+        updates[field] = parseInt(value, 10);
+        if (updates[field] === 100) {
+          updates.status = "Consumed";
         }
+      }
 
-        if (field === "consumed") {
-          updates[field] = parseInt(value, 10);
-          if (updates[field] === 100) {
-            updates.status = "Consumed";
-          }
+      if (field === "status") {
+        if (value === "Consumed") {
+          updates.consumed = 100;
+        } else if (value === "Waste" || value === "Donation") {
+          updates.statusChangeDate = new Date().toISOString();
         }
+      }
 
-        if (field === "status") {
-          if (value === "Consumed") {
-            updates.consumed = 100;
-          } else if (value === "Waste" || value === "Donation") {
-            updates.statusChangeDate = new Date().toISOString();
-          }
-        }
-
-        handleInputChange(id, updates);
-      },
-      [handleInputChange, memoizedItems, quantityMeasurementsByCategory]
-    );
+      handleInputChange(id, updates);
+    }, []);
 
     const confirmDelete = useCallback(async () => {
       if (itemToDelete) {
@@ -183,7 +183,7 @@ const GenericItemTable = React.memo(
       try {
         const compressedFile = await compressImage(file, 800, 600, 0.7);
         const formData = new FormData();
-        formData.append("image", compressedFile);
+        formData.append("image", compressedFile, file.name);
         handleInputChange(id, formData);
       } catch (error) {
         console.error("Error processing image:", error);

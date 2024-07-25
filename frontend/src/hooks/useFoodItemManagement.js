@@ -58,17 +58,21 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        const formData = new FormData();
-
-        Object.keys(updates).forEach((key) => {
-          if (updates[key] instanceof File) {
-            formData.append(key, updates[key]);
-          } else if (key === "purchasedDate" || key === "expirationDate") {
-            formData.append(key, updates[key]);
-          } else {
-            formData.append(key, JSON.stringify(updates[key]));
-          }
-        });
+        let formData;
+        if (updates instanceof FormData) {
+          formData = updates;
+        } else {
+          formData = new FormData();
+          Object.keys(updates).forEach((key) => {
+            if (updates[key] instanceof File) {
+              formData.append(key, updates[key], updates[key].name);
+            } else if (key === "purchasedDate" || key === "expirationDate") {
+              formData.append(key, processDateInput(updates[key]));
+            } else {
+              formData.append(key, JSON.stringify(updates[key]));
+            }
+          });
+        }
 
         console.log("Sending update:", Object.fromEntries(formData));
 
