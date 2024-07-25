@@ -1,15 +1,9 @@
-function getActionFromStatus(currentStatus, previousStatus, updatedFields) {
-  if (!previousStatus) {
-    return "added";
+exports.getActionFromStatus = (newStatus, previousStatus, updatedFields) => {
+  if (newStatus !== previousStatus) {
+    return `changed status from ${previousStatus} to ${newStatus}`;
   }
-
-  if (currentStatus !== previousStatus) {
-    return `changed status from ${previousStatus} to ${currentStatus}`;
-  }
-
-  if (updatedFields && updatedFields.length > 0) {
+  if (updatedFields.length > 0) {
     return `updated ${updatedFields.join(", ")}`;
   }
-
   return "updated";
-}
+};

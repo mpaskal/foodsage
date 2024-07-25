@@ -128,18 +128,33 @@ exports.updateFoodItem = async (req, res) => {
     }
 
     const previousStatus = foodItem.status;
-    const updatedFields = Object.keys(req.body).filter(
-      (key) => key !== "updatedBy" && foodItem[key] !== req.body[key]
+    let updates = {};
+
+    // Parse form data
+    for (let [key, value] of Object.entries(req.body)) {
+      if (key === "purchasedDate" || key === "expirationDate") {
+        updates[key] = new Date(value);
+      } else {
+        try {
+          updates[key] = JSON.parse(value);
+        } catch {
+          updates[key] = value;
+        }
+      }
+    }
+
+    if (req.file) {
+      updates.image = req.file.buffer.toString("base64");
+    }
+
+    updates.updatedBy = req.user._id;
+
+    const updatedFields = Object.keys(updates).filter(
+      (key) => key !== "updatedBy" && foodItem[key] !== updates[key]
     );
 
-    const updates = {
-      ...req.body,
-      updatedBy: req.body.updatedBy || req.user._id,
-      previousStatus: previousStatus,
-    };
-
     const action = getActionFromStatus(
-      updates.status,
+      updates.status || foodItem.status,
       previousStatus,
       updatedFields
     );
@@ -149,7 +164,7 @@ exports.updateFoodItem = async (req, res) => {
       action: action,
       timestamp: new Date(),
       previousStatus: previousStatus,
-      newStatus: updates.status,
+      newStatus: updates.status || foodItem.status,
     };
 
     updates.$push = { activityLog: newActivity };

@@ -58,43 +58,40 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        if (updates.purchasedDate) {
-          updates.purchasedDate = formatDateForDisplay(
-            new Date(updates.purchasedDate)
-          );
-        }
-        if (updates.expirationDate) {
-          updates.expirationDate = formatDateForDisplay(
-            new Date(updates.expirationDate)
-          );
-        }
+        const formData = new FormData();
 
-        console.log("Logged user", loggedInUser.id);
-        console.log("Sending update:", {
-          ...updates,
-          updatedBy: loggedInUser?.id,
+        Object.keys(updates).forEach((key) => {
+          if (updates[key] instanceof File) {
+            formData.append(key, updates[key]);
+          } else if (key === "purchasedDate" || key === "expirationDate") {
+            formData.append(key, updates[key]);
+          } else {
+            formData.append(key, JSON.stringify(updates[key]));
+          }
         });
 
-        const response = await api.post(`/food/items/update/${id}`, {
-          ...updates,
-          updatedBy: loggedInUser?.id,
+        console.log("Sending update:", Object.fromEntries(formData));
+
+        const response = await api.post(`/food/items/update/${id}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
         console.log("Update Response:", response);
 
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item._id === id
-              ? { ...item, ...response.data.data, updatedBy: loggedInUser?.id }
-              : item
+            item._id === id ? { ...item, ...response.data.data } : item
           )
         );
 
         await fetchRecentActivity();
       } catch (error) {
         console.error("Error updating item:", error);
+        throw error;
       }
     },
-    [setFoodItems, fetchRecentActivity, loggedInUser]
+    [setFoodItems, fetchRecentActivity]
   );
 
   const handleDeleteItem = useCallback(

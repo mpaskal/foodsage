@@ -97,19 +97,25 @@ const GenericItemTable = React.memo(
         if (field === "category") {
           const defaultMeasurement = quantityMeasurementsByCategory[value][0];
           updates["quantityMeasurement"] = defaultMeasurement;
-          updates["expirationDate"] = calculateExpirationDate(
-            value,
-            updates.storage || itemToUpdate.storage,
-            itemToUpdate.purchasedDate
-          );
+          // Only calculate expiration date if it wasn't directly edited
+          if (field !== "expirationDate") {
+            updates["expirationDate"] = calculateExpirationDate(
+              value,
+              updates.storage || itemToUpdate.storage,
+              updates.purchasedDate || itemToUpdate.purchasedDate
+            );
+          }
         }
 
         if (field === "storage" || field === "purchasedDate") {
-          updates["expirationDate"] = calculateExpirationDate(
-            field === "category" ? value : itemToUpdate.category,
-            field === "storage" ? value : itemToUpdate.storage,
-            field === "purchasedDate" ? value : itemToUpdate.purchasedDate
-          );
+          // Only calculate expiration date if it wasn't directly edited
+          if (field !== "expirationDate") {
+            updates["expirationDate"] = calculateExpirationDate(
+              itemToUpdate.category,
+              field === "storage" ? value : itemToUpdate.storage,
+              field === "purchasedDate" ? value : itemToUpdate.purchasedDate
+            );
+          }
         }
 
         if (field === "consumed") {
@@ -176,12 +182,9 @@ const GenericItemTable = React.memo(
     const handleFileChange = async (id, file) => {
       try {
         const compressedFile = await compressImage(file, 800, 600, 0.7);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Data = reader.result.split(",")[1];
-          handleInputChange(id, { image: base64Data });
-        };
-        reader.readAsDataURL(compressedFile);
+        const formData = new FormData();
+        formData.append("image", compressedFile);
+        handleInputChange(id, formData);
       } catch (error) {
         console.error("Error processing image:", error);
       }
