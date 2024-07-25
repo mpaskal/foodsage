@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const activitySchema = new Schema(
   {
+    itemName: { type: String, required: true },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

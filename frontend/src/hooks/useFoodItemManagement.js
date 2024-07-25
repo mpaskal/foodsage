@@ -53,7 +53,11 @@ export const useFoodItemManagement = (pageType) => {
     } catch (error) {
       console.error("Error fetching recent activity:", error);
     }
-  }, [setRecentActivity]);
+  }, []);
+
+  useEffect(() => {
+    fetchRecentActivity();
+  }, [fetchRecentActivity]);
 
   const handleInputChange = useCallback(
     async (id, updates) => {

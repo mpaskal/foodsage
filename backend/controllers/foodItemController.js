@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
+const ActivityLog = require("../models/ActivityLog");
 const FoodItem = require("../models/FoodItem");
 const WasteRecord = require("../models/WasteRecord");
-const ActivityLog = require("../models/ActivityLog"); // Make sure you have this model
 const { getActionFromStatus } = require("../utils/statusUtils");
 const handleError = require("../utils/handleError");
 const {
@@ -9,6 +9,13 @@ const {
   generateRecommendations,
 } = require("../utils/foodItemCalcUtils");
 const { parseISO, format } = require("date-fns");
+
+// Add this function to handle date inputs
+const processDateInput = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return date.toISOString();
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return null;
@@ -19,7 +26,6 @@ const formatDate = (dateString) => {
   }
 };
 
-// Get all food items
 exports.getAllFoodItems = async (req, res) => {
   const tenantId = req.user.tenantId;
   console.log("Received request for getAllFoodItems");
@@ -45,7 +51,6 @@ exports.getAllFoodItems = async (req, res) => {
   }
 };
 
-// Get all food items with pagination
 exports.getFoodItems = async (req, res) => {
   console.log("food items in controller req.query", req.query);
   const { page = 1, limit = 10 } = req.query;
@@ -97,6 +102,7 @@ exports.createFoodItem = async (req, res) => {
       expirationDate: formatDate(req.body.expirationDate),
       activityLog: [
         {
+          itemName: req.body.name,
           updatedBy: userId,
           action: "added",
           timestamp: new Date(),
@@ -107,6 +113,15 @@ exports.createFoodItem = async (req, res) => {
 
     await newFoodItem.save();
     await newFoodItem.populate("updatedBy", "firstName lastName");
+
+    // Create ActivityLog entry
+    await ActivityLog.create({
+      itemName: newFoodItem.name,
+      updatedBy: userId,
+      action: "added",
+      timestamp: new Date(),
+      newStatus: newFoodItem.status,
+    });
 
     res.status(201).json({
       message: "Food item created successfully",
@@ -133,7 +148,7 @@ exports.updateFoodItem = async (req, res) => {
     // Parse form data
     for (let [key, value] of Object.entries(req.body)) {
       if (key === "purchasedDate" || key === "expirationDate") {
-        updates[key] = new Date(value);
+        updates[key] = processDateInput(value);
       } else {
         try {
           updates[key] = JSON.parse(value);
@@ -143,7 +158,6 @@ exports.updateFoodItem = async (req, res) => {
       }
     }
 
-    console.log("Received file:", req.file);
     if (req.file) {
       updates.image = req.file.buffer.toString("base64");
     }
@@ -166,13 +180,18 @@ exports.updateFoodItem = async (req, res) => {
     }
 
     const newActivity = {
-      updatedBy: updates.updatedBy,
+      itemName: foodItem.name,
+      updatedBy: req.user._id,
       action: action,
       timestamp: new Date(),
       previousStatus: previousStatus,
       newStatus: updates.status || foodItem.status,
     };
 
+    // Create a new ActivityLog entry
+    await ActivityLog.create(newActivity);
+
+    // Add the activity to the food item's activityLog
     updates.$push = { activityLog: newActivity };
 
     const updatedFoodItem = await FoodItem.findOneAndUpdate(
@@ -193,11 +212,38 @@ exports.updateFoodItem = async (req, res) => {
   }
 };
 
+exports.getRecentActivity = async (req, res) => {
+  try {
+    const recentActivity = await ActivityLog.find()
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .populate("updatedBy", "firstName lastName")
+      .lean();
+
+    const formattedActivity = recentActivity.map((activity) => ({
+      user: activity.updatedBy
+        ? `${activity.updatedBy.firstName} ${activity.updatedBy.lastName}`
+        : "Unknown User",
+      action: activity.action,
+      itemName: activity.itemName,
+      date: format(new Date(activity.timestamp), "yyyy-MM-dd"),
+    }));
+
+    res.json(formattedActivity);
+  } catch (error) {
+    console.error("Error fetching recent activity:", error);
+    res.status(500).json({
+      message: "Error fetching recent activity",
+      error: error.message,
+    });
+  }
+};
+
 exports.deleteFoodItem = async (req, res) => {
   try {
     const { _id } = req.body;
     const tenantId = req.user.tenantId;
-    const userId = req.user._id || req.user.id; // Use either _id or id
+    const userId = req.user._id || req.user.id;
 
     console.log("Deleting food item:", { _id, tenantId, userId });
     console.log("Full user object:", req.user);
@@ -212,7 +258,7 @@ exports.deleteFoodItem = async (req, res) => {
 
     const newActivity = {
       itemName: foodItem.name,
-      updatedBy: new mongoose.Types.ObjectId(userId), // Ensure it's an ObjectId
+      updatedBy: new mongoose.Types.ObjectId(userId),
       action: "deleted",
       timestamp: new Date(),
       previousStatus: foodItem.status,
@@ -239,7 +285,6 @@ exports.deleteFoodItem = async (req, res) => {
   }
 };
 
-// Add these new functions for insights
 exports.getFoodInsights = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
@@ -311,50 +356,22 @@ exports.predictFutureWaste = async (req, res) => {
 exports.getRecentActivity = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const recentActivity = await FoodItem.aggregate([
-      { $match: { tenantId: new mongoose.Types.ObjectId(tenantId) } },
-      { $unwind: "$activityLog" },
-      { $sort: { "activityLog.timestamp": -1 } },
-      { $limit: 10 },
-      {
-        $lookup: {
-          from: "users",
-          localField: "activityLog.updatedBy",
-          foreignField: "_id",
-          as: "user",
-        },
-      },
-      { $unwind: "$user" },
-      {
-        $project: {
-          itemName: "$name",
-          action: "$activityLog.action",
-          user: { $concat: ["$user.firstName", " ", "$user.lastName"] },
-          date: "$activityLog.timestamp",
-        },
-      },
-    ]);
-
-    // Fetch deletion activities
-    const deletionActivities = await ActivityLog.find({ action: "deleted" })
+    const recentActivity = await ActivityLog.find()
       .sort({ timestamp: -1 })
       .limit(10)
       .populate("updatedBy", "firstName lastName")
-      .lean()
-      .then((activities) =>
-        activities.map((activity) => ({
-          ...activity,
-          user: `${activity.updatedBy.firstName} ${activity.updatedBy.lastName}`,
-          date: activity.timestamp,
-        }))
-      );
+      .lean();
 
-    // Combine and sort all activities
-    const allActivities = [...recentActivity, ...deletionActivities]
-      .sort((a, b) => b.date - a.date)
-      .slice(0, 10);
+    const formattedActivity = recentActivity.map((activity) => ({
+      user: activity.updatedBy
+        ? `${activity.updatedBy.firstName} ${activity.updatedBy.lastName}`
+        : "Unknown User",
+      action: activity.action,
+      itemName: activity.itemName,
+      date: activity.timestamp.toISOString().split("T")[0],
+    }));
 
-    res.json(allActivities);
+    res.json(formattedActivity);
   } catch (error) {
     console.error("Error fetching recent activity:", error);
     res.status(500).json({

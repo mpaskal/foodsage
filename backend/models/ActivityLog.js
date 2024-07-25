@@ -5,7 +5,7 @@ const activityLogSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
+    required: false,
   },
   action: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
