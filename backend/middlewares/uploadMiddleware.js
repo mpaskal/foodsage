@@ -2,15 +2,19 @@ const multer = require("multer");
 const path = require("path");
 
 // Set storage engine
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 1000000 }, // Limit file size to 1MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
-}).single("image");
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
 
 // Check file type
 function checkFileType(file, cb) {
@@ -52,4 +56,5 @@ const uploadMiddleware = (req, res, next) => {
   });
 };
 
-module.exports = uploadMiddleware;
+//module.exports = uploadMiddleware;
+module.exports = upload.single("image");

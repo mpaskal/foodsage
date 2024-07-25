@@ -11,6 +11,7 @@ import {
   statusOptions,
   quantityMeasurementsByCategory,
 } from "../../utils/constants";
+import { compressImage } from "../../utils/imageUtils";
 
 const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const [localError, setLocalError] = useState(null);
@@ -86,17 +87,22 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     });
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prevForm) => ({
-          ...prevForm,
-          image: reader.result.split(",")[1],
-        }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedFile = await compressImage(file, 800, 600, 0.7);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setForm((prevForm) => ({
+            ...prevForm,
+            image: reader.result.split(",")[1],
+          }));
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      }
     }
   };
 

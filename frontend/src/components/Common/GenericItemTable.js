@@ -4,7 +4,7 @@ import { useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
 import DeleteFoodConfirmationModal from "./DeleteFoodConfirmationModal";
-import { processImage } from "../../utils/imageUtils";
+import { compressImage } from "../../utils/imageUtils";
 import {
   formatDateForDisplay,
   processDateInput,
@@ -175,8 +175,13 @@ const GenericItemTable = React.memo(
 
     const handleFileChange = async (id, file) => {
       try {
-        const base64Data = await processImage(file);
-        handleInputChange(id, { image: base64Data });
+        const compressedFile = await compressImage(file, 800, 600, 0.7);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Data = reader.result.split(",")[1];
+          handleInputChange(id, { image: base64Data });
+        };
+        reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error("Error processing image:", error);
       }
