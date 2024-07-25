@@ -118,19 +118,17 @@ const registerUser = async (req, res) => {
 };
 
 // Login User
-const loginUser = async (req, res) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     let user = await User.findOne({ email });
     if (!user) {
-      console.log("User not found with email:", email); // Debugging statement
       return res.status(400).json({ msg: "Invalid email or password" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("Password does not match for user:", email); // Debugging statement
       return res.status(400).json({ msg: "Invalid email or password" });
     }
 
@@ -145,7 +143,7 @@ const loginUser = async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 3600 },
+      { expiresIn: 3600 * 24 }, // Token expires in 24 hours
       (err, token) => {
         if (err) throw err;
         res.json({
@@ -162,7 +160,7 @@ const loginUser = async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err.message);
+    console.error("Login error:", err.message);
     res.status(500).send("Server error");
   }
 };
@@ -270,7 +268,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
   registerFirstUser,
   registerUser,
-  loginUser,
+  login,
   getAllUsers,
   getUserProfile,
   updateUser,

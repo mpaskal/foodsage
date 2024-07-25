@@ -16,7 +16,7 @@ import DonationInsightsPage from "../../pages/AppPages/DonationInsightsPage";
 import WasteItemsPage from "../../pages/AppPages/WasteItemsPage";
 import WasteInsightsPage from "../../pages/AppPages/WasteInsightsPage";
 import SavingTrackingPage from "../../pages/AppPages/SavingTrackingPage.js";
-import ProtectedRoute from "../ProtectedRoute";
+import ProtectedRoute from "./ProtectedRoute";
 import useAxiosInterceptor from "../../hooks/useAxiosInterceptor";
 
 const AppContent = () => {

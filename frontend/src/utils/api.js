@@ -1,26 +1,22 @@
-// src/utils/api.js
 import axios from "axios";
 
+console.log("API Base URL:", process.env.REACT_APP_API_BASE_URL);
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
 });
 
-api.interceptors.request.use((config) => {
-  // Add authorization token
-  const token = JSON.parse(localStorage.getItem("user"))?.token;
-  if (token) {
-    config.headers["Authorization"] = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-
-  // Add timezone offset
-  const timezoneOffset = new Date().getTimezoneOffset();
-  config.headers["X-Timezone-Offset"] = timezoneOffset;
-
-  return config;
-});
-
-export const getAllFoodItems = () => {
-  return api.get("/food/items/all");
-};
+);
 
 export default api;

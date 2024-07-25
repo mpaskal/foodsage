@@ -84,7 +84,7 @@ const SavingTrackingPage = () => {
               <Card.Body>
                 <Card.Title className="d-flex align-items-center mb-3">
                   <FaDollarSign className="me-2 text-primary" />
-                  Total Savings
+                  Total Payed for Food Items
                 </Card.Title>
                 <h2 className="text-center text-success">
                   ${savingsData.totalSavings?.toFixed(2) || "0.00"}

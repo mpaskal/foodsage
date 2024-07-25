@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const FoodItem = require("../models/FoodItem");
 const WasteRecord = require("../models/WasteRecord");
+const ActivityLog = require("../models/ActivityLog"); // Make sure you have this model
 const { getActionFromStatus } = require("../utils/statusUtils");
 const handleError = require("../utils/handleError");
 const {
@@ -21,6 +22,9 @@ const formatDate = (dateString) => {
 // Get all food items
 exports.getAllFoodItems = async (req, res) => {
   const tenantId = req.user.tenantId;
+  console.log("Received request for getAllFoodItems");
+  console.log("User:", req.user);
+  console.log("TenantId:", tenantId);
 
   try {
     const allItems = await FoodItem.countDocuments({ tenantId });
@@ -76,13 +80,11 @@ exports.getFoodItems = async (req, res) => {
   }
 };
 
-// In foodItemController.js
-
 exports.createFoodItem = async (req, res) => {
-  console.log("Received food item data createFoodItem:", req);
+  console.log("Received food item data createFoodItem:", req.body);
   try {
     const tenantId = req.user.tenantId;
-    const userId = req.user.id; // Make sure this is set correctly in your auth middleware
+    const userId = req.user.id;
 
     const newFoodItem = new FoodItem({
       ...req.body,
@@ -104,8 +106,6 @@ exports.createFoodItem = async (req, res) => {
     });
 
     await newFoodItem.save();
-
-    // Populate the updatedBy field after saving
     await newFoodItem.populate("updatedBy", "firstName lastName");
 
     res.status(201).json({
@@ -120,8 +120,6 @@ exports.createFoodItem = async (req, res) => {
 
 exports.updateFoodItem = async (req, res) => {
   try {
-    console.log("Received update data:", req.body);
-
     const tenantId = req.user.tenantId;
     const foodItem = await FoodItem.findOne({ _id: req.params.id, tenantId });
 
@@ -130,33 +128,37 @@ exports.updateFoodItem = async (req, res) => {
     }
 
     const previousStatus = foodItem.status;
+    const updatedFields = Object.keys(req.body).filter(
+      (key) => key !== "updatedBy" && foodItem[key] !== req.body[key]
+    );
+
     const updates = {
       ...req.body,
       updatedBy: req.body.updatedBy || req.user._id,
       previousStatus: previousStatus,
     };
 
-    // Create a new activity log entry
+    const action = getActionFromStatus(
+      updates.status,
+      previousStatus,
+      updatedFields
+    );
+
     const newActivity = {
       updatedBy: updates.updatedBy,
-      action: getActionFromStatus(updates.status, previousStatus, false),
+      action: action,
       timestamp: new Date(),
       previousStatus: previousStatus,
       newStatus: updates.status,
     };
 
-    // Add the new activity to the updates
     updates.$push = { activityLog: newActivity };
-
-    console.log("Updates to be applied:", updates);
 
     const updatedFoodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
       updates,
       { new: true, runValidators: true }
     ).populate("updatedBy", "firstName lastName");
-
-    console.log("Updated food item:", updatedFoodItem);
 
     res.status(200).json({
       message: "Food item updated successfully",
@@ -169,21 +171,45 @@ exports.updateFoodItem = async (req, res) => {
 };
 
 exports.deleteFoodItem = async (req, res) => {
-  const { _id } = req.body;
-  const tenantId = req.user.tenantId;
-
   try {
-    const result = await FoodItem.findOneAndDelete({ _id, tenantId });
+    const { _id } = req.body;
+    const tenantId = req.user.tenantId;
+    const userId = req.user._id || req.user.id; // Use either _id or id
 
-    if (result) {
-      res
-        .status(200)
-        .json({ message: "Food item deleted successfully", data: result });
-    } else {
-      res.status(404).json({ message: "Food item not found" });
+    console.log("Deleting food item:", { _id, tenantId, userId });
+    console.log("Full user object:", req.user);
+
+    const foodItem = await FoodItem.findOne({ _id, tenantId });
+
+    if (!foodItem) {
+      return res.status(404).json({ message: "Food item not found" });
     }
+
+    console.log("Food item found:", foodItem);
+
+    const newActivity = {
+      itemName: foodItem.name,
+      updatedBy: new mongoose.Types.ObjectId(userId), // Ensure it's an ObjectId
+      action: "deleted",
+      timestamp: new Date(),
+      previousStatus: foodItem.status,
+      newStatus: "Deleted",
+    };
+
+    console.log("New activity to be created:", newActivity);
+
+    // Add the deletion activity to ActivityLog
+    const activityLog = await ActivityLog.create(newActivity);
+    console.log("Created ActivityLog:", activityLog);
+
+    await FoodItem.findOneAndDelete({ _id, tenantId });
+
+    res.status(200).json({ message: "Food item deleted successfully" });
   } catch (error) {
     console.error("Error deleting food item:", error);
+    if (error.name === "ValidationError") {
+      console.error("Validation error details:", error.errors);
+    }
     res
       .status(500)
       .json({ message: "Error deleting food item", error: error.message });
@@ -286,7 +312,26 @@ exports.getRecentActivity = async (req, res) => {
       },
     ]);
 
-    res.json(recentActivity);
+    // Fetch deletion activities
+    const deletionActivities = await ActivityLog.find({ action: "deleted" })
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .populate("updatedBy", "firstName lastName")
+      .lean()
+      .then((activities) =>
+        activities.map((activity) => ({
+          ...activity,
+          user: `${activity.updatedBy.firstName} ${activity.updatedBy.lastName}`,
+          date: activity.timestamp,
+        }))
+      );
+
+    // Combine and sort all activities
+    const allActivities = [...recentActivity, ...deletionActivities]
+      .sort((a, b) => b.date - a.date)
+      .slice(0, 10);
+
+    res.json(allActivities);
   } catch (error) {
     console.error("Error fetching recent activity:", error);
     res.status(500).json({
