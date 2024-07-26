@@ -4,10 +4,8 @@ import { useRecoilValue } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import InlineEditControl from "../Common/InlineEditControl";
 import DeleteFoodConfirmationModal from "./DeleteFoodConfirmationModal";
-import { compressImage } from "../../utils/imageUtils";
 import {
   formatDateForDisplay,
-  processDateInput,
   calculateExpirationDate,
 } from "../../utils/dateUtils";
 
@@ -82,11 +80,12 @@ const GenericItemTable = React.memo(
       }
       return null;
     };
+
     const handleLocalInputChange = useCallback((id, field, value) => {
       let updates = { [field]: value };
 
       if (field === "purchasedDate" || field === "expirationDate") {
-        updates[field] = processDateInput(value);
+        updates[field] = value; // Remove processDateInput
       }
 
       const itemToUpdate = memoizedItems.find((item) => item._id === id);
@@ -153,18 +152,9 @@ const GenericItemTable = React.memo(
 
     const getImageSrc = (image) => {
       if (image && typeof image === "string" && image.length > 0) {
-        if (image.startsWith("data:image")) {
-          return image;
-        }
-        if (image.startsWith("/9j/")) {
-          return `data:image/jpeg;base64,${image}`;
-        } else if (image.startsWith("iVBORw0KGgo")) {
-          return `data:image/png;base64,${image}`;
-        } else {
-          return `data:image/jpeg;base64,${image}`;
-        }
+        return `data:image/jpeg;base64,${image}`;
       }
-      return `Bad image`;
+      return `No image`;
     };
 
     const getExpirationDateStyle = (expirationDate) => {
@@ -181,9 +171,8 @@ const GenericItemTable = React.memo(
 
     const handleFileChange = async (id, file) => {
       try {
-        const compressedFile = await compressImage(file, 800, 600, 0.7);
         const formData = new FormData();
-        formData.append("image", compressedFile, file.name);
+        formData.append("image", file, file.name);
         handleInputChange(id, formData);
       } catch (error) {
         console.error("Error processing image:", error);

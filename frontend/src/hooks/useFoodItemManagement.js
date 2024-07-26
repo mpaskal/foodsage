@@ -71,7 +71,7 @@ export const useFoodItemManagement = (pageType) => {
             if (updates[key] instanceof File) {
               formData.append(key, updates[key], updates[key].name);
             } else if (key === "purchasedDate" || key === "expirationDate") {
-              formData.append(key, processDateInput(updates[key]));
+              formData.append(key, updates[key]); // Remove processDateInput
             } else {
               formData.append(key, JSON.stringify(updates[key]));
             }
