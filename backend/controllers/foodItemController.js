@@ -129,7 +129,7 @@ exports.createFoodItem = async (req, res) => {
 exports.updateFoodItem = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const userId = req.user.id || req.user._id; // Use either id or _id, whichever is available
+    const userId = req.user.id || req.user._id;
     const foodItem = await FoodItem.findOne({ _id: req.params.id, tenantId });
 
     if (!foodItem) {
@@ -152,45 +152,25 @@ exports.updateFoodItem = async (req, res) => {
       }
     }
 
-    if (req.file) {
-      updates.image = req.file.buffer.toString("base64");
-    }
-
     updates.updatedBy = userId;
-
-    const updatedFields = Object.keys(updates).filter(
-      (key) =>
-        key !== "updatedBy" &&
-        JSON.stringify(foodItem[key]) !== JSON.stringify(updates[key])
-    );
-
-    let action;
-    if (updates.status && updates.status !== previousStatus) {
-      action = `changed status from ${previousStatus} to ${updates.status}`;
-    } else if (updatedFields.length > 0) {
-      action = `updated ${updatedFields.join(", ")}`;
-    } else {
-      action = "updated";
-    }
-
-    const newActivity = {
-      itemName: foodItem.name,
-      updatedBy: userId,
-      action: action,
-      timestamp: new Date(),
-      previousStatus: previousStatus,
-      newStatus: updates.status || foodItem.status,
-      tenantId: tenantId,
-    };
-
-    // Create a new ActivityLog entry
-    await ActivityLog.create(newActivity);
 
     const updatedFoodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
       updates,
       { new: true, runValidators: true }
     ).populate("updatedBy", "firstName lastName");
+
+    // Create activity log
+    const newActivity = {
+      itemName: foodItem.name,
+      updatedBy: userId,
+      action: "updated",
+      timestamp: new Date(),
+      previousStatus: previousStatus,
+      newStatus: updates.status || foodItem.status,
+      tenantId: tenantId,
+    };
+    await ActivityLog.create(newActivity);
 
     res.status(200).json({
       message: "Food item updated successfully",

@@ -62,21 +62,16 @@ export const useFoodItemManagement = (pageType) => {
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        let formData;
-        if (updates instanceof FormData) {
-          formData = updates;
-        } else {
-          formData = new FormData();
-          Object.keys(updates).forEach((key) => {
-            if (updates[key] instanceof File) {
-              formData.append(key, updates[key], updates[key].name);
-            } else if (key === "purchasedDate" || key === "expirationDate") {
-              formData.append(key, updates[key]); // Remove processDateInput
-            } else {
-              formData.append(key, JSON.stringify(updates[key]));
-            }
-          });
-        }
+        let formData = new FormData();
+        Object.keys(updates).forEach((key) => {
+          if (updates[key] instanceof File) {
+            formData.append(key, updates[key], updates[key].name);
+          } else if (key === "purchasedDate" || key === "expirationDate") {
+            formData.append(key, updates[key]);
+          } else {
+            formData.append(key, updates[key]);
+          }
+        });
 
         console.log("Sending update:", Object.fromEntries(formData));
 
@@ -87,13 +82,16 @@ export const useFoodItemManagement = (pageType) => {
         });
         console.log("Update Response:", response);
 
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === id ? { ...item, ...response.data.data } : item
-          )
-        );
-
-        await fetchRecentActivity();
+        if (response.data && response.data.data) {
+          setFoodItems((prevItems) =>
+            prevItems.map((item) =>
+              item._id === id ? { ...item, ...response.data.data } : item
+            )
+          );
+          await fetchRecentActivity();
+        } else {
+          throw new Error("Invalid response from server");
+        }
       } catch (error) {
         console.error("Error updating item:", error);
         throw error;

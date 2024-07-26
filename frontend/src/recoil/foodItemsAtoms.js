@@ -17,22 +17,29 @@ export const foodItemsWithCalculatedDates = selector({
   key: "foodItemsWithCalculatedDates",
   get: ({ get }) => {
     const allFoodItems = get(allFoodItemsState);
-    return allFoodItems.map((item) => ({
-      ...item,
-      expirationDate: calculateExpirationDate(
+    return allFoodItems.map((item) => {
+      const calculatedExpirationDate = calculateExpirationDate(
         item.category,
         item.storage,
         item.purchasedDate
-      ),
-      formattedExpirationDate: formatDateForDisplay(
-        calculateExpirationDate(item.category, item.storage, item.purchasedDate)
-      ),
-      formattedPurchasedDate: formatDateForDisplay(item.purchasedDate),
-      formattedStatusChangeDate: formatDateForDisplay(item.statusChangeDate),
-      formattedDonatedDate: item.donatedDate
-        ? formatDateForDisplay(item.donatedDate)
-        : null,
-    }));
+      );
+
+      const expirationDate = item.isExpirationDateManual
+        ? item.expirationDate
+        : calculatedExpirationDate;
+
+      return {
+        ...item,
+        calculatedExpirationDate, // Keep the calculated date for reference
+        expirationDate,
+        formattedExpirationDate: formatDateForDisplay(expirationDate),
+        formattedPurchasedDate: formatDateForDisplay(item.purchasedDate),
+        formattedStatusChangeDate: formatDateForDisplay(item.statusChangeDate),
+        formattedDonatedDate: item.donatedDate
+          ? formatDateForDisplay(item.donatedDate)
+          : null,
+      };
+    });
   },
 });
 
