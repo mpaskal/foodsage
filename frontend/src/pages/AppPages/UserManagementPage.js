@@ -55,9 +55,12 @@ const UserManagementPage = () => {
       if (!token) {
         throw new Error("No authentication token found");
       }
-      const usersResponse = await api.get(
-        `/users?page=${currentPage}&limit=${usersPerPage}`
-      );
+      const usersResponse = await api.get(`/users`, {
+        params: {
+          page: currentPage,
+          limit: usersPerPage,
+        },
+      });
       if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
         const filteredUsers = usersResponse.data.users;
         const adminUsersList = filteredUsers.filter((u) => u.role === "admin");

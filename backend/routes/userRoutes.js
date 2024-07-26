@@ -6,7 +6,7 @@ const User = require("../models/User");
 
 router.post("/register", userController.registerFirstUser);
 router.post("/register-user", userAuth, userController.registerUser);
-router.post("/login", userController.loginUser);
+router.post("/login", userController.login);
 
 router.get("/", userAuth, async (req, res) => {
   try {

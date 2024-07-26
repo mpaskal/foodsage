@@ -6,15 +6,15 @@ import {
   sharedTableColumns,
 } from "../../utils/constants";
 
-const FoodItemTable = ({ foodItems, ...props }) => (
+const FoodItemTable = React.memo(({ foodItems, ...props }) => (
   <GenericItemTable
-    items={foodItems} // Change this line
+    items={foodItems}
     {...props}
     tableColumns={sharedTableColumns}
     itemType="food"
     statusOptions={statusOptions}
     quantityMeasurementsByCategory={quantityMeasurementsByCategory}
   />
-);
+));
 
 export default FoodItemTable;

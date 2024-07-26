@@ -4,14 +4,6 @@ const path = require("path");
 // Set storage engine
 const storage = multer.memoryStorage();
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1000000 }, // Limit file size to 1MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
-}).single("image");
-
 // Check file type
 function checkFileType(file, cb) {
   const filetypes = /jpeg|jpg|png|gif/;
@@ -24,18 +16,29 @@ function checkFileType(file, cb) {
   }
 }
 
+// Combine the two upload declarations
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+});
+
 const uploadMiddleware = (req, res, next) => {
-  upload(req, res, function (err) {
+  upload.single("image")(req, res, function (err) {
     console.log("req middleware", req.body);
     console.log("err middleware", err);
     if (err instanceof multer.MulterError) {
       // A Multer error occurred when uploading.
-      return res.status(400).json({ message: "Error uploading file", err });
+      return res
+        .status(400)
+        .json({ message: "Error uploading file", error: err.message });
     } else if (err) {
       // An unknown error occurred when uploading.
       return res
         .status(400)
-        .json({ message: "Unknown Error uploading file", err });
+        .json({ message: "Unknown Error uploading file", error: err.message });
     }
 
     // If there is a file, convert it to base64 and add to req.body
@@ -44,8 +47,14 @@ const uploadMiddleware = (req, res, next) => {
       req.body.image = fileBuffer.toString("base64");
     }
 
-    // Convert req.body from FormData to an object if needed
-    req.body = Object.fromEntries(new Map(Object.entries(req.body)));
+    // Parse JSON strings in req.body
+    for (let key in req.body) {
+      try {
+        req.body[key] = JSON.parse(req.body[key]);
+      } catch (e) {
+        // If it's not a JSON string, keep the original value
+      }
+    }
 
     // Everything went fine.
     next();

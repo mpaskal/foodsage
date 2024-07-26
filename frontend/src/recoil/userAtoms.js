@@ -5,6 +5,16 @@ export const loggedInUserState = atom({
   default: null,
 });
 
+export const authLoadingState = atom({
+  key: "authLoadingState",
+  default: true,
+});
+
+export const authTokenState = atom({
+  key: "authTokenState",
+  default: localStorage.getItem("token") || "",
+});
+
 export const isUserModalOpenState = atom({
   key: "isUserModalOpenState",
   default: false,

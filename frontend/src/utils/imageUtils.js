@@ -1,43 +1,48 @@
-export const processImage = (file, maxSize = 300, maxFileSize = 5000000) => {
+export const compressImage = (file, maxWidth, maxHeight, quality) => {
   return new Promise((resolve, reject) => {
-    if (file.size > maxFileSize) {
-      reject(new Error("File is too large. Please choose a file under 5MB."));
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
       const img = new Image();
+      img.src = event.target.result;
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const elem = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
 
         if (width > height) {
-          if (width > maxSize) {
-            height *= maxSize / width;
-            width = maxSize;
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
           }
         } else {
-          if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
           }
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        elem.width = width;
+        elem.height = height;
+
+        const ctx = elem.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
-        const resizedImage = canvas.toDataURL(file.type);
-        const base64Data = resizedImage.split(",")[1];
-        resolve(base64Data);
+        ctx.canvas.toBlob(
+          (blob) => {
+            resolve(
+              new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              })
+            );
+          },
+          "image/jpeg",
+          quality
+        );
       };
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = reader.result;
+      img.onerror = reject;
     };
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsDataURL(file);
+    reader.onerror = reject;
   });
 };

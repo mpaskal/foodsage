@@ -1,25 +1,18 @@
-import { useState, useCallback } from "react";
-import api from "../utils/api";
+import { useState, useCallback, useEffect } from "react";
+import { useFoodItemsFetching } from "./useFoodItemsFetching";
 
 const useFoodInsights = () => {
-  const [foodItems, setFoodItems] = useState([]);
+  const { foodItems, isLoading, error, fetchAllFoodItems } =
+    useFoodItemsFetching();
   const [insights, setInsights] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const fetchAllFoodItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/food/items/all");
-      setFoodItems(response.data.data);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => {
+    fetchAllFoodItems();
+  }, [fetchAllFoodItems]);
 
   const calculateInsights = useCallback(() => {
+    if (foodItems.length === 0) return;
+
     const consumptionRate =
       (foodItems.filter((item) => item.status === "Consumed").length /
         foodItems.length) *
@@ -52,8 +45,6 @@ const useFoodInsights = () => {
       );
     }
 
-    // Add more conditions and recommendations based on your business logic
-
     setInsights({
       consumptionRate,
       wasteRate,
@@ -61,10 +52,12 @@ const useFoodInsights = () => {
     });
   }, [foodItems]);
 
+  useEffect(() => {
+    calculateInsights();
+  }, [calculateInsights]);
+
   const calculateWasteCost = useCallback(
     (startDate, endDate) => {
-      // Implement logic to calculate waste cost based on foodItems
-      // This is a placeholder and should be replaced with actual logic
       return foodItems
         .filter(
           (item) =>
@@ -79,8 +72,6 @@ const useFoodInsights = () => {
 
   const predictFutureWaste = useCallback(
     (days) => {
-      // Implement logic to predict future waste based on foodItems
-      // This is a placeholder and should be replaced with actual logic
       const averageDailyWaste =
         foodItems.filter((item) => item.status === "Waste").length / 30;
       return averageDailyWaste * days;
@@ -91,7 +82,7 @@ const useFoodInsights = () => {
   return {
     foodItems,
     insights,
-    loading,
+    isLoading,
     error,
     fetchAllFoodItems,
     calculateInsights,

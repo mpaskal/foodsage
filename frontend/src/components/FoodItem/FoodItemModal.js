@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import {
   formatDateForDisplay,
@@ -11,10 +11,12 @@ import {
   statusOptions,
   quantityMeasurementsByCategory,
 } from "../../utils/constants";
+import { compressImage } from "../../utils/imageUtils";
 
 const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   const [localError, setLocalError] = useState(null);
   const [userChangedExpiration, setUserChangedExpiration] = useState(false);
+  const [isMounted, setIsMounted] = useState(true);
 
   const initialForm = {
     name: "",
@@ -43,7 +45,20 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       ...prevForm,
       expirationDate,
     }));
+
+    return () => {
+      setIsMounted(false);
+    };
   }, []);
+
+  const safeSetLocalError = useCallback(
+    (error) => {
+      if (isMounted) {
+        setLocalError(error);
+      }
+    },
+    [isMounted]
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,23 +87,28 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     });
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prevForm) => ({
-          ...prevForm,
-          image: reader.result.split(",")[1],
-        }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedFile = await compressImage(file, 800, 600, 0.7);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setForm((prevForm) => ({
+            ...prevForm,
+            image: reader.result.split(",")[1],
+          }));
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      }
     }
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    setLocalError(null);
+    safeSetLocalError(null);
 
     const requiredFields = [
       "name",
@@ -101,7 +121,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
     const missingFields = requiredFields.filter((field) => !form[field]);
 
     if (missingFields.length > 0) {
-      setLocalError(
+      safeSetLocalError(
         `Please fill in all required fields: ${missingFields.join(", ")}`
       );
       return;
@@ -111,7 +131,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
       !form.expirationDate ||
       isNaN(new Date(form.expirationDate).getTime())
     ) {
-      setLocalError("Please provide a valid expiration date.");
+      safeSetLocalError("Please provide a valid expiration date.");
       return;
     }
 
@@ -124,21 +144,30 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
         statusChangeDate: new Date().toISOString(),
       };
 
-      // If source is empty, set it to null or a default value
       if (!formattedItem.source.trim()) {
         formattedItem.source = "N/A";
       }
 
+      console.log("Submitting item from modal:", formattedItem);
+
       await handleSubmit(formattedItem);
-      handleClose();
-      setForm(initialForm);
+      if (isMounted) {
+        handleClose();
+        setForm(initialForm);
+      }
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error("Error submitting form in modal:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "An error occurred while submitting the form.";
-      setLocalError(errorMessage);
+      safeSetLocalError(errorMessage);
+      // Log the full error object
+      console.log("Full error object:", error);
+      // If there's a response object, log it as well
+      if (error.response) {
+        console.log("Error response:", error.response);
+      }
     }
   };
 
@@ -147,7 +176,7 @@ const FoodItemModal = ({ show, handleClose, handleSubmit }) => {
   }, [form.category]);
 
   return (
-    <Modal show={show} onHide={handleClose}>
+    <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
       <Modal.Header closeButton>
         <Modal.Title>Add Food Item</Modal.Title>
       </Modal.Header>

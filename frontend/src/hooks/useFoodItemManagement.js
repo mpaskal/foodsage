@@ -1,87 +1,50 @@
 import { useState, useCallback, useEffect } from "react";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState, useSetRecoilState, useRecoilValue } from "recoil";
 import {
   allFoodItemsState,
   recentActivityState,
 } from "../recoil/foodItemsAtoms";
+import { loggedInUserState } from "../recoil/userAtoms";
 import {
-  calculateExpirationDate,
   getDaysSinceExpiration,
   formatDateForDisplay,
 } from "../utils/dateUtils";
 import api from "../utils/api";
+import { useFoodItemsFetching } from "./useFoodItemsFetching";
 
 export const useFoodItemManagement = (pageType) => {
   const [foodItems, setFoodItems] = useRecoilState(allFoodItemsState);
   const setRecentActivity = useSetRecoilState(recentActivityState);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const loggedInUser = useRecoilValue(loggedInUserState);
+  const { isLoading, error, fetchAllFoodItems } = useFoodItemsFetching();
 
   const fetchItems = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get("/food/items/all");
-      console.log("API Response:", response);
+    await fetchAllFoodItems();
+  }, [fetchAllFoodItems]);
 
-      const itemsArray = Array.isArray(response.data)
-        ? response.data
-        : response.data.data;
-
-      if (!Array.isArray(itemsArray)) {
-        throw new Error("Invalid data structure received from the server");
-      }
-
-      const items = itemsArray.map((item) => ({
-        ...item,
-        expirationDate: calculateExpirationDate(
-          item.category,
-          item.storage,
-          item.purchasedDate
-        ),
-        purchasedDate: formatDateForDisplay(new Date(item.purchasedDate)),
-        ...(item.expirationDate && {
-          expirationDate: formatDateForDisplay(new Date(item.expirationDate)),
-        }),
-        updatedByName: item.updatedBy
-          ? `${item.updatedBy.firstName} ${item.updatedBy.lastName}`
-          : "Unknown User",
-      }));
-
-      console.log("Processed Items:", items);
-
-      const filteredItems = items.filter((item) => {
+  const filterItems = useCallback(
+    (items) => {
+      console.log("Filtering items:", items);
+      return items.filter((item) => {
         const daysSinceExpiration = getDaysSinceExpiration(item.expirationDate);
-
-        switch (pageType) {
-          case "food":
-            return (
-              item.status !== "Waste" &&
-              item.status !== "Donation" &&
-              (daysSinceExpiration <= 5 || item.consumed < 100)
-            );
-          case "waste":
-            return item.status === "Waste" && daysSinceExpiration <= 30;
-          case "donation":
-            return (
-              item.status === "Donation" &&
-              (new Date() - new Date(item.lastStateChangeDate)) /
-                (1000 * 60 * 60 * 24) <=
-                30
-            );
-          default:
-            return true;
-        }
+        const result =
+          item.status === "Active" &&
+          (daysSinceExpiration <= 5 || item.consumed < 100);
+        console.log(`Item ${item._id} filtered:`, result);
+        return result;
       });
+    },
+    [pageType]
+  );
 
-      console.log("Filtered Items:", filteredItems);
-      setFoodItems(filteredItems);
-    } catch (error) {
-      setError("Failed to fetch items");
-      console.error("Error fetching items:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pageType, setFoodItems]);
+  useEffect(() => {
+    console.log("Effect running to filter items");
+    setFoodItems((prevItems) => {
+      const filteredItems = filterItems(prevItems);
+      console.log("Filtered items in effect:", filteredItems);
+      return filteredItems;
+    });
+  }, [filterItems, setFoodItems]);
 
   const fetchRecentActivity = useCallback(async () => {
     try {
@@ -90,35 +53,48 @@ export const useFoodItemManagement = (pageType) => {
     } catch (error) {
       console.error("Error fetching recent activity:", error);
     }
-  }, [setRecentActivity]);
+  }, []);
+
+  useEffect(() => {
+    fetchRecentActivity();
+  }, [fetchRecentActivity]);
 
   const handleInputChange = useCallback(
     async (id, updates) => {
       try {
-        if (updates.purchasedDate) {
-          updates.purchasedDate = formatDateForDisplay(
-            new Date(updates.purchasedDate)
-          );
-        }
-        if (updates.expirationDate) {
-          updates.expirationDate = formatDateForDisplay(
-            new Date(updates.expirationDate)
-          );
-        }
+        let formData = new FormData();
+        Object.keys(updates).forEach((key) => {
+          if (updates[key] instanceof File) {
+            formData.append(key, updates[key], updates[key].name);
+          } else if (key === "purchasedDate" || key === "expirationDate") {
+            formData.append(key, updates[key]);
+          } else {
+            formData.append(key, updates[key]);
+          }
+        });
 
-        const response = await api.post(`/food/items/update/${id}`, updates);
+        console.log("Sending update:", Object.fromEntries(formData));
+
+        const response = await api.post(`/food/items/update/${id}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         console.log("Update Response:", response);
 
-        setFoodItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === id ? { ...item, ...response.data.data } : item
-          )
-        );
-
-        await fetchRecentActivity();
+        if (response.data && response.data.data) {
+          setFoodItems((prevItems) =>
+            prevItems.map((item) =>
+              item._id === id ? { ...item, ...response.data.data } : item
+            )
+          );
+          await fetchRecentActivity();
+        } else {
+          throw new Error("Invalid response from server");
+        }
       } catch (error) {
-        setError("Failed to update item");
         console.error("Error updating item:", error);
+        throw error;
       }
     },
     [setFoodItems, fetchRecentActivity]
@@ -145,6 +121,10 @@ export const useFoodItemManagement = (pageType) => {
     fetchItems();
     fetchRecentActivity();
   }, [fetchItems, fetchRecentActivity]);
+
+  useEffect(() => {
+    setFoodItems((prevItems) => filterItems(prevItems));
+  }, [filterItems, setFoodItems]);
 
   return {
     foodItems,

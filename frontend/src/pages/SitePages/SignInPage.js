@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Layout from "../../components/Layout/LayoutSite";
 import { useSetRecoilState } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import { toast } from "react-toastify";
+import api from "../../utils/api";
 
 const SignInPage = () => {
   const [formData, setFormData] = useState({
@@ -28,13 +28,10 @@ const SignInPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/users/login",
-        {
-          email,
-          password,
-        }
-      );
+      const response = await api.post("/users/login", {
+        email,
+        password,
+      });
 
       if (response.data && response.data.user && response.data.token) {
         console.log("User logged in", response.data);
@@ -43,6 +40,7 @@ const SignInPage = () => {
           token: response.data.token,
         };
         localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("token", response.data.token); // Add this line
         setLoggedInUser(userData);
         setIsLoggedIn(true);
         toast.success("Successfully signed in!");

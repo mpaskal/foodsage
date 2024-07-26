@@ -94,40 +94,19 @@ export const calculateExpirationDate = (category, storage, purchasedDate) => {
     default:
       expirationDate.setDate(purchased.getDate() + 7); // Default to 7 days if no specific rule
   }
-
-  console.log("Calculated Expiration Date:", expirationDate);
   return expirationDate.toISOString().split("T")[0];
 };
 
-/**
- * Formats the given date in the "yyyy-mm-dd" format.
- * @param {Date|string|null} date - The date to be formatted.
- * @returns {string} - The formatted date in the "yyyy-mm-dd" format or an empty string if the date is invalid.
- */
 export const formatDateForDisplay = (date) => {
   if (!date) return "";
-
-  const parsedDate = new Date(date);
-  if (isNaN(parsedDate.getTime())) return ""; // Return empty string for invalid date
-
-  return parsedDate.toISOString().split("T")[0];
+  const d = new Date(date);
+  return d.toISOString().split("T")[0];
 };
 
-/**
- * Processes the date input from the UI and converts it to the ISO string format.
- * @param {string|null} date - The date input from the UI.
- * @returns {string} - The date in the ISO string format, or an empty string if the input is invalid.
- */
-export const processDateInput = (date) => {
-  if (!date) return "";
-
-  // Construct a new date assuming the date is in YYYY-MM-DD format
-  const parts = date.split("-");
-  const inputDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-
-  if (isNaN(inputDate.getTime())) return ""; // Check for invalid date
-
-  return inputDate.toISOString().split("T")[0];
+export const processDateInput = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return date.toISOString();
 };
 
 export const getCurrentDate = () => {

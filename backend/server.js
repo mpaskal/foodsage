@@ -17,7 +17,11 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+  })
+);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -47,6 +51,10 @@ mongoose
   })
   .catch((err) => console.log("MongoDB connection error:", err));
 
+// Increase the payload size limit (adjust the limit as needed)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 // Use Routes
 app.use("/api/users", userRoutes);
 app.use("/api/food/items", foodItemRoutes);
@@ -62,6 +70,10 @@ const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
 app.use((req, res, next) => {
-  console.log(`Unmatched route: ${req.method} ${req.originalUrl}`);
-  next();
+  if (req.url.includes(".hot-update.json")) {
+    res.status(404).end();
+  } else {
+    console.log(`Unmatched route: ${req.method} ${req.originalUrl}`);
+    next();
+  }
 });

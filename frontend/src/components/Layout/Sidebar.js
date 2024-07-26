@@ -24,13 +24,17 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    const paths = location.pathname.split('/').filter(x => x);
+    const paths = location.pathname.split("/").filter((x) => x);
     const openItems = {};
 
     paths.forEach((path, index) => {
-      const fullPath = '/' + paths.slice(0, index + 1).join('/');
-      sidebarItems.forEach(item => {
-        if (item.path === fullPath || (item.items && item.items.some(subItem => subItem.path === fullPath))) {
+      const fullPath = "/" + paths.slice(0, index + 1).join("/");
+      sidebarItems.forEach((item) => {
+        if (
+          item.path === fullPath ||
+          (item.items &&
+            item.items.some((subItem) => subItem.path === fullPath))
+        ) {
           openItems[item.name] = true;
         }
       });
@@ -56,6 +60,16 @@ const Sidebar = () => {
     }));
   };
 
+  const SidebarLink = ({ to, children, onClick }) => (
+    <NavLink
+      to={to}
+      className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </NavLink>
+  );
+
   return (
     <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
       <button className="sidebar-toggle" onClick={toggleSidebar}>
@@ -67,7 +81,9 @@ const Sidebar = () => {
             {item.items ? (
               <div className="sidebar-dropdown">
                 <div
-                  className={`sidebar-link ${expandedItems[item.name] ? 'expanded' : ''}`}
+                  className={`sidebar-link ${
+                    expandedItems[item.name] ? "expanded" : ""
+                  }`}
                   onClick={() => toggleItem(item.name)}
                 >
                   <item.icon className="sidebar-icon" />
@@ -81,27 +97,18 @@ const Sidebar = () => {
                 {expandedItems[item.name] && (
                   <div className="sidebar-dropdown-content">
                     {item.items.map((subItem, subIndex) => (
-                      <NavLink
-                        key={subIndex}
-                        to={subItem.path}
-                        className="sidebar-sublink"
-                        activeClassName="active"
-                      >
+                      <SidebarLink key={subIndex} to={subItem.path}>
                         <span>{subItem.name}</span>
-                      </NavLink>
+                      </SidebarLink>
                     ))}
                   </div>
                 )}
               </div>
             ) : (
-              <NavLink
-                to={item.path}
-                className="sidebar-link"
-                activeClassName="active"
-              >
+              <SidebarLink to={item.path}>
                 <item.icon className="sidebar-icon" />
                 <span>{item.name}</span>
-              </NavLink>
+              </SidebarLink>
             )}
           </div>
         ))}
@@ -109,7 +116,9 @@ const Sidebar = () => {
           <div className="sidebar-item">
             <div className="sidebar-dropdown">
               <div
-                className={`sidebar-link ${expandedItems["Admin Panel"] ? 'expanded' : ''}`}
+                className={`sidebar-link ${
+                  expandedItems["Admin Panel"] ? "expanded" : ""
+                }`}
                 onClick={() => toggleItem("Admin Panel")}
               >
                 <FaUser className="sidebar-icon" />
@@ -122,9 +131,9 @@ const Sidebar = () => {
               </div>
               {expandedItems["Admin Panel"] && (
                 <div className="sidebar-dropdown-content">
-                  <NavLink to="/users" className="sidebar-sublink" activeClassName="active">
+                  <SidebarLink to="/users">
                     <span>User Management</span>
-                  </NavLink>
+                  </SidebarLink>
                 </div>
               )}
             </div>
