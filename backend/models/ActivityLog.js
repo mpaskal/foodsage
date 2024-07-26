@@ -5,12 +5,17 @@ const activityLogSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: false,
+    required: true,
   },
   action: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   previousStatus: String,
   newStatus: String,
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+  },
 });
 
 const ActivityLog = mongoose.model("ActivityLog", activityLogSchema);

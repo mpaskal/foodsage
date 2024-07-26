@@ -100,28 +100,21 @@ exports.createFoodItem = async (req, res) => {
       consumed: req.body.consumed || 0,
       purchasedDate: formatDate(req.body.purchasedDate),
       expirationDate: formatDate(req.body.expirationDate),
-      activityLog: [
-        {
-          itemName: req.body.name,
-          updatedBy: userId,
-          action: "added",
-          timestamp: new Date(),
-          newStatus: req.body.status || "Active",
-        },
-      ],
     });
 
     await newFoodItem.save();
     await newFoodItem.populate("updatedBy", "firstName lastName");
 
     // Create ActivityLog entry
-    await ActivityLog.create({
+    const newActivity = {
       itemName: newFoodItem.name,
       updatedBy: userId,
       action: "added",
       timestamp: new Date(),
       newStatus: newFoodItem.status,
-    });
+      tenantId: tenantId,
+    };
+    await ActivityLog.create(newActivity);
 
     res.status(201).json({
       message: "Food item created successfully",
@@ -136,6 +129,7 @@ exports.createFoodItem = async (req, res) => {
 exports.updateFoodItem = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
+    const userId = req.user.id || req.user._id; // Use either id or _id, whichever is available
     const foodItem = await FoodItem.findOne({ _id: req.params.id, tenantId });
 
     if (!foodItem) {
@@ -162,7 +156,7 @@ exports.updateFoodItem = async (req, res) => {
       updates.image = req.file.buffer.toString("base64");
     }
 
-    updates.updatedBy = req.user._id;
+    updates.updatedBy = userId;
 
     const updatedFields = Object.keys(updates).filter(
       (key) =>
@@ -181,18 +175,16 @@ exports.updateFoodItem = async (req, res) => {
 
     const newActivity = {
       itemName: foodItem.name,
-      updatedBy: req.user._id,
+      updatedBy: userId,
       action: action,
       timestamp: new Date(),
       previousStatus: previousStatus,
       newStatus: updates.status || foodItem.status,
+      tenantId: tenantId,
     };
 
     // Create a new ActivityLog entry
     await ActivityLog.create(newActivity);
-
-    // Add the activity to the food item's activityLog
-    updates.$push = { activityLog: newActivity };
 
     const updatedFoodItem = await FoodItem.findOneAndUpdate(
       { _id: req.params.id, tenantId },
@@ -214,7 +206,8 @@ exports.updateFoodItem = async (req, res) => {
 
 exports.getRecentActivity = async (req, res) => {
   try {
-    const recentActivity = await ActivityLog.find()
+    const tenantId = req.user.tenantId;
+    const recentActivity = await ActivityLog.find({ tenantId })
       .sort({ timestamp: -1 })
       .limit(10)
       .populate("updatedBy", "firstName lastName")
@@ -236,6 +229,32 @@ exports.getRecentActivity = async (req, res) => {
       message: "Error fetching recent activity",
       error: error.message,
     });
+  }
+};
+
+exports.getRecentActivityByTenant = async (tenantId, limit = 5) => {
+  try {
+    const recentActivity = await ActivityLog.find({ tenantId })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .populate("updatedBy", "firstName lastName")
+      .lean();
+
+    const formattedActivity = recentActivity.map((activity) => ({
+      user: activity.updatedBy
+        ? `${activity.updatedBy.firstName} ${activity.updatedBy.lastName}`
+        : "Unknown User",
+      action: activity.action,
+      itemName: activity.itemName,
+      date: new Date(activity.timestamp).toLocaleString(),
+      tenantId: activity.tenantId, // Include tenantId for filtering on the frontend
+    }));
+
+    console.log("Formatted Recent Activity:", formattedActivity);
+    return formattedActivity;
+  } catch (error) {
+    console.error("Error fetching recent activity:", error);
+    return []; // Return an empty array in case of error
   }
 };
 
@@ -263,6 +282,7 @@ exports.deleteFoodItem = async (req, res) => {
       timestamp: new Date(),
       previousStatus: foodItem.status,
       newStatus: "Deleted",
+      tenantId: tenantId, // Add this line to include the tenantId
     };
 
     console.log("New activity to be created:", newActivity);

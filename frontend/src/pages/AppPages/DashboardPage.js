@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import {
   Card,
   Row,
@@ -22,7 +22,8 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentDateFormatted } from "../../utils/dateUtils";
 import { useDashboard } from "../../hooks/useDashboard";
 import ActionNeededModal from "../../components/Dashboard/ActionNeededModal";
-import { recentActivitySelector } from "../../recoil/foodItemsAtoms";
+import { recentActivityState } from "../../recoil/foodItemsAtoms";
+import { loggedInUserState } from "../../recoil/userAtoms";
 
 const Layout = lazy(() => import("../../components/Layout/LayoutApp"));
 
@@ -37,7 +38,26 @@ const DashboardPage = () => {
     actionNeeded,
   } = useDashboard();
   const currentDate = getCurrentDateFormatted();
-  const recentActivity = useRecoilValue(recentActivitySelector);
+
+  const recentActivity = useRecoilValue(recentActivityState);
+  const loggedInUser = useRecoilValue(loggedInUserState);
+  const [filteredRecentActivity, setFilteredRecentActivity] = useState([]);
+
+  useEffect(() => {
+    console.log("Recent Activity:", recentActivity);
+    console.log("Logged In User:", loggedInUser);
+
+    if (Array.isArray(recentActivity)) {
+      const filtered = recentActivity.filter(
+        (activity) => activity.tenantId === loggedInUser.tenantId
+      );
+      setFilteredRecentActivity(filtered);
+    } else {
+      console.error("recentActivity is not an array:", recentActivity);
+      setFilteredRecentActivity([]);
+    }
+  }, [recentActivity, loggedInUser]);
+
   const [showActionModal, setShowActionModal] = useState(false);
 
   if (loading) return <Spinner animation="border" />;
@@ -261,12 +281,16 @@ const DashboardPage = () => {
                   <FaHistory /> Recent Activity
                 </Card.Title>
                 <ListGroup>
-                  {recentActivity.map((activity, index) => (
-                    <ListGroup.Item key={index}>
-                      {activity.user} {activity.action} {activity.itemName} on{" "}
-                      {activity.date}
-                    </ListGroup.Item>
-                  ))}
+                  {filteredRecentActivity.length > 0 ? (
+                    filteredRecentActivity.map((activity, index) => (
+                      <ListGroup.Item key={index}>
+                        {activity.user} {activity.action} {activity.itemName} on{" "}
+                        {activity.date}
+                      </ListGroup.Item>
+                    ))
+                  ) : (
+                    <ListGroup.Item>No recent activity</ListGroup.Item>
+                  )}
                 </ListGroup>
               </Card.Body>
             </Card>
