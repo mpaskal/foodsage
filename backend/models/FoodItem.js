@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const activitySchema = require("./Activity");
+const ActivityLog = require("./ActivityLog"); // Import the ActivityLog model
 
 const foodItemSchema = new Schema(
   {
@@ -39,7 +39,6 @@ const foodItemSchema = new Schema(
       ref: "User",
       required: true,
     },
-    activityLog: [activitySchema],
   },
   {
     timestamps: true,
@@ -52,6 +51,28 @@ foodItemSchema.index({ tenantId: 1, category: 1 });
 foodItemSchema.index({ tenantId: 1, status: 1 });
 foodItemSchema.index({ tenantId: 1, expirationDate: 1 });
 foodItemSchema.index({ tenantId: 1, purchasedDate: 1 });
+
+// Method to log activity
+foodItemSchema.methods.logActivity = async function (action, updatedBy) {
+  await ActivityLog.create({
+    foodItemId: this._id,
+    itemName: this.name,
+    updatedBy: updatedBy,
+    action: action,
+    previousStatus: this.previousStatus,
+    newStatus: this.status,
+    tenantId: this.tenantId,
+  });
+};
+
+// Pre-save middleware to handle status changes
+foodItemSchema.pre("save", function (next) {
+  if (this.isModified("status")) {
+    this.previousStatus = this.status;
+    this.statusChangeDate = new Date();
+  }
+  next();
+});
 
 const FoodItem = mongoose.model("FoodItem", foodItemSchema);
 
