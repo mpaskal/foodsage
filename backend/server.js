@@ -19,43 +19,41 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin:
+      process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL : "*",
+    credentials: true,
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+// Increase the payload size limit
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// DB Config
-const db = process.env.MONGO_URI;
-
 // Connect to MongoDB
 mongoose
-  .connect(db)
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("MongoDB connected");
-
     // Ensure indexes are created
     const FoodItem = require("./models/FoodItem");
     const WasteRecord = require("./models/WasteRecord");
 
-    Promise.all([FoodItem.init(), WasteRecord.init()])
-      .then(() => {
-        console.log("Indexes ensured for FoodItem and WasteRecord");
-      })
-      .catch((err) => {
-        console.error("Error ensuring indexes", err);
-      });
+    return Promise.all([FoodItem.init(), WasteRecord.init()]);
   })
-  .catch((err) => console.log("MongoDB connection error:", err));
+  .then(() => {
+    console.log("Indexes ensured for FoodItem and WasteRecord");
+  })
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-// Increase the payload size limit (adjust the limit as needed)
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-// Use Routes
+// API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/food/items", foodItemRoutes);
 app.use("/api/food/insights", foodInsightRoutes);
@@ -65,15 +63,44 @@ app.use("/api/donation/items", donationItemRoutes);
 app.use("/api/donation/insights", donationInsightRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-const port = process.env.PORT || 5000;
+// Serve static files from the React app in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "client/build")));
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+  // Handle React routing, return all requests to React app
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "client/build", "index.html"));
+  });
+}
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+
+// Handle unmatched routes
 app.use((req, res, next) => {
   if (req.url.includes(".hot-update.json")) {
     res.status(404).end();
   } else {
     console.log(`Unmatched route: ${req.method} ${req.originalUrl}`);
-    next();
+    res.status(404).send("Not Found");
   }
+});
+
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  app.close(() => {
+    console.log("HTTP server closed");
+    mongoose.connection.close(false, () => {
+      console.log("MongoDB connection closed");
+      process.exit(0);
+    });
+  });
 });
