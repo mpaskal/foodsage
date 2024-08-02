@@ -1,3 +1,4 @@
+// components/Common/ProtectedRoute.jsx
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -15,7 +16,7 @@ const ProtectedRoute = ({ requiredRole }) => {
 
   if (!isAuthenticated()) {
     setSessionExpired(true);
-    return null; // Return null instead of navigating, let the modal handle it
+    return <Navigate to="/signin" replace />;
   }
 
   if (requiredRole && (!user || user.role !== requiredRole)) {

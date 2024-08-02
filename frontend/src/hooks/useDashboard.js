@@ -39,6 +39,7 @@ export const useDashboard = () => {
 
       if (!authToken || !loggedInUser) {
         setError("No authentication token or user information found");
+        toast.error("Authentication error. Please log in again.");
         setLoading(false);
         return;
       }
@@ -56,13 +57,13 @@ export const useDashboard = () => {
         setFoodItems(itemsResponse.data.data);
         setRecentActivity(activityResponse.data.recentActivity);
         setError(null);
-        // Removed success toast
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         if (error.response) {
           switch (error.response.status) {
             case 401:
               setSessionExpired(true);
+              // The api interceptor will handle the toast and redirect
               break;
             case 403:
               toast.error("You don't have permission to access the dashboard.");
@@ -106,10 +107,6 @@ export const useDashboard = () => {
     moneyMatters,
     inventoryStatus,
     actionNeeded,
-    refetchDashboardData: () => {
-      // This function can be called when "Continue" is clicked
-      fetchDashboardData();
-    },
   };
 };
 

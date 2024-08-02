@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { toast } from "react-toastify";
 import { loggedInUserState, sessionExpiredState } from "../../recoil/userAtoms";
-import SessionExpiredModal from "./SessionExpiredModal";
 import { useSessionManager } from "../../hooks/useSessionManager";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -22,9 +21,7 @@ import DonationInsightsPage from "../../pages/AppPages/DonationInsightsPage";
 import WasteItemsPage from "../../pages/AppPages/WasteItemsPage";
 import WasteInsightsPage from "../../pages/AppPages/WasteInsightsPage";
 import SavingTrackingPage from "../../pages/AppPages/SavingTrackingPage";
-
 import ProtectedRoute from "./ProtectedRoute";
-import useAxiosInterceptor from "../../hooks/useAxiosInterceptor";
 
 const AppContent = () => {
   const user = useRecoilValue(loggedInUserState);
@@ -32,39 +29,20 @@ const AppContent = () => {
   const sessionExpired = useRecoilValue(sessionExpiredState);
   const setSessionExpired = useSetRecoilState(sessionExpiredState);
   const navigate = useNavigate();
-  const { refreshSession, logout, isRefreshing } = useSessionManager();
+  const { logout } = useSessionManager();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const handleSessionExpired = () => {
-      if (isAuthenticated()) {
-        setSessionExpired(true);
-      }
-    };
-
-    window.addEventListener("sessionExpired", handleSessionExpired);
-
-    return () => {
-      window.removeEventListener("sessionExpired", handleSessionExpired);
-    };
-  }, [setSessionExpired, isAuthenticated]);
-
-  const handleContinue = async () => {
-    const success = await refreshSession();
-    if (success) {
-      setSessionExpired(false);
-      toast.success("Session refreshed successfully");
-      window.location.reload();
-    } else {
-      toast.error("Failed to refresh session. Please log in again.");
+    if (sessionExpired) {
+      // toast.error("Your session has ended. Please sign in again.");
       handleLogout();
     }
-  };
+  }, [sessionExpired]);
 
   const handleLogout = () => {
     logout();
     setSessionExpired(false);
-    navigate("/");
+    navigate("/signin");
   };
 
   return (
@@ -91,12 +69,6 @@ const AppContent = () => {
           <Route path="/savings" element={<SavingTrackingPage />} />
         </Route>
       </Routes>
-      <SessionExpiredModal
-        show={sessionExpired}
-        onContinue={handleContinue}
-        onLogout={handleLogout}
-        isRefreshing={isRefreshing}
-      />
     </>
   );
 };
