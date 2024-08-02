@@ -4,7 +4,7 @@ import Layout from "../../components/Layout/LayoutSite";
 import { useSetRecoilState } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
 import { toast } from "react-toastify";
-import api from "../../utils/api";
+import { useAuth } from "../../hooks/useAuth";
 
 const SignInPage = () => {
   const [formData, setFormData] = useState({
@@ -12,10 +12,9 @@ const SignInPage = () => {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
+  const { login, error } = useAuth();
 
   const { email, password } = formData;
 
@@ -26,41 +25,19 @@ const SignInPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
     try {
-      const response = await api.post("/users/login", {
-        email,
-        password,
-      });
-
-      if (response.data && response.data.user && response.data.token) {
-        console.log("User logged in", response.data);
-        const userData = {
-          ...response.data.user,
-          token: response.data.token,
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("token", response.data.token); // Add this line
-        setLoggedInUser(userData);
-        setIsLoggedIn(true);
-        toast.success("Successfully signed in!");
-      } else {
-        throw new Error("User data is not returned correctly");
-      }
+      const user = await login(email, password);
+      console.log("User logged in", user);
+      setLoggedInUser(user);
+      toast.success("Successfully signed in!");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error logging in user", error);
-      setError(error.response?.data?.msg || "Error logging in user");
-      toast.error(error.response?.data?.msg || "Error logging in user");
+      toast.error(error.message || "Error logging in user");
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate("/dashboard");
-    }
-  }, [isLoggedIn, navigate]);
 
   return (
     <Layout>

@@ -4,7 +4,7 @@ import Layout from "../../components/Layout/LayoutApp";
 import UserTable from "../../components/User/UserTable";
 import UserModal from "../../components/User/UserModal";
 import DeleteConfirmationModal from "../../components/User/DeleteConfirmationModal";
-import api from "../../utils/api"; // Use custom Axios instance
+import api from "../../utils/api";
 import {
   Button,
   Toast,
@@ -22,14 +22,14 @@ import {
   currentPageState,
   usersState,
 } from "../../recoil/userAtoms";
-import { useFetchUsers, useDeleteUser } from "../../hooks/useUserManagement";
+import { useDeleteUser } from "../../hooks/useUserManagement";
+import { useAuth } from "../../hooks/useAuth"; // Import useAuth hook
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =
     useRecoilState(isUserModalOpenState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
   const loggedInUser = useRecoilValue(loggedInUserState);
-  //console.log("loggedInUser", loggedInUser);
   const isLoading = useRecoilValue(isLoadingState);
   const totalPages = useRecoilValue(totalPagesState);
   const currentPage = useRecoilValue(currentPageState);
@@ -46,15 +46,17 @@ const UserManagementPage = () => {
   const [toastMessage, setToastMessage] = useState("");
   const usersPerPage = 10;
   const deleteUser = useDeleteUser();
+  const { isAuthenticated } = useAuth(); // Use the useAuth hook
 
   const fetchUsers = async () => {
+    if (!isAuthenticated()) {
+      setToastMessage("You are not authenticated. Please log in.");
+      setShowToast(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const token = JSON.parse(localStorage.getItem("user"))?.token;
-      console.log("token", token); // Get token from localStorage
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
       const usersResponse = await api.get(`/users`, {
         params: {
           page: currentPage,
@@ -85,9 +87,8 @@ const UserManagementPage = () => {
   };
 
   useEffect(() => {
-    console.log("loggedInUser", loggedInUser);
     fetchUsers();
-  }, [loggedInUser?.token, currentPage]);
+  }, [currentPage, isAuthenticated]);
 
   const handleShowModal = (user = null) => {
     setSelectedUser(
@@ -122,11 +123,13 @@ const UserManagementPage = () => {
   };
 
   const confirmDelete = async () => {
+    if (!isAuthenticated()) {
+      setToastMessage("You are not authenticated. Please log in.");
+      setShowToast(true);
+      return;
+    }
+
     try {
-      const token = JSON.parse(localStorage.getItem("user"))?.token; // Get token from localStorage
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
       const userToDelete = users.find((user) => user._id === selectedUser?._id);
       const adminCount = adminUsers.length;
 
@@ -155,11 +158,11 @@ const UserManagementPage = () => {
           setConfirmModal(false);
         }
       } else if (userToDelete?._id === loggedInUser.id) {
-        await deleteUser(userToDelete._id, token);
+        await deleteUser(userToDelete._id);
         localStorage.clear();
         window.location.href = "/";
       } else {
-        await deleteUser(userToDelete?._id, token);
+        await deleteUser(userToDelete?._id);
         fetchUsers();
         setConfirmModal(false);
         setToastMessage("User deleted successfully.");
@@ -178,6 +181,17 @@ const UserManagementPage = () => {
       setCurrentPage(newPage);
     }
   };
+
+  if (!isAuthenticated()) {
+    return (
+      <Layout>
+        <div className="user-management">
+          <h1>User Management</h1>
+          <p>You need to be authenticated to view this page. Please log in.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

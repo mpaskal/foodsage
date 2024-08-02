@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSetRecoilState, useRecoilValue } from "recoil";
+import { toast } from "react-toastify";
 import {
   allFoodItemsState,
   wasteAtGlanceSelector,
@@ -12,6 +13,7 @@ import {
   authTokenState,
   authLoadingState,
   loggedInUserState,
+  sessionExpiredState,
 } from "../recoil/userAtoms";
 import api from "../utils/api";
 
@@ -23,7 +25,7 @@ export const useDashboard = () => {
   const authToken = useRecoilValue(authTokenState);
   const authLoading = useRecoilValue(authLoadingState);
   const loggedInUser = useRecoilValue(loggedInUserState);
-
+  const setSessionExpired = useSetRecoilState(sessionExpiredState);
   const wasteAtGlance = useRecoilValue(wasteAtGlanceSelector);
   const moneyMatters = useRecoilValue(moneyMattersSelector);
   const inventoryStatus = useRecoilValue(inventoryStatusSelector);
@@ -52,10 +54,35 @@ export const useDashboard = () => {
         console.log("Activity Response:", activityResponse.data);
 
         setFoodItems(itemsResponse.data.data);
-        setRecentActivity(activityResponse.data.recentActivity); // Make sure it's accessing .recentActivity
+        setRecentActivity(activityResponse.data.recentActivity);
         setError(null);
+        // Removed success toast
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        if (error.response) {
+          switch (error.response.status) {
+            case 401:
+              setSessionExpired(true);
+              break;
+            case 403:
+              toast.error("You don't have permission to access the dashboard.");
+              break;
+            case 404:
+              toast.error("Dashboard data not found. Please try again later.");
+              break;
+            case 500:
+              toast.error("Server error. Please try again later.");
+              break;
+            default:
+              toast.error("An unexpected error occurred. Please try again.");
+          }
+        } else if (error.request) {
+          toast.error(
+            "No response from server. Please check your internet connection."
+          );
+        } else {
+          toast.error("An error occurred while setting up the request.");
+        }
         setError("Failed to fetch dashboard data");
       } finally {
         setLoading(false);
@@ -63,7 +90,14 @@ export const useDashboard = () => {
     };
 
     fetchDashboardData();
-  }, [setFoodItems, setRecentActivity, authToken, authLoading, loggedInUser]);
+  }, [
+    setFoodItems,
+    setRecentActivity,
+    authToken,
+    authLoading,
+    loggedInUser,
+    setSessionExpired,
+  ]);
 
   return {
     loading,
@@ -72,5 +106,11 @@ export const useDashboard = () => {
     moneyMatters,
     inventoryStatus,
     actionNeeded,
+    refetchDashboardData: () => {
+      // This function can be called when "Continue" is clicked
+      fetchDashboardData();
+    },
   };
 };
+
+export default useDashboard;

@@ -15,6 +15,16 @@ export const authTokenState = atom({
   default: localStorage.getItem("token") || "",
 });
 
+export const refreshTokenState = atom({
+  key: "refreshTokenState",
+  default: localStorage.getItem("refreshToken") || "",
+});
+
+export const sessionExpiredState = atom({
+  key: "sessionExpiredState",
+  default: false,
+});
+
 export const isUserModalOpenState = atom({
   key: "isUserModalOpenState",
   default: false,
