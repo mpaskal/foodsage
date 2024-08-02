@@ -6,6 +6,7 @@ const DeleteConfirmationModal = ({
   handleClose,
   confirmDelete,
   isLastAdmin,
+  userId,
 }) => {
   return (
     <Modal show={show} onHide={handleClose}>
@@ -30,7 +31,7 @@ const DeleteConfirmationModal = ({
         <Button variant="secondary" onClick={handleClose}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={confirmDelete}>
+        <Button variant="danger" onClick={() => confirmDelete(userId)}>
           Confirm
         </Button>
       </Modal.Footer>

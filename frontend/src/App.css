@@ -1291,3 +1291,96 @@ mb-5 li {
     padding: 10px; /* Smaller padding for smaller screens */
   }
 }
+
+/* FAQ Page Styles */
+.faq-container {
+  margin-left: 170px; /* Consistent with other pages */
+  padding: 30px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.faq-container h1 {
+  color: #058240;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.faq-container .lead {
+  text-align: center;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+.faq-container .accordion {
+  margin-bottom: 40px;
+}
+
+.faq-container .accordion-item {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.faq-container .accordion-header {
+  background-color: #f4f4f4;
+}
+
+.faq-container .accordion-button {
+  color: #058240;
+  font-weight: bold;
+}
+
+.faq-container .accordion-button:not(.collapsed) {
+  background-color: #e8f5e9;
+  color: #058240;
+}
+
+.faq-container .accordion-body {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.faq-container .card {
+  margin-bottom: 30px;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.faq-container .card-title {
+  color: #058240;
+  margin-bottom: 20px;
+}
+
+.faq-container .card-text,
+.faq-container .card ul {
+  color: #333;
+  line-height: 1.6;
+}
+
+.faq-container .btn-outline-primary {
+  color: #058240;
+  border-color: #058240;
+}
+
+.faq-container .btn-outline-primary:hover {
+  background-color: #058240;
+  color: #fff;
+}
+
+.faq-container .text-center {
+  margin-top: 40px;
+}
+
+.aq-add-item li {
+  align-items: start;
+  display: flex;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .faq-container {
+    margin-left: 0;
+    padding: 20px;
+  }
+}

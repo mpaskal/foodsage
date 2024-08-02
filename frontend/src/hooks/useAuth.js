@@ -16,7 +16,7 @@ export const useAuth = () => {
   const setRefreshToken = useSetRecoilState(refreshTokenState);
   const setAuthLoading = useSetRecoilState(authLoadingState);
   const setSessionExpired = useSetRecoilState(sessionExpiredState);
-  const authToken = useRecoilValue(authTokenState);
+  const authToken = useRecoilValue(authTokenState); // Make sure authToken is provided here
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -146,6 +146,7 @@ export const useAuth = () => {
     error,
     isInitialized,
     initializeAuth,
+    authToken, // Make sure authToken is included in the return
   };
 };
 

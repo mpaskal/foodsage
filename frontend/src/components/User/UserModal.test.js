@@ -6,8 +6,9 @@ import {
   selectedUserState,
   isUserModalOpenState,
   loggedInUserState,
+  authTokenState,
 } from "../../recoil/userAtoms";
-
+import { toast } from "react-toastify";
 const mockUpdateUser = jest.fn();
 const mockAddUser = jest.fn();
 jest.mock("../../hooks/useUserManagement.js", () => ({
@@ -15,13 +16,23 @@ jest.mock("../../hooks/useUserManagement.js", () => ({
   useAddUser: () => mockAddUser,
 }));
 
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+  },
+}));
+
 describe("UserModal", () => {
   const mockFetchUsers = jest.fn();
+  const mockUpdateUser =
+    require("../../hooks/useUserManagement.js").useUpdateUser;
+  const mockAddUser = require("../../hooks/useUserManagement.js").useAddUser;
 
   const setup = (
     isOpen = true,
     user = null,
-    loggedInUser = { token: "mockToken", id: "mockId" }
+    authToken = "mockToken",
+    loggedInUser = { id: "mockId" }
   ) => {
     return render(
       <RecoilRoot
@@ -29,6 +40,7 @@ describe("UserModal", () => {
           snap.set(isUserModalOpenState, isOpen);
           snap.set(selectedUserState, user);
           snap.set(loggedInUserState, loggedInUser);
+          snap.set(authTokenState, authToken);
         }}
       >
         <UserModal fetchUsers={mockFetchUsers} page={1} usersPerPage={10} />
@@ -86,9 +98,9 @@ describe("UserModal", () => {
       target: { value: "admin" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /add user/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save user/i }));
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(mockAddUser).toHaveBeenCalledWith(
         expect.objectContaining({
           firstName: "Alice",
@@ -98,9 +110,9 @@ describe("UserModal", () => {
           role: "admin",
         }),
         "mockToken"
-      );
-      expect(mockFetchUsers).toHaveBeenCalled();
-    });
+      )
+    );
+    expect(mockFetchUsers).toHaveBeenCalled();
   });
 
   test("submits updated user data correctly", async () => {
@@ -135,21 +147,23 @@ describe("UserModal", () => {
 
   test("handles error when no token is available", async () => {
     console.error = jest.fn();
-    setup(true, null, {});
+    setup(true, null, ""); // No token
 
-    fireEvent.click(screen.getByRole("button", { name: /add user/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save user/i }));
 
-    await waitFor(() => {
-      expect(console.error).toHaveBeenCalledWith("No token found");
-    });
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        "Authentication error. Please log in again."
+      )
+    );
   });
 
   test("closes modal on cancel", async () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    );
   });
 });

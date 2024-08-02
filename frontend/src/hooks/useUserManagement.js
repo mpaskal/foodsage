@@ -124,7 +124,9 @@ export const useDeleteUser = () => {
         throw new Error("Cannot delete the last admin user");
       }
 
-      await axios.delete(`/api/users/${userId}`, {
+      console.log("Token:", token); // Log the token for debugging
+
+      await axios.delete(`/api/users/${userToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

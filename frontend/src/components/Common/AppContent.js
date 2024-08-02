@@ -12,6 +12,7 @@ import AboutPage from "../../pages/SitePages/AboutPage";
 import ContactPage from "../../pages/SitePages/ContactPage";
 import SignInPage from "../../pages/SitePages/SignInPage";
 import SignUpPage from "../../pages/SitePages/SignUpPage";
+import FAQPage from "../../pages/SitePages/FAQPage";
 import DashboardPage from "../../pages/AppPages/DashboardPage";
 import UserManagementPage from "../../pages/AppPages/UserManagementPage";
 import FoodItemsPage from "../../pages/AppPages/FoodItemsPage";
@@ -67,6 +68,7 @@ const AppContent = () => {
           <Route path="/donationinsights" element={<DonationInsightsPage />} />
           <Route path="/wasteinsights" element={<WasteInsightsPage />} />
           <Route path="/savings" element={<SavingTrackingPage />} />
+          <Route path="/faq" element={<FAQPage />} />
         </Route>
       </Routes>
     </>

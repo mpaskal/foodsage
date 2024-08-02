@@ -23,7 +23,7 @@ import {
   usersState,
 } from "../../recoil/userAtoms";
 import { useDeleteUser } from "../../hooks/useUserManagement";
-import { useAuth } from "../../hooks/useAuth"; // Import useAuth hook
+import { useAuth } from "../../hooks/useAuth";
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =
@@ -46,7 +46,7 @@ const UserManagementPage = () => {
   const [toastMessage, setToastMessage] = useState("");
   const usersPerPage = 10;
   const deleteUser = useDeleteUser();
-  const { isAuthenticated } = useAuth(); // Use the useAuth hook
+  const { authToken, isAuthenticated } = useAuth(); // Use the useAuth hook
 
   const fetchUsers = async () => {
     if (!isAuthenticated()) {
@@ -62,6 +62,7 @@ const UserManagementPage = () => {
           page: currentPage,
           limit: usersPerPage,
         },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
         const filteredUsers = usersResponse.data.users;
@@ -122,7 +123,7 @@ const UserManagementPage = () => {
     }
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (userId) => {
     if (!isAuthenticated()) {
       setToastMessage("You are not authenticated. Please log in.");
       setShowToast(true);
@@ -130,44 +131,17 @@ const UserManagementPage = () => {
     }
 
     try {
-      const userToDelete = users.find((user) => user._id === selectedUser?._id);
-      const adminCount = adminUsers.length;
-
-      if (
-        userToDelete?.role === "admin" &&
-        adminCount === 1 &&
-        userToDelete._id === loggedInUser.id
-      ) {
-        const userConfirmed = window.confirm(
-          "Deleting the last admin will remove all users, the tenant, and all associated data. Are you sure you want to proceed?"
-        );
-        if (!userConfirmed) {
-          setConfirmModal(false);
-          return;
-        }
-
-        try {
-          await api.delete(`/tenants/${userToDelete.tenantId}`);
-          localStorage.clear();
-          window.location.href = "/";
-        } catch (error) {
-          setToastMessage(
-            error.response?.data?.msg || "Error deleting tenant and users"
-          );
-          setShowToast(true);
-          setConfirmModal(false);
-        }
-      } else if (userToDelete?._id === loggedInUser.id) {
-        await deleteUser(userToDelete._id);
-        localStorage.clear();
-        window.location.href = "/";
-      } else {
-        await deleteUser(userToDelete?._id);
-        fetchUsers();
-        setConfirmModal(false);
+      const result = await deleteUser(userId, authToken);
+      if (result.success) {
         setToastMessage("User deleted successfully.");
         setShowToast(true);
+        // Refresh users after deletion
+        fetchUsers();
+      } else {
+        setToastMessage(result.error);
+        setShowToast(true);
       }
+      setConfirmModal(false);
     } catch (error) {
       console.error("Error deleting user", error);
       setToastMessage("Error deleting user");
@@ -207,6 +181,7 @@ const UserManagementPage = () => {
         />
 
         <DeleteConfirmationModal
+          userId={selectedUser?._id}
           show={confirmModal}
           handleClose={() => setConfirmModal(false)}
           confirmDelete={confirmDelete}

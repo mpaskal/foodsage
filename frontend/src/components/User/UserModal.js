@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
 import { useRecoilState, useRecoilValue } from "recoil";
 import {
   selectedUserState,
   isUserModalOpenState,
   loggedInUserState,
+  authTokenState,
+  authLoadingState,
 } from "../../recoil/userAtoms";
 import { useUpdateUser, useAddUser } from "../../hooks/useUserManagement";
 import { currentPageState, usersPerPageState } from "../../recoil/userAtoms";
+import { toast } from "react-toastify";
 
 const UserModal = ({
   fetchUsers,
@@ -17,7 +20,11 @@ const UserModal = ({
   const page = useRecoilValue(currentPageState);
   const usersPerPage = useRecoilValue(usersPerPageState);
   const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
+  const authToken = useRecoilValue(authTokenState);
+  const authLoading = useRecoilValue(authLoadingState);
+  const [error, setError] = useState(null);
   const loggedInUser = useRecoilValue(loggedInUserState);
+  const [loading, setLoading] = useState(true);
   const updateUser = useUpdateUser();
   const addUser = useAddUser();
   const [isUserModalOpen, setIsUserModalOpen] =
@@ -33,22 +40,25 @@ const UserModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = loggedInUser?.token;
-    if (!token) {
-      console.error("No token found");
+    if (!authToken || !loggedInUser) {
+      setError("No authentication token or user information found");
+      toast.error("Authentication error. Please log in again.");
+      setLoading(false);
       return;
     }
 
     try {
       if (selectedUser?._id) {
-        await updateUser(selectedUser, token);
+        await updateUser(selectedUser, authToken);
       } else {
-        await addUser(selectedUser, token);
-        fetchUsers(token, page, usersPerPage);
+        await addUser(selectedUser, authToken);
+        fetchUsers(authToken, page, usersPerPage);
       }
       setIsUserModalOpen(false);
     } catch (error) {
       console.error("Error saving user:", error);
+      setError("Error saving user. Please try again.");
+      toast.error("Error saving user. Please try again.");
     }
   };
 
