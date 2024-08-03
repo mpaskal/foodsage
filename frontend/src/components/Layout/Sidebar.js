@@ -54,10 +54,14 @@ const Sidebar = () => {
   };
 
   const toggleItem = (itemName) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [itemName]: !prev[itemName],
-    }));
+    if (!expanded) {
+      setExpanded(true);
+    } else {
+      setExpandedItems((prev) => ({
+        ...prev,
+        [itemName]: !prev[itemName],
+      }));
+    }
   };
 
   const SidebarLink = ({ to, children, onClick }) => (
@@ -86,15 +90,22 @@ const Sidebar = () => {
                   }`}
                   onClick={() => toggleItem(item.name)}
                 >
-                  <item.icon className="sidebar-icon" />
-                  <span>{item.name}</span>
-                  {expandedItems[item.name] ? (
-                    <BiChevronUp />
-                  ) : (
-                    <BiChevronDown />
-                  )}
+                  <item.icon
+                    className="sidebar-icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!expanded) setExpanded(true);
+                    }}
+                  />
+                  {expanded && <span>{item.name}</span>}
+                  {expanded &&
+                    (expandedItems[item.name] ? (
+                      <BiChevronUp />
+                    ) : (
+                      <BiChevronDown />
+                    ))}
                 </div>
-                {expandedItems[item.name] && (
+                {expanded && expandedItems[item.name] && (
                   <div className="sidebar-dropdown-content">
                     {item.items.map((subItem, subIndex) => (
                       <SidebarLink key={subIndex} to={subItem.path}>
@@ -106,8 +117,14 @@ const Sidebar = () => {
               </div>
             ) : (
               <SidebarLink to={item.path}>
-                <item.icon className="sidebar-icon" />
-                <span>{item.name}</span>
+                <item.icon
+                  className="sidebar-icon"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!expanded) setExpanded(true);
+                  }}
+                />
+                {expanded && <span>{item.name}</span>}
               </SidebarLink>
             )}
           </div>
@@ -121,15 +138,22 @@ const Sidebar = () => {
                 }`}
                 onClick={() => toggleItem("Admin Panel")}
               >
-                <FaUser className="sidebar-icon" />
-                <span>Admin Panel</span>
-                {expandedItems["Admin Panel"] ? (
-                  <BiChevronUp />
-                ) : (
-                  <BiChevronDown />
-                )}
+                <FaUser
+                  className="sidebar-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!expanded) setExpanded(true);
+                  }}
+                />
+                {expanded && <span>Admin Panel</span>}
+                {expanded &&
+                  (expandedItems["Admin Panel"] ? (
+                    <BiChevronUp />
+                  ) : (
+                    <BiChevronDown />
+                  ))}
               </div>
-              {expandedItems["Admin Panel"] && (
+              {expanded && expandedItems["Admin Panel"] && (
                 <div className="sidebar-dropdown-content">
                   <SidebarLink to="/users">
                     <span>User Management</span>
