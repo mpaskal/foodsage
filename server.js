@@ -1,9 +1,10 @@
+require("dotenv").config();
 const express = require("express");
+console.log("MONGO_URI:", process.env.MONGO_URI);
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
 
 const userRoutes = require("./backend/routes/userRoutes");
 const foodItemRoutes = require("./backend/routes/foodItemRoutes");
@@ -40,18 +41,18 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => {
-    console.log("MongoDB connected");
-    // Ensure indexes are created
-    const FoodItem = require("./backend/models/FoodItem");
-    const WasteRecord = require("./backend/models/WasteRecord");
+  .then(() =>
+    console.log("MongoDB connected successfully", process.env.MONGO_URI)
+  )
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    console.error("MongoDB URI:", process.env.MONGO_URI);
+    // Don't log the full URI in production as it contains sensitive information
+  });
 
-    return Promise.all([FoodItem.init(), WasteRecord.init()]);
-  })
-  .then(() => {
-    console.log("Indexes ensured for FoodItem and WasteRecord");
-  })
-  .catch((err) => console.error("MongoDB connection error:", err));
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
+});
 
 // API Routes
 app.use("/api/users", userRoutes);

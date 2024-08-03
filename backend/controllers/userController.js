@@ -113,16 +113,20 @@ const registerUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).send(err.message);
   }
 };
 
 // Login User
 const login = async (req, res) => {
+  console.log("Login request:", req.body);
   const { email, password } = req.body;
 
   try {
+    console.log("Finding user with email:", email);
+    console.log("MongoDB connected for user", process.env.MONGO_URI);
     let user = await User.findOne({ email });
+    console.log("User found:", user);
     if (!user) {
       return res.status(400).json({ msg: "Invalid email or password" });
     }
@@ -162,7 +166,7 @@ const login = async (req, res) => {
   } catch (err) {
     console.log("Login new error:", err.message);
     console.error("Login error:", err.message);
-    res.status(500).send("Server error");
+    res.status(500).send(err.message);
   }
 };
 
@@ -205,7 +209,7 @@ const getUserProfile = async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).send(err.message);
   }
 };
 
