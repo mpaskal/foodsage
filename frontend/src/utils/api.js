@@ -1,4 +1,3 @@
-// utils/api.js
 import axios from "axios";
 
 const API_BASE_URL =
@@ -6,6 +5,8 @@ const API_BASE_URL =
   (process.env.NODE_ENV === "production"
     ? "/api"
     : "http://localhost:5000/api");
+
+console.log("API Base URL:", API_BASE_URL); // Add this for debugging
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -20,6 +21,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -27,6 +29,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error("Response interceptor error:", error);
     if (error.response && error.response.status === 401) {
       window.dispatchEvent(new CustomEvent("sessionExpired"));
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from "../../utils/api";
 import Layout from "../../components/Layout/LayoutSite";
 import { useSetRecoilState } from "recoil";
 import { loggedInUserState } from "../../recoil/userAtoms";
@@ -58,15 +59,12 @@ const SignUpPage = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/users/register",
-        {
-          firstName,
-          lastName,
-          email,
-          password,
-        }
-      );
+      const response = await api.post("/users/register", {
+        firstName,
+        lastName,
+        email,
+        password,
+      });
 
       if (response.data && response.data.user && response.data.token) {
         const userData = {

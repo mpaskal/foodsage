@@ -10,7 +10,6 @@ router.post("/login", userController.login);
 
 router.get("/", userAuth, async (req, res) => {
   try {
-    console.log("GET /api/users", req.user.tenantId); // Use req.user.tenantId
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
@@ -29,7 +28,6 @@ router.get("/", userAuth, async (req, res) => {
       total,
     });
   } catch (error) {
-    console.error("Error in GET /api/users:", error);
     res
       .status(500)
       .json({ message: "Error fetching users", error: error.message });
