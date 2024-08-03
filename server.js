@@ -5,14 +5,14 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 
-const userRoutes = require("./routes/userRoutes");
-const foodItemRoutes = require("./routes/foodItemRoutes");
-const foodInsightRoutes = require("./routes/foodInsightRoutes");
-const wasteItemRoutes = require("./routes/wasteItemRoutes");
-const wasteInsightRoutes = require("./routes/wasteInsightRoutes");
-const donationItemRoutes = require("./routes/donationItemRoutes");
-const donationInsightRoutes = require("./routes/donationInsightRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
+const userRoutes = require("./backend/routes/userRoutes");
+const foodItemRoutes = require("./backend/routes/foodItemRoutes");
+const foodInsightRoutes = require("./backend/routes/foodInsightRoutes");
+const wasteItemRoutes = require("./backend/routes/wasteItemRoutes");
+const wasteInsightRoutes = require("./backend/routes/wasteInsightRoutes");
+const donationItemRoutes = require("./backend/routes/donationItemRoutes");
+const donationInsightRoutes = require("./backend/routes/donationInsightRoutes");
+const dashboardRoutes = require("./backend/routes/dashboardRoutes");
 
 const app = express();
 
@@ -32,7 +32,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "backend/uploads")));
 
 // Connect to MongoDB
 mongoose
@@ -43,8 +43,8 @@ mongoose
   .then(() => {
     console.log("MongoDB connected");
     // Ensure indexes are created
-    const FoodItem = require("./models/FoodItem");
-    const WasteRecord = require("./models/WasteRecord");
+    const FoodItem = require("./backend/models/FoodItem");
+    const WasteRecord = require("./backend/models/WasteRecord");
 
     return Promise.all([FoodItem.init(), WasteRecord.init()]);
   })
@@ -65,11 +65,10 @@ app.use("/api/dashboard", dashboardRoutes);
 
 // Serve static files from the React app in production
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "client/build")));
+  app.use(express.static(path.join(__dirname, "frontend/build")));
 
-  // Handle React routing, return all requests to React app
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client/build", "index.html"));
+    res.sendFile(path.join(__dirname, "frontend/build", "index.html"));
   });
 }
 
