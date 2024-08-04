@@ -53,7 +53,8 @@ const Sidebar = () => {
     }
   };
 
-  const toggleItem = (itemName) => {
+  const toggleItem = (itemName, e) => {
+    e.stopPropagation();
     if (!expanded) {
       setExpanded(true);
     } else {
@@ -74,6 +75,24 @@ const Sidebar = () => {
     </NavLink>
   );
 
+  const IconWithTooltip = ({ icon: Icon, name, onClick }) => (
+    <div className="icon-tooltip-container">
+      <Icon
+        className="sidebar-icon"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!expanded) {
+            setExpanded(true);
+          } else if (onClick) {
+            onClick(e);
+          }
+        }}
+      />
+      {!expanded && <div className="icon-tooltip">{name}</div>}
+    </div>
+  );
+
   return (
     <div className={`sidebar ${expanded ? "expanded" : "collapsed"}`}>
       <button className="sidebar-toggle" onClick={toggleSidebar}>
@@ -88,15 +107,9 @@ const Sidebar = () => {
                   className={`sidebar-link ${
                     expandedItems[item.name] ? "expanded" : ""
                   }`}
-                  onClick={() => toggleItem(item.name)}
+                  onClick={(e) => toggleItem(item.name, e)}
                 >
-                  <item.icon
-                    className="sidebar-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!expanded) setExpanded(true);
-                    }}
-                  />
+                  <IconWithTooltip icon={item.icon} name={item.name} />
                   {expanded && <span>{item.name}</span>}
                   {expanded &&
                     (expandedItems[item.name] ? (
@@ -117,13 +130,7 @@ const Sidebar = () => {
               </div>
             ) : (
               <SidebarLink to={item.path}>
-                <item.icon
-                  className="sidebar-icon"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!expanded) setExpanded(true);
-                  }}
-                />
+                <IconWithTooltip icon={item.icon} name={item.name} />
                 {expanded && <span>{item.name}</span>}
               </SidebarLink>
             )}
@@ -136,15 +143,9 @@ const Sidebar = () => {
                 className={`sidebar-link ${
                   expandedItems["Admin Panel"] ? "expanded" : ""
                 }`}
-                onClick={() => toggleItem("Admin Panel")}
+                onClick={(e) => toggleItem("Admin Panel", e)}
               >
-                <FaUser
-                  className="sidebar-icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!expanded) setExpanded(true);
-                  }}
-                />
+                <IconWithTooltip icon={FaUser} name="Admin Panel" />
                 {expanded && <span>Admin Panel</span>}
                 {expanded &&
                   (expandedItems["Admin Panel"] ? (
