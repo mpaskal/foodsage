@@ -1,8 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-console.log("MONGO_URI:", process.env.MONGO_URI);
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 
@@ -17,18 +15,27 @@ const dashboardRoutes = require("./backend/routes/dashboardRoutes");
 
 const app = express();
 
-// Middleware
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL : "*",
-    credentials: true,
-  })
-);
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      "http://localhost:3000",
+      "https://foodsage-app-fd38a67f3d3e.herokuapp.com",
+    ].filter(Boolean);
 
-// Increase the payload size limit
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+// Middleware
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -41,13 +48,9 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() =>
-    console.log("MongoDB connected successfully", process.env.MONGO_URI)
-  )
+  .then(() => console.log("MongoDB connected successfully"))
   .catch((err) => {
     console.error("MongoDB connection error:", err);
-    console.error("MongoDB URI:", process.env.MONGO_URI);
-    // Don't log the full URI in production as it contains sensitive information
   });
 
 mongoose.connection.on("error", (err) => {
@@ -76,27 +79,29 @@ if (process.env.NODE_ENV === "production") {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send("Something broke!");
+  res.status(500).json({ message: "Internal Server Error" });
 });
 
 // Handle unmatched routes
-app.use((req, res, next) => {
+app.use((req, res) => {
   if (req.url.includes(".hot-update.json")) {
     res.status(404).end();
   } else {
     console.log(`Unmatched route: ${req.method} ${req.originalUrl}`);
-    res.status(404).send("Not Found");
+    res.status(404).json({ message: "Not Found" });
   }
 });
 
 const port = process.env.PORT || 5000;
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+const server = app.listen(port, () =>
+  console.log(`Server running on port ${port}`)
+);
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received: closing HTTP server");
-  app.close(() => {
+  server.close(() => {
     console.log("HTTP server closed");
     mongoose.connection.close(false, () => {
       console.log("MongoDB connection closed");
