@@ -13,27 +13,59 @@ import { toast } from "react-toastify";
 export const useAuth = () => {
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
   const setAuthToken = useSetRecoilState(authTokenState);
+  const authToken = useRecoilValue(authTokenState);
   const setRefreshToken = useSetRecoilState(refreshTokenState);
   const setAuthLoading = useSetRecoilState(authLoadingState);
   const setSessionExpired = useSetRecoilState(sessionExpiredState);
-  const authToken = useRecoilValue(authTokenState); // Make sure authToken is provided here
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const storeAuthData = useCallback(
+    (token, refreshToken, user, rememberMe) => {
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("token", token);
+      storage.setItem("refreshToken", refreshToken);
+      storage.setItem("user", JSON.stringify(user));
+      storage.setItem("rememberMe", JSON.stringify(rememberMe));
+      setAuthToken(token);
+      setRefreshToken(refreshToken);
+      setLoggedInUser(user);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    },
+    [setAuthToken, setRefreshToken, setLoggedInUser]
+  );
+
+  const clearAuthData = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("rememberMe");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("rememberMe");
+    setAuthToken(null);
+    setRefreshToken(null);
+    setLoggedInUser(null);
+    delete api.defaults.headers.common["Authorization"];
+  }, [setAuthToken, setRefreshToken, setLoggedInUser]);
+
   const initializeAuth = useCallback(async () => {
     setAuthLoading(true);
-    const token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
-    const user = JSON.parse(localStorage.getItem("user"));
-    console.log("Initializing Auth:", { token, refreshToken, user });
+    const rememberedUser = localStorage.getItem("rememberMe") === "true";
+    const storage = rememberedUser ? localStorage : sessionStorage;
+
+    const token = storage.getItem("token");
+    const refreshToken = storage.getItem("refreshToken");
+    const user = JSON.parse(storage.getItem("user") || "null");
 
     if (token && refreshToken && user) {
       setAuthToken(token);
       setRefreshToken(refreshToken);
       setLoggedInUser(user);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       try {
         const response = await api.get("/users/profile");
-        console.log("Profile response:", response.data);
         setLoggedInUser(response.data);
       } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -44,18 +76,10 @@ export const useAuth = () => {
             "Failed to fetch user profile. Please try logging in again."
           );
         }
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        setAuthToken("");
-        setRefreshToken("");
-        setLoggedInUser(null);
+        clearAuthData();
       }
     } else {
-      console.log("No stored auth data found");
-      setAuthToken("");
-      setRefreshToken("");
-      setLoggedInUser(null);
+      clearAuthData();
     }
     setAuthLoading(false);
     setIsInitialized(true);
@@ -65,88 +89,74 @@ export const useAuth = () => {
     setLoggedInUser,
     setAuthLoading,
     setSessionExpired,
+    clearAuthData,
   ]);
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
-  const login = async (email, password) => {
-    try {
-      setError(null);
-      const response = await api.post("/users/login", { email, password });
-      const { token, refreshToken, user } = response.data;
+  const login = useCallback(
+    async (email, password, rememberMe) => {
+      try {
+        setError(null);
+        const response = await api.post("/users/login", { email, password });
+        const { token, refreshToken, user } = response.data;
+        storeAuthData(token, refreshToken, user, rememberMe);
+        setSessionExpired(false); // Reset session expired state
+        return user;
+      } catch (error) {
+        console.error("Login failed:", error);
+        setError(
+          error.response?.data?.msg ||
+            "Login failed. Please check your credentials."
+        );
+        throw error;
+      }
+    },
+    [storeAuthData, setSessionExpired]
+  );
 
-      console.log("Login response:", { token, refreshToken, user });
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      setAuthToken(token);
-      setRefreshToken(refreshToken);
-      setLoggedInUser(user);
-
-      console.log("After login:", {
-        storedToken: localStorage.getItem("token"),
-        storedRefreshToken: localStorage.getItem("refreshToken"),
-        storedUser: localStorage.getItem("user"),
-      });
-
-      return user;
-    } catch (error) {
-      console.error("Login failed:", error);
-      setError("Login failed. Please check your credentials.");
-      toast.error("Login failed. Please check your credentials.");
-      throw error;
-    }
-  };
+  const register = useCallback(
+    async (userData) => {
+      try {
+        setError(null);
+        const response = await api.post("/users/register", userData);
+        const { token, refreshToken, user } = response.data;
+        storeAuthData(token, refreshToken, user, true); // Assume remember me for registration
+        setSessionExpired(false); // Reset session expired state
+        return user;
+      } catch (error) {
+        console.error("Registration failed:", error);
+        setError(
+          error.response?.data?.msg || "Registration failed. Please try again."
+        );
+        throw error;
+      }
+    },
+    [storeAuthData, setSessionExpired]
+  );
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    setAuthToken("");
-    setRefreshToken("");
-    setLoggedInUser(null);
+    clearAuthData();
     setSessionExpired(false);
     toast.info("You have been logged out.");
-  }, [setAuthToken, setRefreshToken, setLoggedInUser, setSessionExpired]);
-
-  const register = async (userData) => {
-    try {
-      setError(null);
-      const response = await api.post("/users/register", userData);
-      const { token, refreshToken, user } = response.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setAuthToken(token);
-      setRefreshToken(refreshToken);
-      setLoggedInUser(user);
-      toast.success("Registration successful! Welcome aboard!");
-      return user;
-    } catch (error) {
-      console.error("Registration failed:", error);
-      setError("Registration failed. Please try again.");
-      toast.error("Registration failed. Please try again.");
-      throw error;
-    }
-  };
+  }, [clearAuthData, setSessionExpired]);
 
   const isAuthenticated = useCallback(() => {
-    return !!localStorage.getItem("token") && !!localStorage.getItem("user");
-  }, []);
+    return !!authToken;
+  }, [authToken]);
 
   return {
     login,
-    logout,
     register,
+    logout,
     isAuthenticated,
     error,
     isInitialized,
     initializeAuth,
-    authToken, // Make sure authToken is included in the return
+    storeAuthData,
+    clearAuthData,
   };
 };
 

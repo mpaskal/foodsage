@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import api from "../../utils/api";
 import Layout from "../../components/Layout/LayoutSite";
 import { useSetRecoilState } from "recoil";
-import { loggedInUserState } from "../../recoil/userAtoms";
+import { loggedInUserState, sessionExpiredState } from "../../recoil/userAtoms";
 import { toast } from "react-toastify";
+import { useAuth } from "../../hooks/useAuth";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -17,9 +16,10 @@ const SignUpPage = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isRegistered, setIsRegistered] = useState(false);
   const navigate = useNavigate();
   const setLoggedInUser = useSetRecoilState(loggedInUserState);
+  const setSessionExpired = useSetRecoilState(sessionExpiredState);
+  const { register, error: authError } = useAuth();
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
 
@@ -28,79 +28,97 @@ const SignUpPage = () => {
   };
 
   const validatePassword = (password) => {
-    // At least 8 characters long, contains at least one uppercase letter, one lowercase letter, and one number
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     return passwordRegex.test(password);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
 
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      setError("All fields are required");
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      setError(
-        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number"
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await api.post("/users/register", {
-        firstName,
-        lastName,
-        email,
-        password,
-      });
-
-      if (response.data && response.data.user && response.data.token) {
-        const userData = {
-          ...response.data.user,
-          token: response.data.token,
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        setLoggedInUser(userData);
-        setIsRegistered(true);
-        toast.success("Successfully registered!");
-      } else {
-        throw new Error("User data is not returned correctly");
+      if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        setError("All fields are required");
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("Error registering user", error);
-      if (error.response?.data?.msg === "Email already exists") {
+
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!validatePassword(password)) {
         setError(
-          "This email is already registered. Please use a different email."
+          "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number"
         );
-        toast.error(
-          "This email is already registered. Please use a different email."
-        );
-      } else {
-        setError(error.response?.data?.msg || "Error registering user");
-        toast.error(error.response?.data?.msg || "Error registering user");
+        setIsLoading(false);
+        return;
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [firstName, lastName, email, password, confirmPassword]
+  );
 
   useEffect(() => {
-    if (isRegistered) {
-      navigate("/dashboard");
+    let isMounted = true;
+
+    const performRegistration = async () => {
+      try {
+        const user = await register({ firstName, lastName, email, password });
+        if (isMounted) {
+          setLoggedInUser(user);
+          setSessionExpired(false);
+          toast.success("Successfully registered!");
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error registering user", error);
+          if (error.response?.data?.msg === "Email already exists") {
+            setError(
+              "This email is already registered. Please use a different email."
+            );
+            toast.error(
+              "This email is already registered. Please use a different email."
+            );
+          } else {
+            setError(error.response?.data?.msg || "Error registering user");
+            toast.error(error.response?.data?.msg || "Error registering user");
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (isLoading) {
+      performRegistration();
     }
-  }, [isRegistered, navigate]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    isLoading,
+    register,
+    firstName,
+    lastName,
+    email,
+    password,
+    setLoggedInUser,
+    setSessionExpired,
+    navigate,
+  ]);
+
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
 
   return (
     <Layout>

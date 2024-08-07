@@ -14,12 +14,15 @@ const useAxiosInterceptor = () => {
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          localStorage.removeItem("user");
-          setLoggedInUser(null);
-
-          toast.info("Your session has expired. Please sign in again.", {
-            onClose: () => navigate("/signin"),
-          });
+          const token = localStorage.getItem("token");
+          if (!token) {
+            // Only clear user data and redirect if there's no token
+            localStorage.removeItem("user");
+            setLoggedInUser(null);
+            toast.info("Your session has expired. Please sign in again.", {
+              onClose: () => navigate("/signin"),
+            });
+          }
         }
         return Promise.reject(error);
       }
