@@ -29,6 +29,7 @@ const SignInPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     try {
       const user = await login(email, password, rememberMe);
       setLoggedInUser(user);
@@ -36,7 +37,8 @@ const SignInPage = () => {
       navigate("/dashboard");
     } catch (error) {
       console.error("Error logging in user", error);
-      toast.error(error.message || "An error occurred during sign in.");
+      setError(error.message);
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }

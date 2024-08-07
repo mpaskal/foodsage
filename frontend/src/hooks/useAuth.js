@@ -103,15 +103,12 @@ export const useAuth = () => {
         const response = await api.post("/users/login", { email, password });
         const { token, refreshToken, user } = response.data;
         storeAuthData(token, refreshToken, user, rememberMe);
-        setSessionExpired(false); // Reset session expired state
+        setSessionExpired(false);
         return user;
       } catch (error) {
         console.error("Login failed:", error);
-        setError(
-          error.response?.data?.msg ||
-            "Login failed. Please check your credentials."
-        );
-        throw error;
+        setError("Invalid email or password. Please try again.");
+        throw new Error("Invalid email or password. Please try again.");
       }
     },
     [storeAuthData, setSessionExpired]

@@ -1,18 +1,25 @@
-// utils/api.js
 import axios from "axios";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+import { API_URL } from "../config";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
 });
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Dispatch a custom event instead of directly setting state
       window.dispatchEvent(new Event("sessionExpired"));
     }
     return Promise.reject(error);

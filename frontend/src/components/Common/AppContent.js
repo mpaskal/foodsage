@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { loggedInUserState, sessionExpiredState } from "../../recoil/userAtoms";
 import { useSessionManager } from "../../hooks/useSessionManager";
 import { useAuth } from "../../hooks/useAuth";
+import useAxiosInterceptor from "../../hooks/useAxiosInterceptor";
 
 // Import all your pages
 import HomePage from "../../pages/SitePages/HomePage";
@@ -33,9 +34,11 @@ const AppContent = () => {
   const { logout } = useSessionManager();
   const { isAuthenticated } = useAuth();
 
+  // Use the axios interceptor
+  useAxiosInterceptor();
+
   useEffect(() => {
     if (sessionExpired) {
-      // toast.error("Your session has ended. Please sign in again.");
       handleLogout();
     }
   }, [sessionExpired]);

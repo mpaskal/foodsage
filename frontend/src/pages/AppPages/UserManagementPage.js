@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import Layout from "../../components/Layout/LayoutApp";
 import UserTable from "../../components/User/UserTable";
@@ -21,9 +21,11 @@ import {
   totalPagesState,
   currentPageState,
   usersState,
+  authTokenState,
 } from "../../recoil/userAtoms";
 import { useDeleteUser } from "../../hooks/useUserManagement";
 import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const UserManagementPage = () => {
   const [isUserModalOpen, setIsUserModalOpen] =
@@ -35,6 +37,7 @@ const UserManagementPage = () => {
   const currentPage = useRecoilValue(currentPageState);
   const users = useRecoilValue(usersState);
   const adminUsers = useRecoilValue(adminUsersState);
+  const authToken = useRecoilValue(authTokenState);
   const setUsers = useSetRecoilState(usersState);
   const setIsLoading = useSetRecoilState(isLoadingState);
   const setTotalPages = useSetRecoilState(totalPagesState);
@@ -46,12 +49,14 @@ const UserManagementPage = () => {
   const [toastMessage, setToastMessage] = useState("");
   const usersPerPage = 10;
   const deleteUser = useDeleteUser();
-  const { authToken, isAuthenticated } = useAuth(); // Use the useAuth hook
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!isAuthenticated()) {
       setToastMessage("You are not authenticated. Please log in.");
       setShowToast(true);
+      navigate("/signin");
       return;
     }
 
@@ -64,6 +69,7 @@ const UserManagementPage = () => {
         },
         headers: { Authorization: `Bearer ${authToken}` },
       });
+      console.log("Fetched users:", usersResponse.data);
       if (usersResponse.data && Array.isArray(usersResponse.data.users)) {
         const filteredUsers = usersResponse.data.users;
         const adminUsersList = filteredUsers.filter((u) => u.role === "admin");
@@ -82,14 +88,29 @@ const UserManagementPage = () => {
         "Error fetching users: " + (error.message || "Unknown error")
       );
       setShowToast(true);
+      if (error.response && error.response.status === 401) {
+        navigate("/signin");
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentPage,
+    usersPerPage,
+    setUsers,
+    setAdminUsers,
+    setTotalPages,
+    setCurrentPage,
+    setIsLoading,
+    navigate,
+    isAuthenticated,
+  ]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [currentPage, isAuthenticated]);
+    if (isAuthenticated()) {
+      fetchUsers();
+    }
+  }, [fetchUsers, isAuthenticated]);
 
   const handleShowModal = (user = null) => {
     setSelectedUser(
@@ -127,6 +148,7 @@ const UserManagementPage = () => {
     if (!isAuthenticated()) {
       setToastMessage("You are not authenticated. Please log in.");
       setShowToast(true);
+      navigate("/signin");
       return;
     }
 
@@ -135,7 +157,6 @@ const UserManagementPage = () => {
       if (result.success) {
         setToastMessage("User deleted successfully.");
         setShowToast(true);
-        // Refresh users after deletion
         fetchUsers();
       } else {
         setToastMessage(result.error);
